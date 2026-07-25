@@ -150,7 +150,7 @@ export default function AdminGearBoardPage() {
 
               {/* Gear image only */}
               {getMemberGear(m.name) && (
-                <div className="rounded-xl overflow-hidden border border-desert-night/10 mb-3">
+                <div className="rounded-xl overflow-hidden border border-desert-night/10 mb-3 max-w-[50%]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={getMemberGear(m.name)!} alt={`${m.name} gear`} className="w-full" />
                 </div>

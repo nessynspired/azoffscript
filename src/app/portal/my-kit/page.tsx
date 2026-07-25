@@ -219,7 +219,7 @@ export default function MyWaveKitPage() {
 
       {/* ===== MEMBER CARD IMAGE ===== */}
       {cardImg && (
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden max-w-[50%] mx-auto">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={cardImg} alt={`${profile.name} member card`} className="w-full" />
         </div>
@@ -229,7 +229,7 @@ export default function MyWaveKitPage() {
       <section>
         <h2 className="font-display text-2xl text-desert-night mb-3">Your Gear</h2>
         {gearImg && (
-          <div className="card overflow-hidden mb-4">
+          <div className="card overflow-hidden mb-4 max-w-[50%] mx-auto">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={gearImg} alt={`${profile.name} gear`} className="w-full" />
           </div>
