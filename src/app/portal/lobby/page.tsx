@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
+import { AnimatedIntro } from "@/components/AnimatedIntro";
 import { getTemplate, getExampleFor } from "@/lib/quick-drop-templates";
 import type { Database } from "@/lib/types/db";
 
@@ -102,6 +103,8 @@ export default function LobbyPage() {
   const firstName = member?.name?.split(" ")[0] ?? "Crew";
 
   return (
+    <>
+    <AnimatedIntro />
     <div className="space-y-8">
       {/* Hero welcome band — primary poster background */}
       <section className="hero-band p-6 md:p-10 relative overflow-hidden min-h-[380px] md:min-h-[460px] flex items-end">
@@ -360,6 +363,7 @@ export default function LobbyPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 
