@@ -331,22 +331,94 @@ function AgreementScrollViewer({
 // ---------------------------------------------------------------------------
 // MainAgreementPopup — shows the Main Agreement text in a branded popup.
 // Exhibit mentions inside the text are clickable → open the full scroll viewer.
+// Includes a signing area at the bottom (signature pad + name + date).
+// Section 5 (Core Participation Rules / posting rules) is hidden from this
+// popup because it's covered in detail in Exhibit A.
 // ---------------------------------------------------------------------------
 function MainAgreementPopup({
   doc,
   onClose,
   onOpenExhibit,
+  activeAgreementId,
+  member,
+  alreadySigned,
+  onSigned,
+  previewMode,
 }: {
   doc: AgreementDoc;
   onClose: () => void;
   onOpenExhibit: (exhibitId: string) => void;
+  activeAgreementId?: string | null;
+  member?: { id: string; name: string; email?: string | null; phone?: string | null } | null;
+  alreadySigned?: boolean;
+  onSigned?: () => void;
+  previewMode?: boolean;
 }) {
+  const supabase = createClient();
   const exhibits = doc.exhibits ?? [];
   const mainExhibit = exhibits.find((e) => e.id === "main");
   const allSections = parseAgreementSections(doc.bodyMarkdown);
-  const mainSections = mainExhibit
+  // Filter out Section 5 (Core Participation Rules / posting rules) — covered in Exhibit A
+  const POSTING_RULES_SECTION = 5;
+  const mainSections = (mainExhibit
     ? allSections.filter((s) => s.prefix === "" && mainExhibit.sections.includes(s.number))
-    : allSections.filter((s) => s.prefix === "");
+    : allSections.filter((s) => s.prefix === "")
+  ).filter((s) => s.number !== POSTING_RULES_SECTION);
+
+  // Signing state (same as summary popup)
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [printedName, setPrintedName] = useState(member?.name ?? "");
+  const [signedDate, setSignedDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [signing, setSigning] = useState(false);
+  const [signed, setSigned] = useState(alreadySigned ?? false);
+  const [error, setError] = useState<string | null>(null);
+  const [whoami, setWhoami] = useState<{
+    name: string; email: string; emailVerified: boolean;
+    ip: string | null; deviceSummary: string;
+  } | null>(null);
+  const [whoamiLoading, setWhoamiLoading] = useState(false);
+  const [acknowledgedDevice, setAcknowledgedDevice] = useState(false);
+
+  useEffect(() => {
+    if (previewMode || !activeAgreementId || !member || signed || whoami || whoamiLoading) return;
+    setWhoamiLoading(true);
+    fetch("/api/agreements/whoami")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setWhoami({
+            name: data.name, email: data.email,
+            emailVerified: !!data.emailVerified, ip: data.ip, deviceSummary: data.deviceSummary,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setWhoamiLoading(false));
+  }, [previewMode, activeAgreementId, member, signed, whoami, whoamiLoading]);
+
+  const emailBlocked = whoami && !whoami.emailVerified;
+  const canSign = signatureData && printedName.trim() && signedDate && !signing && !signed && !previewMode && activeAgreementId && member && whoami && whoami.emailVerified && acknowledgedDevice;
+
+  async function handleSign() {
+    if (!canSign || !activeAgreementId || !member) return;
+    setError(null);
+    setSigning(true);
+    const res = await fetch("/api/agreements/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agreementId: activeAgreementId,
+        printedName: printedName.trim(),
+        signatureData, signedDate,
+        memberPhone: member.phone ?? null,
+      }),
+    });
+    const data = await res.json();
+    setSigning(false);
+    if (!res.ok) { setError(data.error ?? "Failed to sign"); return; }
+    setSigned(true);
+    onSigned?.();
+  }
 
   // Build a map of "Exhibit A" → exhibit id for linkify
   const exhibitLinkMap: Record<string, string> = {};
@@ -400,6 +472,11 @@ function MainAgreementPopup({
             <p className="text-sandstone-cream/60 text-xs mt-1">
               {mainSections.length} sections · scroll to read · exhibits are linked inside
             </p>
+            {previewMode && (
+              <p className="text-sandstone-cream/40 text-[10px] mt-1 uppercase tracking-wide">
+                Admin preview — signing is disabled
+              </p>
+            )}
           </div>
         </div>
 
@@ -420,13 +497,86 @@ function MainAgreementPopup({
               </div>
             ))
           )}
+
+          {/* Note about Section 5 */}
+          <div className="bg-copper-clay/5 rounded-xl p-3 mt-4 text-xs text-smoked-charcoal/60">
+            <p>Section 5 (Core Participation Rules) is covered in detail in <a href="#" className="exhibit-link" data-exhibit-id="exhibit-a" onClick={(e) => { e.preventDefault(); onOpenExhibit("exhibit-a"); }}>Exhibit A — Posting Rules</a>.</p>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="bg-sandstone-cream border-t border-copper-clay/20 px-4 py-2.5 shrink-0 text-center">
-          <button onClick={onClose} className="btn btn-ghost btn-sm !text-xs">
-            ← Back to sign
-          </button>
+        {/* Signing area — at the bottom of the popup */}
+        <div className="bg-sandstone-cream border-t-2 border-copper-clay/20 px-5 py-4 shrink-0 max-h-[40vh] overflow-y-auto">
+          {signed ? (
+            <div className="bg-cactus-teal/20 rounded-xl p-4 text-center">
+              <p className="font-display text-base text-desert-night">✓ Signed!</p>
+              <p className="text-xs text-smoked-charcoal/70 mt-1">
+                You signed the Main Agreement and all Exhibits A–E on {signedDate}.
+              </p>
+            </div>
+          ) : !previewMode && activeAgreementId && member ? (
+            <div className="space-y-3">
+              <p className="font-display text-sm text-desert-night">Sign here:</p>
+
+              {/* Email verification warning */}
+              {emailBlocked && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                  <p className="text-sm font-bold text-red-800">Email not verified</p>
+                  <p className="text-xs text-red-700 mt-1">Confirm your email before signing.</p>
+                </div>
+              )}
+
+              {/* Pre-sign disclosure */}
+              {whoami && (
+                <div className="bg-desert-night/5 rounded-xl p-3 space-y-1">
+                  <p className="text-[10px] font-black text-desert-night/60 uppercase tracking-wide">For your legal protection</p>
+                  <div className="text-xs text-smoked-charcoal space-y-0.5">
+                    <p><span className="text-smoked-charcoal/50">Signed in as:</span> <strong>{whoami.name}</strong> ({whoami.email})</p>
+                    <p><span className="text-smoked-charcoal/50">IP address:</span> {whoami.ip ?? "recorded server-side"}</p>
+                    <p><span className="text-smoked-charcoal/50">Device:</span> {whoami.deviceSummary}</p>
+                  </div>
+                  <label className="flex items-start gap-2 pt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={acknowledgedDevice} onChange={(e) => setAcknowledgedDevice(e.target.checked)} disabled={!!emailBlocked} className="mt-0.5" />
+                    <span className="text-xs text-smoked-charcoal">I confirm this is my account and my device.</span>
+                  </label>
+                </div>
+              )}
+
+              {/* Printed name + date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="label">Printed name</p>
+                  <input type="text" value={printedName} onChange={(e) => setPrintedName(e.target.value)} placeholder="Legal name" className="field" disabled={!!emailBlocked} />
+                </div>
+                <div>
+                  <p className="label">Date</p>
+                  <input type="date" value={signedDate} onChange={(e) => setSignedDate(e.target.value)} className="field !w-auto" disabled={!!emailBlocked} />
+                </div>
+              </div>
+
+              {/* Signature pad */}
+              <SignaturePad onChange={setSignatureData} label="Draw your signature" />
+
+              {error && <p className="text-xs text-red-700 bg-red-50 rounded p-2">{error}</p>}
+
+              <button onClick={handleSign} disabled={!canSign} className="btn btn-primary btn-lg w-full">
+                {signing ? "Signing…" : "Sign the full agreement"}
+              </button>
+              <p className="text-[10px] text-smoked-charcoal/40 text-center">
+                Signing the Main Agreement means you agree to all exhibits A–E together.
+              </p>
+            </div>
+          ) : previewMode ? (
+            <div className="bg-sandstone-cream/60 rounded-xl p-3 text-center">
+              <p className="text-xs text-smoked-charcoal/50">Signature pad appears here for crew once activated.</p>
+            </div>
+          ) : null}
+
+          {/* Back button */}
+          <div className="text-center mt-3">
+            <button onClick={onClose} className="btn btn-ghost btn-sm !text-xs">
+              ← Back
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -766,6 +916,11 @@ function AgreementPopup({
             setShowMainAgreement(false);
             onOpenExhibit?.(exhibitId);
           }}
+          activeAgreementId={activeAgreementId}
+          member={member}
+          alreadySigned={alreadySigned}
+          onSigned={onSigned}
+          previewMode={previewMode}
         />
       )}
     </div>
