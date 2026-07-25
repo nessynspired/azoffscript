@@ -59,8 +59,16 @@ function parseAgreementSections(markdown: string): ParsedSection[] {
     const plainMatch = line.match(/^#+\s+(\d+)\.\s+(.+)$/);
     // Pattern 2: # A.1. Title (or B.2. etc.)
     const prefixedMatch = line.match(/^#+\s+([A-Z])\.(\d+)\.\s+(.+)$/);
+    // Pattern 3: # Exhibit X — Title (exhibit heading — acts as a boundary,
+    // stops the current section so exhibit intro text doesn't leak into main sections)
+    const exhibitMatch = line.match(/^#+\s+Exhibit\s+([A-Z])/i);
 
-    if (prefixedMatch) {
+    if (exhibitMatch) {
+      // Flush current section and drop content until the first sub-section (A.1, etc.)
+      flush();
+      currentSection = null;
+      buffer = [];
+    } else if (prefixedMatch) {
       flush();
       const prefix = prefixedMatch[1] + ".";
       const num = parseInt(prefixedMatch[2], 10);
