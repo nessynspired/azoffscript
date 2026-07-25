@@ -329,6 +329,93 @@ function AgreementScrollViewer({
 // ===========================================================================
 
 // ---------------------------------------------------------------------------
+// IntroMessagePopup — Vanessa's personal message to the crew.
+// This is the VERY FIRST popup they see before the agreement summary.
+// ---------------------------------------------------------------------------
+function IntroMessagePopup({
+  memberName,
+  onContinue,
+  onClose,
+}: {
+  memberName?: string;
+  onContinue: () => void;
+  onClose: () => void;
+}) {
+  const firstName = memberName?.split(" ")[0] ?? "hey";
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header — branded */}
+        <div className="card-dark rounded-t-3xl p-6 relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-20">
+            <MascotImage pose="shades" size={140} />
+          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 text-sandstone-cream/50 hover:text-sandstone-cream text-2xl z-10"
+            aria-label="Close"
+          >×</button>
+          <div className="relative z-10">
+            <span className="chip chip-yellow mb-2">Message from Vanessa</span>
+            <h2 className="font-display text-2xl text-sandstone-cream leading-tight">
+              Hey {firstName},
+            </h2>
+          </div>
+        </div>
+
+        {/* Body — the message */}
+        <div className="p-6 space-y-4 text-sm text-desert-night leading-relaxed">
+          <p>Before we start recording or dropping real clips, I am putting the AZ Off Script participation rules in writing so everything is clear from the beginning.</p>
+
+          <p>This is not to make it weird. It is to protect the brand and protect everybody in the room.</p>
+
+          <p>The same idea still stands: we are building one shared AZ Off Script page first — fun, local, personality-driven, and not forced. But once people are filming, being tagged, sharing clips, wearing gear, or maybe later dealing with sponsors/money, we need clear rules around approvals, posting, raw footage, comfort, kids, and what happens if someone leaves.</p>
+
+          <p>One thing I also want to make clear: AZ Off Script is the main brand, and this First Wave is the first women-led room under it. That does not change what we are doing right now. It just gives the brand room to grow later into other waves, other Arizona areas, couples content, mixed groups, or other versions if it makes sense.</p>
+
+          <p>Nothing is paid or promised right now. Nobody is being asked to pay anything. If AZ Off Script ever becomes monetized, sponsored, or paid later, money conversations will happen privately and in writing before anything is owed or split.</p>
+
+          <div className="bg-copper-clay/10 rounded-2xl p-4">
+            <p className="font-display text-base text-copper-deep mb-2">The main things are simple:</p>
+            <ul className="space-y-1.5 text-sm text-smoked-charcoal">
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> official AZ Off Script content posts on the official page first</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> do not post raw footage or drafts without approval</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> do not use the AZ Off Script name/logo/mascot for your own separate thing</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> clips need approval before posting</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Do Not Post wins before something goes live</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> if someone leaves later, previously approved/posted content may stay with the brand</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> no kids by default</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> tagging is separate from posting</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> AZ Off Script may grow into future waves later</li>
+            </ul>
+          </div>
+
+          <p>I want this to stay fun, but I also want it organized and respectful before we start.</p>
+
+          <p>Please read it, ask me anything that feels confusing, and only sign when you feel clear.</p>
+
+          <p className="font-display text-base text-desert-night">— Vanessa</p>
+
+          {/* Continue button */}
+          <button
+            onClick={onContinue}
+            className="btn btn-primary btn-lg w-full"
+          >
+            Continue to agreement →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // MainAgreementPopup — shows the Main Agreement text in a branded popup.
 // Exhibit mentions inside the text are clickable → open the full scroll viewer.
 // Includes a signing area at the bottom (signature pad + name + date).
@@ -934,6 +1021,7 @@ export default function AgreementsPage() {
   const [viewSignaturesFor, setViewSignaturesFor] = useState<string | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
   const [popupPreview, setPopupPreview] = useState<AgreementDoc | null>(null);
+  const [showIntro, setShowIntro] = useState(false);
 
   const load = useCallback(async () => {
     const [agRes, sigRes, memRes] = await Promise.all([
@@ -1153,7 +1241,7 @@ export default function AgreementsPage() {
                     <p className="text-xs text-smoked-charcoal/60 mt-1">{doc.summary}</p>
                   </div>
                   <div className="flex gap-2 shrink-0 flex-wrap">
-                    <button onClick={() => setPopupPreview(doc)} className="btn btn-ghost btn-sm !text-xs">Preview Popup</button>
+                    <button onClick={() => { setPopupPreview(doc); setShowIntro(true); }} className="btn btn-ghost btn-sm !text-xs">Preview Popup</button>
                     <button onClick={() => setViewVersion(doc.version)} className="btn btn-ghost btn-sm !text-xs">Preview Full</button>
                     <button
                       onClick={() => publishVersion(doc)}
@@ -1246,8 +1334,17 @@ export default function AgreementsPage() {
         )}
       </section>
 
+      {/* Intro message popup — Vanessa's personal message (shows first) */}
+      {popupPreview && showIntro && (
+        <IntroMessagePopup
+          memberName={member?.name}
+          onContinue={() => setShowIntro(false)}
+          onClose={() => { setPopupPreview(null); setShowIntro(false); }}
+        />
+      )}
+
       {/* Popup preview — admin can see what crew will see */}
-      {popupPreview && (
+      {popupPreview && !showIntro && (
         <AgreementPopup
           doc={popupPreview}
           onClose={() => setPopupPreview(null)}
