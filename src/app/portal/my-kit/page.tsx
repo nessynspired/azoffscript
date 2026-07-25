@@ -217,23 +217,27 @@ export default function MyWaveKitPage() {
         </div>
       </div>
 
-      {/* ===== MEMBER CARD IMAGE ===== */}
-      {cardImg && (
-        <div className="card overflow-hidden max-w-[50%] mx-auto">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cardImg} alt={`${profile.name} member card`} className="w-full" />
+      {/* ===== MEMBER CARD + GEAR IMAGES SIDE BY SIDE ===== */}
+      {(cardImg || gearImg) && (
+        <div className="flex gap-4 justify-center">
+          {cardImg && (
+            <div className="card overflow-hidden w-1/2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cardImg} alt={`${profile.name} member card`} className="w-full" />
+            </div>
+          )}
+          {gearImg && (
+            <div className="card overflow-hidden w-1/2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={gearImg} alt={`${profile.name} gear`} className="w-full" />
+            </div>
+          )}
         </div>
       )}
 
       {/* ===== YOUR GEAR ===== */}
       <section>
         <h2 className="font-display text-2xl text-desert-night mb-3">Your Gear</h2>
-        {gearImg && (
-          <div className="card overflow-hidden mb-4 max-w-[50%] mx-auto">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={gearImg} alt={`${profile.name} gear`} className="w-full" />
-          </div>
-        )}
         {gear.length === 0 ? (
           <div className="card p-5 text-center">
             <p className="text-smoked-charcoal/70">Your gear hasn&apos;t been set up yet. Vanessa will add your items soon.</p>
