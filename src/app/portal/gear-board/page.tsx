@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
-import { getMemberCard, getMemberGear } from "@/lib/crew-data";
+import { getMemberGear } from "@/lib/crew-data";
 import type { Database, GearItemType, GearStatus } from "@/lib/types/db";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
@@ -148,21 +148,11 @@ export default function AdminGearBoardPage() {
                 </button>
               </div>
 
-              {/* Member card + gear images */}
-              {(getMemberCard(m.name) || getMemberGear(m.name)) && (
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  {getMemberCard(m.name) && (
-                    <div className="rounded-xl overflow-hidden border border-desert-night/10">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={getMemberCard(m.name)!} alt={`${m.name} card`} className="w-full" />
-                    </div>
-                  )}
-                  {getMemberGear(m.name) && (
-                    <div className="rounded-xl overflow-hidden border border-desert-night/10">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={getMemberGear(m.name)!} alt={`${m.name} gear`} className="w-full" />
-                    </div>
-                  )}
+              {/* Gear image only */}
+              {getMemberGear(m.name) && (
+                <div className="rounded-xl overflow-hidden border border-desert-night/10 mb-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={getMemberGear(m.name)!} alt={`${m.name} gear`} className="w-full" />
                 </div>
               )}
 
