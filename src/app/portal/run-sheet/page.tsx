@@ -47,15 +47,24 @@ export default function RunSheetPage() {
   const [people, setPeople] = useState<Record<string, ClipPerson[]>>({});
   const [approvals, setApprovals] = useState<Record<string, Approval[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<"production" | "ideas" | "all">("production");
   const [view, setView] = useState<"flow" | "calendar">("flow");
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { data: clipData } = await supabase
+    const { data: clipData, error } = await supabase
       .from("clips_with_meta")
       .select("*")
       .order("updated_at", { ascending: false });
+
+    if (error) {
+      console.error("[run-sheet] clips_with_meta query failed:", error.message);
+      setLoadError(error.message);
+      setLoading(false);
+      return;
+    }
+    setLoadError(null);
 
     const clips = clipData ?? [];
     setClips(clips);
@@ -126,6 +135,22 @@ export default function RunSheetPage() {
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="animate-pulse-slow"><MascotImage pose="main" size={120} /></div>
         <p className="font-display text-2xl text-desert-night">Loading the run sheet…</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="card p-8 max-w-lg mx-auto text-center mt-10">
+        <h1 className="font-display text-3xl text-heat-orange">Can&apos;t load the Run Sheet</h1>
+        <p className="text-smoked-charcoal/70 mt-3 text-sm">
+          The database view <code className="bg-desert-night/10 px-1.5 py-0.5 rounded">clips_with_meta</code> may not exist yet.
+        </p>
+        <p className="text-xs text-smoked-charcoal/50 mt-2 font-mono break-all">{loadError}</p>
+        <p className="text-sm text-smoked-charcoal/70 mt-4">
+          Run <code className="bg-desert-night/10 px-1.5 py-0.5 rounded">supabase/create-clips-view.sql</code> in your
+          Supabase Dashboard → SQL Editor.
+        </p>
       </div>
     );
   }
