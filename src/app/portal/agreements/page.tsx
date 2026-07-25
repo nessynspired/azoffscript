@@ -189,7 +189,7 @@ function AgreementScrollViewer({
           <span className="chip chip-yellow mb-2">{version}</span>
           <h1 className="font-display text-2xl md:text-3xl text-sandstone-cream leading-tight">{title}</h1>
           <p className="text-sandstone-cream/60 text-sm mt-1">
-            {allSections.length} sections · {grouped.length} {grouped.length === 1 ? "part" : "parts"} · scroll to read · one signature signs all
+            {allSections.length} sections · {grouped.length} {grouped.length === 1 ? "part" : "parts"} · scroll to read
           </p>
         </div>
       </div>
@@ -255,9 +255,8 @@ function AgreementScrollViewer({
           {/* Signature notice */}
           <div className="mt-10 pt-8 border-t-2 border-copper-clay/20">
             <div className="bg-cactus-teal/10 rounded-xl p-4">
-              <p className="font-display text-lg text-desert-night">One Signature Signs All</p>
-              <p className="text-sm text-smoked-charcoal/70 mt-1">
-                When a participant signs this agreement, they are signing the Main Agreement and all Exhibits (A through E) together. One electronic signature covers everything.
+              <p className="text-sm text-smoked-charcoal/70">
+                Signing the Main Agreement means you agree to all exhibits A–E together.
               </p>
             </div>
           </div>
@@ -458,14 +457,9 @@ function AgreementPopup({
           </div>
 
           {/* One signature signs all */}
-          <div className="bg-copper-clay/10 rounded-2xl p-4 text-center">
-            <p className="font-display text-base text-copper-deep">
-              One signature signs everything
-            </p>
-            <p className="text-xs text-smoked-charcoal/60 mt-1">
-              Signing the Main Agreement means you agree to all exhibits A–E together.
-            </p>
-          </div>
+          <p className="text-xs text-smoked-charcoal/60 text-center px-4">
+            Signing the Main Agreement means you agree to all exhibits A–E together.
+          </p>
 
           {/* Signature section */}
           {signed ? (
