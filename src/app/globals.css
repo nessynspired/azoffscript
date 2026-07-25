@@ -338,6 +338,20 @@ body {
   padding: 0.3rem 0.7rem;
   border-radius: var(--radius-pill);
   white-space: nowrap;
+  min-height: 1.75rem;
+}
+/* Chips used as buttons need bigger touch targets on mobile */
+button.chip,
+a.chip {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.9rem;
+}
+@media (min-width: 768px) {
+  button.chip,
+  a.chip {
+    min-height: auto;
+    padding: 0.3rem 0.7rem;
+  }
 }
 .chip-copper {
   background: var(--color-copper-clay);
@@ -411,6 +425,18 @@ body {
   background: var(--color-bone-white);
   color: var(--color-desert-night);
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+/* Prevent iOS auto-zoom on input focus (requires 16px minimum) */
+@media (max-width: 768px) {
+  .field,
+  input[type="text"],
+  input[type="email"],
+  input[type="date"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 .field:focus {
   outline: none;

@@ -111,7 +111,7 @@ export default function LobbyPage() {
         <div className="absolute inset-0 opacity-40">
           <PosterImage poster="primary" fill priority alt="AZ Off Script desert poster" />
         </div>
-        <div className="absolute right-4 bottom-0 z-10">
+        <div className="absolute right-4 bottom-0 z-10 hidden sm:block">
           <MascotImage pose="main" size={280} />
         </div>
         <div className="relative z-10 max-w-2xl pb-2">

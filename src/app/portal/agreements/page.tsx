@@ -293,7 +293,7 @@ function AgreementScrollViewer({
               scrollToAnchor(link.dataset.anchor);
             }
           }}
-          className="flex-1 card p-6 md:p-8 max-h-[70vh] overflow-y-auto scroll-smooth agreement-prose"
+          className="flex-1 card p-4 md:p-8 max-h-[55vh] md:max-h-[70vh] overflow-y-auto scroll-smooth agreement-prose"
         >
           {grouped.map((ex, exIdx) => (
             <div key={ex.group.id} className={exIdx > 0 ? "mt-10 pt-8 border-t-2 border-copper-clay/20" : ""}>
@@ -356,7 +356,7 @@ function IntroMessagePopup({
       onClick={onClose}
     >
       <div
-        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] mx-2 overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — branded */}
@@ -548,7 +548,7 @@ function MainAgreementPopup({
       onClick={onClose}
     >
       <div
-        className="bg-sandstone-cream rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+        className="bg-sandstone-cream rounded-3xl max-w-2xl w-full max-h-[92vh] mx-2 flex flex-col shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — same branded design */}
@@ -771,7 +771,7 @@ function AgreementPopup({
       onClick={onClose}
     >
       <div
-        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] mx-2 overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — cute and branded */}

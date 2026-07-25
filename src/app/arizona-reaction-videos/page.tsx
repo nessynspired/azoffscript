@@ -95,7 +95,7 @@ export default function ArizonaReactionVideosPage() {
           <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-6">
             Meet the First Wave
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {CREW.map((member) => (
               <div key={member.slug} className="card p-4 text-center">
                 <div className="w-14 h-14 rounded-full bg-copper-clay/20 flex items-center justify-center mx-auto">

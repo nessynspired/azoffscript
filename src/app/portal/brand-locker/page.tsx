@@ -167,7 +167,7 @@ export default function BrandLockerPage() {
             <p className="text-sm text-smoked-charcoal/60 mb-4">
               Square version for profile pictures, avatars, and stickers.
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { file: "logo-stacked-white.png", label: "White · Transparent", bg: "bg-desert-night" },
                 { file: "logo-stacked-black.png", label: "Black · Transparent", bg: "bg-sandstone-cream border-b" },
@@ -228,7 +228,7 @@ export default function BrandLockerPage() {
 
       {/* COLORS */}
       {tab === "colors" && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {BRAND_COLORS.map((c) => (
             <div key={c.name} className="card overflow-hidden">
               <div

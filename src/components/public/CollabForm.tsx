@@ -51,7 +51,7 @@ export function CollabForm() {
         <label className="label" htmlFor="biz-type">Product / event / service</label>
         <input id="biz-type" className="field" value={form.productEvent} onChange={(e) => update("productEvent", e.target.value)} />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label" htmlFor="biz-timeline">Timeline</label>
           <input id="biz-timeline" className="field" placeholder="ASAP, next month…" value={form.timeline} onChange={(e) => update("timeline", e.target.value)} />
