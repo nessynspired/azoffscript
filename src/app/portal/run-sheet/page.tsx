@@ -653,13 +653,13 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
 
   return (
     <div className="lg:w-80 shrink-0">
-      <div className="card p-3 space-y-2.5 lg:sticky lg:top-4">
+      <div className="card p-4 md:p-3 space-y-3 md:space-y-2.5 lg:sticky lg:top-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-display text-base text-desert-night">Ready to Schedule</p>
-            <p className="text-[10px] text-smoked-charcoal/50">{filtered.length} ready · click + to add</p>
+            <p className="font-display text-lg md:text-base text-desert-night">Ready to Schedule</p>
+            <p className="text-xs md:text-[10px] text-smoked-charcoal/50">{filtered.length} ready · tap + to add</p>
           </div>
-          <Link href="/portal/ready-bank" className="text-[10px] text-copper-deep font-bold hover:underline shrink-0">
+          <Link href="/portal/ready-bank" className="text-xs md:text-[10px] text-copper-deep font-bold hover:underline shrink-0">
             Full Bank →
           </Link>
         </div>
@@ -670,32 +670,32 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search formats..."
-          className="field !text-xs !py-1.5 !px-2"
+          className="field !text-sm md:!text-xs !py-2.5 md:!py-1.5 !px-3 md:!px-2"
         />
 
         {/* Effort filter — compact row */}
-        <div className="flex flex-wrap gap-1">
-          <button onClick={() => setEffortFilter(null)} className={`chip !text-[9px] !py-0.5 ${!effortFilter ? "chip-copper" : "chip-cream"}`}>All</button>
+        <div className="flex flex-wrap gap-1.5 md:gap-1">
+          <button onClick={() => setEffortFilter(null)} className={`chip !text-xs md:!text-[9px] !py-1 md:!py-0.5 ${!effortFilter ? "chip-copper" : "chip-cream"}`}>All</button>
           {(["2-Min Drop", "5-Min Drop", "10-Min Drop", "Group Day"] as EffortLabel[]).map((e) => (
-            <button key={e} onClick={() => setEffortFilter(e === effortFilter ? null : e)} className={`chip !text-[9px] !py-0.5 ${effortFilter === e ? "chip-copper" : "chip-cream"}`}>{e.replace(" Drop", "")}</button>
+            <button key={e} onClick={() => setEffortFilter(e === effortFilter ? null : e)} className={`chip !text-xs md:!text-[9px] !py-1 md:!py-0.5 ${effortFilter === e ? "chip-copper" : "chip-cream"}`}>{e.replace(" Drop", "")}</button>
           ))}
         </div>
 
-        {/* Compact list — single-line rows, click anywhere to add */}
-        <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+        {/* List — bigger touch targets on mobile, compact on desktop */}
+        <div className="space-y-2 md:space-y-1 max-h-[500px] overflow-y-auto pr-1">
           {filtered.length === 0 ? (
-            <p className="text-xs text-smoked-charcoal/40 text-center py-4">No formats match.</p>
+            <p className="text-sm md:text-xs text-smoked-charcoal/40 text-center py-4">No formats match.</p>
           ) : (
             filtered.map((t) => (
               <button
                 key={t.id}
                 onClick={() => { setActionTemplate(t); setLiveDate(nextSunday().toISOString().slice(0, 10)); setSelectedCrew([]); }}
-                className="w-full flex items-center gap-2 bg-sandstone-cream/40 hover:bg-copper-clay/15 rounded-lg px-2.5 py-1.5 text-left transition-colors group"
+                className="w-full flex items-center gap-2 bg-sandstone-cream/40 hover:bg-copper-clay/15 rounded-lg px-3 md:px-2.5 py-3 md:py-1.5 text-left transition-colors group"
               >
-                <span className="text-copper-deep font-black text-sm shrink-0 group-hover:scale-110 transition-transform">+</span>
-                <span className="font-bold text-xs text-desert-night leading-tight flex-1 min-w-0 truncate">{t.name}</span>
-                <span className="text-[8px] text-smoked-charcoal/50 shrink-0">{t.effort.replace(" Drop", "")}</span>
-                {!t.needsTalking && <span className="text-[10px] shrink-0" title="No talking">🤫</span>}
+                <span className="text-copper-deep font-black text-base md:text-sm shrink-0 group-hover:scale-110 transition-transform">+</span>
+                <span className="font-bold text-sm md:text-xs text-desert-night leading-tight flex-1 min-w-0 truncate">{t.name}</span>
+                <span className="text-[10px] md:text-[8px] text-smoked-charcoal/50 shrink-0">{t.effort.replace(" Drop", "")}</span>
+                {!t.needsTalking && <span className="text-xs md:text-[10px] shrink-0" title="No talking">🤫</span>}
               </button>
             ))
           )}
