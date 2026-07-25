@@ -6,11 +6,11 @@ export function PublicFooter() {
       <div className="max-w-6xl mx-auto">
         {/* SEO paragraph — plain but powerful for search */}
         <p className="text-sandstone-cream/50 text-sm leading-relaxed max-w-4xl mb-8">
-          AZ Off Script is an Arizona-based creator brand and women-led creator crew making
-          reaction videos, hot takes, group games, local humor, and short-form social content for
-          TikTok, Instagram Reels, Facebook, and YouTube Shorts. Based in Arizona and built to grow across the state,
-          area, AZ Off Script is built around real reactions, group chemistry, and off-script
-          Arizona moments.
+          AZ Off Script is an Arizona-based creator brand making reaction videos, hot takes, group
+          games, local humor, quick trend remixes, and short-form social content for TikTok,
+          Instagram Reels, Facebook, and YouTube Shorts. Built to grow across Arizona, AZ Off
+          Script is centered on real reactions, group chemistry, local personality, and off-script
+          moments people want to share.
         </p>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
@@ -25,7 +25,6 @@ export function PublicFooter() {
             <Link href="/collabs" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Collabs</Link>
             <Link href="/join" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Join</Link>
             <Link href="/about" className="text-sandstone-cream/60 hover:text-sunburst-yellow">About</Link>
-            <Link href="/arizona-reaction-videos" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Arizona Reaction Videos</Link>
             <Link href="/login" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Portal Login</Link>
           </nav>
 

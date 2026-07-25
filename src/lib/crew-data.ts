@@ -34,8 +34,8 @@ export const CREW: CrewMember[] = [
     slug: "ronnie",
     title: "The Sweet Touch",
     description:
-      "Warm, creative, and the one who can bring personality into the room without forcing it.",
-    tags: ["Creative Energy", "Warm Vibe", "Food / Cake Energy", "Personality"],
+      "Warm, creative, and the one who brings personality into the room while helping shape what hits the calendar next.",
+    tags: ["Creative Touch", "Warm Vibe", "Calendar Planner", "Personality"],
   },
   {
     name: "Elaine",
@@ -64,7 +64,7 @@ export const CREW: CrewMember[] = [
 ];
 
 export const CREW_NAMES_SHORT =
-  "Vanessa, Ronnie, Sholanda, Elaine, Latasha, and Maria are the first AZ Off Script crew — a mix of real reactions, hot takes, calm energy, funny timing, and Arizona personality. Different women. Same room. No script needed.";
+  "Vanessa, Ronnie, Sholanda, Elaine, Latasha, and Maria are the first AZ Off Script room — a mix of real reactions, hot takes, calm energy, funny timing, and Arizona personality. They are the First Wave, not the limit of what AZ Off Script can become.";
 
 /**
  * Member image paths — gear mockups and member cards.

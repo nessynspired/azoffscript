@@ -56,9 +56,9 @@ export default function CollabsPage() {
           </h1>
           <p className="text-xl text-smoked-charcoal/80 mt-6 max-w-2xl mx-auto leading-relaxed">
             AZ Off Script creates short-form content with real reactions, local Arizona energy, and
-            group chemistry. For local businesses, events, products, and brands, that means your
-            offer does not have to feel like an ad. It can become part of a conversation people
-            actually want to watch.
+            group chemistry. For local businesses, events, products, and brands, your offer does
+            not have to feel like a cold ad. It can become part of a conversation people actually
+            want to watch.
           </p>
         </div>
       </section>

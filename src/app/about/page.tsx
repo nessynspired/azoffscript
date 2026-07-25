@@ -8,12 +8,12 @@ import { MascotImage, PosterImage } from "@/components/MascotImage";
 export const metadata: Metadata = {
   title: "About AZ Off Script — Arizona, Our Way",
   description:
-    "AZ Off Script is an Arizona women-led creator crew making reaction videos, group games, hot takes, local humor, quick trend remixes, and off-script moments. Different women. Same room. Arizona, our way.",
+    "AZ Off Script is an Arizona-based creator brand making reaction videos, hot takes, group games, local humor, quick trend remixes, and short-form social content for TikTok, Instagram Reels, Facebook, and YouTube Shorts. Built to grow across Arizona, AZ Off Script is centered on real reactions, group chemistry, local personality, and off-script moments people want to share.",
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About AZ Off Script — Arizona, Our Way",
     description:
-      "AZ Off Script is an Arizona women-led creator crew making reaction videos, group games, hot takes, local humor, quick trend remixes, and off-script moments. Different women. Same room. Arizona, our way.",
+      "AZ Off Script is an Arizona-based creator brand making reaction videos, hot takes, group games, local humor, quick trend remixes, and short-form social content for TikTok, Instagram Reels, Facebook, and YouTube Shorts. Built to grow across Arizona, AZ Off Script is centered on real reactions, group chemistry, local personality, and off-script moments people want to share.",
   },
 };
 
@@ -45,24 +45,33 @@ export default function AboutPage() {
 
           <div className="card p-6">
             <p className="text-lg text-desert-night leading-relaxed">
-              We are an Arizona women-led creator crew making short-form content around real
-              reactions, group games, hot takes, local humor, quick trend remixes, and off-script
-              moments. The group chat got a camera — and nobody is reading from a script.
+              AZ Off Script is an Arizona creator brand built around real reactions, group games,
+              hot takes, local humor, quick trend remixes, and off-script moments.
             </p>
           </div>
 
           <div className="card p-6">
             <p className="text-lg text-desert-night leading-relaxed">
-              The First Wave started with the women who showed up first and helped shape the room.
-              The first group brings strong Black and Latina energy, but the brand is not limited
-              to one background. As AZ Off Script grows, the room will expand with more Arizona
-              women, more perspectives, and more personalities.
+              The First Wave is our first women-led creator room — the group that showed up first,
+              shaped the vibe, and helped turn the idea into something real. Different
+              personalities, different timing, same room.
+            </p>
+          </div>
+
+          <div className="card p-6">
+            <p className="text-lg text-desert-night leading-relaxed">
+              As AZ Off Script grows, the brand may expand into more Arizona voices, more
+              backgrounds, more cities, more formats, and future waves — including women, couples,
+              mixed groups, local features, and other creator lanes.
             </p>
           </div>
 
           <div className="card p-6 bg-copper-clay/10 border-l-4 border-copper-clay">
             <p className="font-display text-2xl text-desert-night leading-tight">
-              Different women. Same room. Arizona, our way.
+              The group chat got a camera — and nobody is reading from a script.
+            </p>
+            <p className="font-display text-2xl text-desert-night leading-tight mt-2">
+              Different people. Same room. Arizona, our way.
             </p>
           </div>
 
@@ -70,8 +79,8 @@ export default function AboutPage() {
             <p className="text-lg text-desert-night leading-relaxed">
               The goal is to create content people recognize themselves in — the kind of clip you
               send to a friend because somebody finally said it out loud. Not about one type of
-              woman, but about what happens when different Arizona women get the same prompt and
-              nobody answers the same way.
+              person, but about what happens when different Arizona personalities get the same
+              prompt and nobody answers the same way.
             </p>
           </div>
 

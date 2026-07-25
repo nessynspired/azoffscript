@@ -485,11 +485,11 @@ export function ImmersiveHome() {
           </h2>
 
           <p className="text-sandstone-cream/50 text-sm leading-relaxed max-w-4xl mb-10">
-            AZ Off Script is a women-led Arizona creator crew making reaction videos, hot takes,
-            group games, local humor, and short-form social content for TikTok, Instagram Reels,
-            Facebook, and YouTube Shorts. Based in Arizona and built to grow across the state,
-            AZ Off Script turns real reactions and off-script moments into content people want to
-            watch and share.
+            AZ Off Script is an Arizona-based creator brand making reaction videos, hot takes,
+            group games, local humor, quick trend remixes, and short-form social content for
+            TikTok, Instagram Reels, Facebook, and YouTube Shorts. Built to grow across Arizona,
+            AZ Off Script is centered on real reactions, group chemistry, local personality, and
+            off-script moments people want to share.
           </p>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">

@@ -10,12 +10,12 @@ import { WatchClipsGrid } from "@/components/public/WatchClipsGrid";
 export const metadata: Metadata = {
   title: "Arizona Reaction Videos & Group Games — AZ Off Script",
   description:
-    "AZ Off Script creates Arizona reaction videos, group games, hot takes, and local short-form content featuring a women-led creator crew from Arizona.",
+    "AZ Off Script creates Arizona reaction videos, group games, hot takes, and local short-form content featuring a women-led creator room from Arizona.",
   alternates: { canonical: "/arizona-reaction-videos" },
   openGraph: {
     title: "Arizona Reaction Videos & Group Games — AZ Off Script",
     description:
-      "AZ Off Script creates Arizona reaction videos, group games, hot takes, and local short-form content featuring a women-led creator crew from Arizona.",
+      "AZ Off Script creates Arizona reaction videos, group games, hot takes, and local short-form content featuring a women-led creator room from Arizona.",
   },
 };
 
@@ -33,7 +33,7 @@ export default function ArizonaReactionVideosPage() {
           </h1>
           <p className="text-lg md:text-xl text-smoked-charcoal/80 mt-6 max-w-3xl leading-relaxed">
             AZ Off Script creates Arizona reaction videos, group games, hot takes, and local
-            short-form content featuring a women-led creator crew from Arizona. Our clips
+            short-form content featuring a women-led creator room from Arizona. Our clips
             are built around real reactions, funny questions, social debates, and off-script moments
             that feel like the group chat came to life.
           </p>

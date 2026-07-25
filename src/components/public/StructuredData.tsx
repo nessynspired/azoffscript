@@ -27,7 +27,7 @@ export function OrganizationSchema() {
         "@id": `${SITE_URL}/#organization`,
         name: "AZ Off Script",
         description:
-          "AZ Off Script is a women-led Arizona creator crew making reaction videos, hot takes, group games, local humor, and off-script moments from across Arizona.",
+          "AZ Off Script is an Arizona-based creator brand making reaction videos, hot takes, group games, local humor, quick trend remixes, and short-form social content. The First Wave is the first women-led room.",
         url: SITE_URL,
         logo: `${SITE_URL}/assets/az-off-script-poster-primary-cactus-purse-desert.png`,
         sameAs: [
@@ -63,7 +63,7 @@ export function WebSiteSchema() {
         "@id": `${SITE_URL}/#website`,
         url: SITE_URL,
         name: "AZ Off Script",
-        description: "Arizona, Our Way. A women-led Arizona creator crew.",
+        description: "Arizona, Our Way. An Arizona-based creator brand.",
         publisher: { "@id": `${SITE_URL}/#organization` },
         potentialAction: {
           "@type": "SearchAction",

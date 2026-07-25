@@ -5,12 +5,21 @@ import { MascotImage } from "@/components/MascotImage";
 
 const ROLES = ["On camera", "Ideas", "Filming", "Editing", "Planning", "Behind the scenes"];
 
+const LANES = [
+  "Women's First Wave / Next Wave",
+  "Guest appearance",
+  "Behind the scenes",
+  "Couples content later",
+  "Local business / community feature",
+  "Future AZ Off Script wave",
+];
+
 export function JoinForm() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     name: "", city: "", socials: "", comfortableOnCamera: "",
     contentType: "", roles: [] as string[], availability: "",
-    boundaries: "", why: "",
+    boundaries: "", why: "", lane: "",
   });
 
   function update(key: string, value: string) {
@@ -96,6 +105,15 @@ export function JoinForm() {
       <div>
         <label className="label" htmlFor="join-why">Why does this interest you?</label>
         <textarea id="join-why" className="field min-h-[80px]" value={form.why} onChange={(e) => update("why", e.target.value)} />
+      </div>
+      <div>
+        <label className="label" htmlFor="join-lane">Which lane are you interested in?</label>
+        <select id="join-lane" className="field" value={form.lane} onChange={(e) => update("lane", e.target.value)}>
+          <option value="">Select…</option>
+          {LANES.map((lane) => (
+            <option key={lane} value={lane}>{lane}</option>
+          ))}
+        </select>
       </div>
       <button type="submit" className="btn btn-primary btn-lg w-full">Tell Us Your Vibe</button>
     </form>

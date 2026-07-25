@@ -32,13 +32,15 @@ export default function JoinPage() {
           </h1>
           <p className="text-xl text-smoked-charcoal/80 mt-6 max-w-2xl mx-auto leading-relaxed">
             AZ Off Script is building slowly and intentionally. We are not looking for everybody.
-            We are looking for women who bring something real to the room — funny, quiet, blunt,
-            polished, chaotic, calm, stylish, thoughtful, or completely unexpected. AZ Off Script
-            works because the women are different.
+            We are looking for people who bring something real to the room — funny, quiet, blunt,
+            polished, chaotic, calm, stylish, thoughtful, or completely unexpected.
           </p>
           <p className="text-base text-smoked-charcoal/60 mt-4 max-w-2xl mx-auto leading-relaxed">
-            The room is growing. We are opening the next wave for more Arizona women with different
-            personalities, backgrounds, and content comfort levels.
+            Right now, we are growing the women-led First Wave, but AZ Off Script may expand into
+            future waves, couples, mixed groups, local features, and other Arizona creator lanes.
+          </p>
+          <p className="text-base text-smoked-charcoal/60 mt-4 max-w-2xl mx-auto leading-relaxed">
+            Tell us your vibe. We&apos;ll reach out if there&apos;s a fit for this wave or a future one.
           </p>
           <div className="flex justify-center mt-8">
             <MascotImage pose="peace" size={100} />

@@ -49,8 +49,8 @@ const PROFILES = [
     name: "Ronnie",
     public_title: "The Sweet Touch",
     secondary_role: "First Wave Creator + Calendar Planner",
-    short_personality_line: "Warm, creative, and always bringing extra flavor — while helping shape what hits the calendar next.",
-    website_bio: "Warm, creative, and the one who can bring personality into the room without forcing it.",
+    short_personality_line: "Warm, creative, and the one who brings personality into the room while helping shape what hits the calendar next.",
+    website_bio: "Warm, creative, and the one who brings personality into the room while helping shape what hits the calendar next.",
   },
   {
     name: "Sholanda",

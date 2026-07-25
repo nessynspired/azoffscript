@@ -1,9 +1,10 @@
 /**
  * Quick Drop Library — AZ Off Script content format library.
  *
- * POSITIONING: AZ Off Script is an Arizona women-led creator crew.
- * Not about one type of woman — about what happens when different Arizona
- * women get the same prompt and nobody answers the same way.
+ * POSITIONING: AZ Off Script is an Arizona creator brand. The First Wave
+ * is the first women-led room. Not about one type of person — about what
+ * happens when different Arizona personalities get the same prompt and
+ * nobody answers the same way.
  *
  * PHILOSOPHY: Prompt them. Don't script them.
  * We give the idea. They bring the moment.
@@ -608,7 +609,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     whatToDrop: "A 10-second explainer. What is AZ Off Script?",
     easyWay: "Just say what we are in your own words.",
     examples: [
-      "AZ Off Script is an Arizona women-led creator crew.",
+      "AZ Off Script is an Arizona creator brand.",
       "We do reactions, group debates, and local hot takes.",
       "It's a room of different women keeping it real, off script.",
     ],

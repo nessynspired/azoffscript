@@ -37,13 +37,13 @@ export default function CrewPage() {
             Meet the First Wave
           </h1>
           <p className="text-lg md:text-xl text-sandstone-cream/80 mt-4 max-w-2xl">
-            The First Wave is the original AZ Off Script crew — different personalities, different
-            timing, same room. Some bring the hot take. Some bring the calm. Some catch the face
-            everyone else missed. That&apos;s the point.
+            The First Wave is the original women-led AZ Off Script room — different personalities,
+            different timing, same brand. Some bring the hot take. Some bring the calm. Some catch
+            the face everyone else missed. That&apos;s the point.
           </p>
           <p className="text-base text-sandstone-cream/60 mt-3 max-w-2xl">
             This is not a cast trying to act perfect. It&apos;s a room full of real reactions,
-            Arizona energy, group games, and off-script moments.
+            Arizona energy, group games, quick prompts, and off-script moments.
           </p>
         </div>
       </section>
