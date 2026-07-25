@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage } from "@/components/MascotImage";
-import type { Database, ClipStatus } from "@/lib/types/db";
+import type { Database, ClipStatus, Platform } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
 type ClipPerson = Database["public"]["Tables"]["clip_people"]["Row"];
 type Approval = Database["public"]["Tables"]["approvals"]["Row"];
+type Theme = Database["public"]["Tables"]["content_themes"]["Row"];
+type TrendRef = Database["public"]["Tables"]["trend_references"]["Row"];
 
 const STUDIO_FLOW: ClipStatus[] = [
   "Dropped", "Planned", "Shot", "Cutting", "Review", "Ready", "Scheduled", "Live", "Vault",
@@ -46,31 +48,35 @@ export default function RunSheetPage() {
   const [clips, setClips] = useState<ClipMeta[]>([]);
   const [people, setPeople] = useState<Record<string, ClipPerson[]>>({});
   const [approvals, setApprovals] = useState<Record<string, Approval[]>>({});
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [trends, setTrends] = useState<TrendRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"production" | "ideas" | "all">("production");
-  const [view, setView] = useState<"flow" | "calendar">("flow");
+  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "trends" | "heat">("week");
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { data: clipData, error } = await supabase
-      .from("clips_with_meta")
-      .select("*")
-      .order("updated_at", { ascending: false });
+    const [clipRes, themeRes, trendRes] = await Promise.all([
+      supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }),
+      supabase.from("content_themes").select("*").order("start_date", { ascending: false }),
+      supabase.from("trend_references").select("*").order("created_at", { ascending: false }),
+    ]);
 
-    if (error) {
-      console.error("[run-sheet] clips_with_meta query failed:", error.message);
-      setLoadError(error.message);
+    if (clipRes.error) {
+      console.error("[run-sheet] clips_with_meta query failed:", clipRes.error.message);
+      setLoadError(clipRes.error.message);
       setLoading(false);
       return;
     }
     setLoadError(null);
 
-    const clips = clipData ?? [];
-    setClips(clips);
+    const clipData = clipRes.data ?? [];
+    setClips(clipData);
+    setThemes(themeRes.data ?? []);
+    setTrends(trendRes.data ?? []);
 
-    if (clips.length > 0) {
-      const clipIds = clips.map((c) => c.id);
+    if (clipData.length > 0) {
+      const clipIds = clipData.map((c) => c.id);
       const [pplRes, appRes] = await Promise.all([
         supabase.from("clip_people").select("*").in("clip_id", clipIds),
         supabase.from("approvals").select("*").in("clip_id", clipIds),
@@ -93,12 +99,13 @@ export default function RunSheetPage() {
 
   useEffect(() => {
     load();
-    // realtime: refresh when clips/approvals change
     const channel = supabase
       .channel("run-sheet")
       .on("postgres_changes", { event: "*", schema: "public", table: "clips" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "approvals" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "clip_people" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "content_themes" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "trend_references" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [load, supabase]);
@@ -158,8 +165,15 @@ export default function RunSheetPage() {
 
   // Split clips: production = actual videos being made, ideas = links/ideas/trends
   const productionClips = clips.filter((c) => c.type === "video" || c.type === "final_cut");
-  const ideaClips = clips.filter((c) => c.type === "tiktok_link" || c.type === "idea");
-  const displayClips = tab === "production" ? productionClips : tab === "ideas" ? ideaClips : clips;
+  const themeMap = new Map(themes.map((t) => [t.id, t]));
+
+  const TABS: { key: typeof tab; label: string; count?: number }[] = [
+    { key: "week", label: "This Week" },
+    { key: "calendar", label: "Calendar" },
+    { key: "flow", label: "Studio Flow", count: productionClips.length },
+    { key: "trends", label: "Trend Drops", count: trends.length },
+    { key: "heat", label: "Weekly Heat", count: themes.length },
+  ];
 
   return (
     <div className="space-y-6">
@@ -170,95 +184,106 @@ export default function RunSheetPage() {
         </div>
       </div>
 
-      {/* Tab bar — Production vs Ideas vs All */}
-      <div className="flex gap-2 bg-desert-night/10 rounded-full p-1 w-fit">
-        <button
-          onClick={() => setTab("production")}
-          className={`px-4 py-2 rounded-full text-sm font-black uppercase ${tab === "production" ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
-        >Production ({productionClips.length})</button>
-        <button
-          onClick={() => setTab("ideas")}
-          className={`px-4 py-2 rounded-full text-sm font-black uppercase ${tab === "ideas" ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
-        >Ideas & Links ({ideaClips.length})</button>
-        <button
-          onClick={() => setTab("all")}
-          className={`px-4 py-2 rounded-full text-sm font-black uppercase ${tab === "all" ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
-        >All ({clips.length})</button>
+      {/* Tab bar */}
+      <div className="flex gap-2 bg-desert-night/10 rounded-full p-1 w-fit overflow-x-auto">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2 rounded-full text-sm font-black uppercase whitespace-nowrap ${tab === t.key ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
+          >
+            {t.label}{t.count !== undefined ? ` (${t.count})` : ""}
+          </button>
+        ))}
       </div>
 
-      {/* Sub-view toggle: Flow vs Calendar (only for production/all) */}
-      {(tab === "production" || tab === "all") && displayClips.length > 0 && (
-        <div className="flex gap-2 bg-desert-night/5 rounded-full p-1 w-fit">
-          <button
-            onClick={() => setView("flow")}
-            className={`px-3 py-1.5 rounded-full text-xs font-black uppercase ${view === "flow" ? "bg-copper-clay text-sandstone-cream" : "text-desert-night"}`}
-          >Studio Flow</button>
-          <button
-            onClick={() => setView("calendar")}
-            className={`px-3 py-1.5 rounded-full text-xs font-black uppercase ${view === "calendar" ? "bg-copper-clay text-sandstone-cream" : "text-desert-night"}`}
-          >Calendar</button>
-        </div>
+      {/* THIS WEEK — everybody's quick overview */}
+      {tab === "week" && (
+        <ThisWeekTab
+          clips={clips}
+          people={people}
+          approvals={approvals}
+          themes={themes}
+          trends={trends}
+          themeMap={themeMap}
+          currentMemberId={member?.id}
+          onSelectClip={(id) => setSelectedClip(id)}
+        />
       )}
 
-      {displayClips.length === 0 ? (
-        <div className="card p-10 text-center">
-          <div className="inline-block"><MascotImage pose="main" size={120} /></div>
-          <p className="font-display text-2xl text-desert-night mt-4">
-            {tab === "production" ? "No videos in production yet." : tab === "ideas" ? "No ideas or links yet." : "Nothing dropped yet."}
-          </p>
-          <p className="text-smoked-charcoal/70 mt-2">
-            {tab === "production" ? "Drop a video to start the assembly line." : "Be the first to toss something in."}
-          </p>
-          <Link href="/portal/drop" className="btn btn-primary mt-6">Drop a Clip</Link>
-        </div>
-      ) : tab === "ideas" ? (
-        /* IDEAS & LINKS — simple list, no pipeline */
-        <div className="space-y-3">
-          {ideaClips.map((clip) => (
-            <ClipCard
-              key={clip.id}
-              clip={clip}
-              people={people[clip.id] ?? []}
-              approvals={approvals[clip.id] ?? []}
-              isAdmin={isAdmin}
-              onSelect={() => setSelectedClip(clip.id)}
-            />
-          ))}
-        </div>
-      ) : view === "flow" ? (
-        /* PRODUCTION / ALL — Kanban pipeline */
-        <div className="overflow-x-auto -mx-4 px-4 pb-4">
-          <div className="flex gap-4 min-w-max">
-            {STUDIO_FLOW.map((status) => {
-              const colClips = displayClips.filter((c) => c.status === status);
-              if (colClips.length === 0) return null;
-              return (
-                <div key={status} className="w-72 shrink-0">
-                  <div className="sticky top-0 bg-sandstone-cream/95 backdrop-blur py-2 z-10">
-                    <div className="flex items-center justify-between">
-                      <span className={`chip ${STATUS_CHIP[status]}`}>{status}</span>
-                      <span className="text-xs font-black text-desert-night/50">{colClips.length}</span>
+      {/* CALENDAR — layered view with deadlines + posts + themes */}
+      {tab === "calendar" && (
+        <CalendarView clips={clips} themes={themes} themeMap={themeMap} />
+      )}
+
+      {/* STUDIO FLOW — Kanban pipeline */}
+      {tab === "flow" && (
+        <>
+          {productionClips.length === 0 ? (
+            <div className="card p-10 text-center">
+              <div className="inline-block"><MascotImage pose="main" size={120} /></div>
+              <p className="font-display text-2xl text-desert-night mt-4">No videos in production yet.</p>
+              <p className="text-smoked-charcoal/70 mt-2">Drop a video to start the assembly line.</p>
+              <Link href="/portal/drop" className="btn btn-primary mt-6">Drop a Clip</Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-4 px-4 pb-4">
+              <div className="flex gap-4 min-w-max">
+                {STUDIO_FLOW.map((status) => {
+                  const colClips = productionClips.filter((c) => c.status === status);
+                  if (colClips.length === 0) return null;
+                  return (
+                    <div key={status} className="w-72 shrink-0">
+                      <div className="sticky top-0 bg-sandstone-cream/95 backdrop-blur py-2 z-10">
+                        <div className="flex items-center justify-between">
+                          <span className={`chip ${STATUS_CHIP[status]}`}>{status}</span>
+                          <span className="text-xs font-black text-desert-night/50">{colClips.length}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3 mt-3">
+                        {colClips.map((clip) => (
+                          <ClipCard
+                            key={clip.id}
+                            clip={clip}
+                            people={people[clip.id] ?? []}
+                            approvals={approvals[clip.id] ?? []}
+                            isAdmin={isAdmin}
+                            themeName={clip.theme_id ? themeMap.get(clip.theme_id)?.name : undefined}
+                            onSelect={() => setSelectedClip(clip.id)}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-3 mt-3">
-                    {colClips.map((clip) => (
-                      <ClipCard
-                        key={clip.id}
-                        clip={clip}
-                        people={people[clip.id] ?? []}
-                        approvals={approvals[clip.id] ?? []}
-                        isAdmin={isAdmin}
-                        onSelect={() => setSelectedClip(clip.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <CalendarView clips={displayClips} />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* TREND DROPS — references and inspiration */}
+      {tab === "trends" && (
+        <TrendDropsTab
+          trends={trends}
+          themes={themes}
+          currentMemberId={member?.id}
+          currentMemberName={member?.name}
+          canPlanContent={canPlanContent}
+          onRefresh={load}
+        />
+      )}
+
+      {/* WEEKLY HEAT — theme management */}
+      {tab === "heat" && (
+        <WeeklyHeatTab
+          themes={themes}
+          clips={clips}
+          trends={trends}
+          canPlanContent={canPlanContent}
+          currentMemberId={member?.id}
+          onRefresh={load}
+        />
       )}
 
       {selectedClip && (
@@ -268,6 +293,7 @@ export default function RunSheetPage() {
           approvals={approvals[selectedClip] ?? []}
           isAdmin={isAdmin}
           canPlanContent={canPlanContent}
+          themes={themes}
           currentMemberId={member?.id}
           currentMemberName={member?.name}
           onClose={() => setSelectedClip(null)}
@@ -281,12 +307,13 @@ export default function RunSheetPage() {
 }
 
 function ClipCard({
-  clip, people, approvals, isAdmin, onSelect,
+  clip, people, approvals, isAdmin, themeName, onSelect,
 }: {
   clip: ClipMeta;
   people: ClipPerson[];
   approvals: Approval[];
   isAdmin: boolean;
+  themeName?: string;
   onSelect: () => void;
 }) {
   const approved = approvals.filter((a) => a.status === "Approved" || a.status === "Approved With Edits").length;
@@ -336,6 +363,13 @@ function ClipCard({
       <div className="p-4">
         <h3 className="font-bold text-desert-night leading-tight">{clip.title}</h3>
         <p className="text-xs text-smoked-charcoal/60 mt-1">by {clip.submitted_by_name}</p>
+
+        {/* Weekly Heat badge */}
+        {themeName && (
+          <div className="mt-2">
+            <span className="chip chip-copper !text-[10px]">🔥 {themeName}</span>
+          </div>
+        )}
 
         {/* Destination badge — where is this video going? */}
         {clip.destination && (
@@ -420,44 +454,107 @@ function ClipThumbnail({ link }: { link: string }) {
   );
 }
 
-function CalendarView({ clips }: { clips: ClipMeta[] }) {
+function CalendarView({ clips, themes, themeMap }: {
+  clips: ClipMeta[];
+  themes: Theme[];
+  themeMap: Map<string, Theme>;
+}) {
+  const [weekOffset, setWeekOffset] = useState(0);
   const scheduled = clips.filter((c) => c.scheduled_date || c.clip_due_date || c.approval_due || c.idea_due_date || c.final_cut_due || c.due_date);
   const today = new Date();
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay());
+  weekStart.setDate(today.getDate() - today.getDay() + weekOffset * 7);
   const days = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
     return d;
   });
 
+  // Active themes for this week
+  const weekThemes = themes.filter((t) => {
+    if (!t.start_date && !t.end_date) return false;
+    const ws = weekStart.getTime();
+    const we = days[6].getTime();
+    const ts = t.start_date ? new Date(t.start_date).getTime() : 0;
+    const te = t.end_date ? new Date(t.end_date).getTime() : Date.now();
+    return ts <= we && te >= ws;
+  });
+
+  const DEADLINE_TYPES: { field: keyof ClipMeta; label: string; color: string }[] = [
+    { field: "idea_due_date", label: "Spark-by", color: "text-cactus-teal" },
+    { field: "clip_due_date", label: "Drop-by", color: "text-copper-deep" },
+    { field: "final_cut_due", label: "Cut ready", color: "text-heat-orange" },
+    { field: "approval_due", label: "Greenlight", color: "text-heat-orange" },
+    { field: "scheduled_date", label: "Goes Live", color: "text-cactus-teal" },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-      {days.map((day) => {
-        const dayClips = scheduled.filter((c) => {
-          const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
-          return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
-        });
-        return (
-          <div key={day.toISOString()} className="card p-3 min-h-[120px]">
-            <p className="font-display text-sm text-desert-night">
-              {day.toLocaleDateString(undefined, { weekday: "short" })}
-            </p>
-            <p className="text-xs text-smoked-charcoal/60">{day.getDate()}</p>
-            <div className="space-y-2 mt-2">
-              {dayClips.map((c) => (
-                <div key={c.id} className="bg-copper-clay/15 rounded-lg p-2">
-                  <p className="text-xs font-bold text-desert-night leading-tight">{c.title}</p>
-                  <span className={`chip ${STATUS_CHIP[c.status]} !text-[9px] !py-0.5 mt-1`}>{c.status}</span>
-                </div>
-              ))}
+    <div className="space-y-4">
+      {/* Week navigation */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => setWeekOffset(weekOffset - 1)} className="btn btn-ghost btn-sm">← Prev</button>
+        <span className="font-display text-lg text-desert-night">
+          {days[0].toLocaleDateString(undefined, { month: "short", day: "numeric" })} — {days[6].toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+        </span>
+        <button onClick={() => setWeekOffset(weekOffset + 1)} className="btn btn-ghost btn-sm">Next →</button>
+        {weekOffset !== 0 && (
+          <button onClick={() => setWeekOffset(0)} className="btn btn-secondary btn-sm ml-2">Today</button>
+        )}
+      </div>
+
+      {/* Active Weekly Heat for this week */}
+      {weekThemes.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {weekThemes.map((t) => (
+            <span key={t.id} className="chip chip-copper">🔥 {t.name}</span>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+        {days.map((day) => {
+          const isToday = day.toDateString() === today.toDateString();
+          const dayClips = scheduled.filter((c) => {
+            const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
+            return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
+          });
+          return (
+            <div key={day.toISOString()} className={`card p-3 min-h-[120px] ${isToday ? "ring-2 ring-copper-clay" : ""}`}>
+              <div className="flex items-center justify-between">
+                <p className="font-display text-sm text-desert-night">
+                  {day.toLocaleDateString(undefined, { weekday: "short" })}
+                </p>
+                <p className={`text-xs ${isToday ? "text-copper-deep font-black" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
+              </div>
+              <div className="space-y-2 mt-2">
+                {dayClips.map((c) => {
+                  // Find which deadline(s) match this day
+                  const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
+                    const val = c[dt.field] as string | null;
+                    return val && new Date(val).toDateString() === day.toDateString();
+                  });
+                  const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
+                  return (
+                    <div key={c.id} className={`rounded-lg p-2 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
+                      <p className="text-xs font-bold text-desert-night leading-tight">{c.title}</p>
+                      {matchingDeadlines.map((d) => (
+                        <span key={d.label} className={`text-[9px] font-black ${d.color} block`}>{d.label}</span>
+                      ))}
+                      <span className={`chip ${STATUS_CHIP[c.status]} !text-[9px] !py-0.5 mt-1`}>{c.status}</span>
+                      {c.theme_id && themeMap.get(c.theme_id) && (
+                        <span className="text-[9px] text-copper-deep block mt-1">🔥 {themeMap.get(c.theme_id)!.name}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
       {scheduled.length === 0 && (
-        <div className="md:col-span-7 card p-6 text-center text-smoked-charcoal/60">
-          Nothing scheduled yet. Move a clip to Scheduled from the Studio Flow.
+        <div className="card p-6 text-center text-smoked-charcoal/60">
+          Nothing scheduled yet. Set deadlines on a clip from Studio Flow, or create a Weekly Heat.
         </div>
       )}
     </div>
@@ -465,13 +562,14 @@ function CalendarView({ clips }: { clips: ClipMeta[] }) {
 }
 
 function ClipDetailModal({
-  clip, people, approvals, isAdmin, canPlanContent, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
+  clip, people, approvals, isAdmin, canPlanContent, themes, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
 }: {
   clip: ClipMeta;
   people: ClipPerson[];
   approvals: Approval[];
   isAdmin: boolean;
   canPlanContent: boolean;
+  themes: Theme[];
   currentMemberId?: string;
   currentMemberName?: string;
   onClose: () => void;
@@ -482,6 +580,7 @@ function ClipDetailModal({
   const supabase = createClient();
   const [editNote, setEditNote] = useState("");
   const [working, setWorking] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<string>(clip.theme_id ?? "");
   const [deadlines, setDeadlines] = useState<Record<string, string>>({
     idea_due_date: clip.idea_due_date ?? "",
     clip_due_date: clip.clip_due_date ?? "",
@@ -499,6 +598,7 @@ function ClipDetailModal({
       final_cut_due: deadlines.final_cut_due || null,
       approval_due: deadlines.approval_due || null,
       scheduled_date: deadlines.scheduled_date || null,
+      theme_id: selectedTheme || null,
     }).eq("id", clip.id);
     if (error) alert(error.message);
     await onRefresh();
@@ -572,9 +672,25 @@ function ClipDetailModal({
               <DeadlineRow label="Goes live" value={clip.scheduled_date} canEdit={canPlanContent} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
             </div>
             {canPlanContent && (
-              <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
-                {savingDeadlines ? "Saving…" : "Save Deadlines"}
-              </button>
+              <>
+                {/* Theme assignment */}
+                <div className="mt-3 pt-3 border-t border-desert-night/10">
+                  <p className="label">Weekly Heat</p>
+                  <select
+                    className="field !w-auto"
+                    value={selectedTheme}
+                    onChange={(e) => setSelectedTheme(e.target.value)}
+                  >
+                    <option value="">No theme</option>
+                    {themes.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
+                  {savingDeadlines ? "Saving…" : "Save Deadlines + Theme"}
+                </button>
+              </>
             )}
           </div>
         )}
@@ -705,6 +821,509 @@ function DeadlineRow({
         <span className="text-sm font-bold text-desert-night">
           {formatted ?? "Not set"}
         </span>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// THIS WEEK — everybody's quick overview
+// ===========================================================================
+function ThisWeekTab({
+  clips, people, approvals, themes, trends, themeMap, currentMemberId, onSelectClip,
+}: {
+  clips: ClipMeta[];
+  people: Record<string, ClipPerson[]>;
+  approvals: Record<string, Approval[]>;
+  themes: Theme[];
+  trends: TrendRef[];
+  themeMap: Map<string, Theme>;
+  currentMemberId?: string;
+  onSelectClip: (id: string) => void;
+}) {
+  const now = new Date();
+  const weekEnd = new Date(now);
+  weekEnd.setDate(now.getDate() + 7);
+
+  const isThisWeek = (dateStr: string | null) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return d >= now && d <= weekEnd;
+  };
+
+  // My clips — clips I'm tagged in
+  const myClipIds = Object.entries(people)
+    .filter(([, ppl]) => ppl.some((p) => p.member_id === currentMemberId))
+    .map(([id]) => id);
+  const myClips = clips.filter((c) => myClipIds.includes(c.id));
+  const myApprovals = myClips
+    .map((c) => ({ clip: c, approval: approvals[c.id]?.find((a) => a.member_id === currentMemberId) }))
+    .filter((x) => x.approval && x.approval.status === "Waiting");
+
+  // Upcoming deadlines this week
+  const upcomingDeadlines = clips
+    .filter((c) => {
+      const dates = [c.clip_due_date, c.final_cut_due, c.approval_due, c.scheduled_date, c.idea_due_date];
+      return dates.some(isThisWeek);
+    })
+    .sort((a, b) => {
+      const aDate = [a.clip_due_date, a.final_cut_due, a.approval_due, a.scheduled_date, a.idea_due_date].filter(Boolean).sort()[0];
+      const bDate = [b.clip_due_date, b.final_cut_due, b.approval_due, b.scheduled_date, b.idea_due_date].filter(Boolean).sort()[0];
+      return new Date(aDate ?? 0).getTime() - new Date(bDate ?? 0).getTime();
+    });
+
+  // What's going live this week
+  const goingLive = clips.filter((c) => isThisWeek(c.scheduled_date));
+  // What's stuck
+  const stuck = clips.filter((c) => c.status === "Hold" || c.status === "Do Not Post" ||
+    (c.status === "Review" && c.approvals_blocked > 0));
+
+  // Active themes
+  const activeThemes = themes.filter((t) => t.status === "Active" || t.status === "Planning");
+
+  return (
+    <div className="space-y-6">
+      {/* Active Weekly Heat */}
+      {activeThemes.length > 0 && (
+        <div className="card-dark p-5">
+          <h2 className="font-display text-2xl text-sunburst-yellow mb-3">🔥 This Week&apos;s Heat</h2>
+          <div className="space-y-3">
+            {activeThemes.map((t) => {
+              const themeClips = clips.filter((c) => c.theme_id === t.id);
+              const themeTrends = trends.filter((tr) => tr.theme_id === t.id);
+              return (
+                <div key={t.id} className="bg-white/5 rounded-xl p-4">
+                  <p className="font-display text-lg text-sandstone-cream">{t.name}</p>
+                  {t.description && <p className="text-sm text-sandstone-cream/60 mt-1">{t.description}</p>}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="chip chip-copper !text-[10px]">{themeClips.length} clips</span>
+                    <span className="chip chip-teal !text-[10px]">{themeTrends.length} trend drops</span>
+                    {t.start_date && t.end_date && (
+                      <span className="chip chip-cream !text-[10px]">
+                        {new Date(t.start_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — {new Date(t.end_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* My greenlights needed */}
+      {myApprovals.length > 0 && (
+        <div className="card p-5 border-2 border-heat-orange/30">
+          <h2 className="font-display text-2xl text-desert-night mb-1">Your Greenlights</h2>
+          <p className="text-sm text-smoked-charcoal/60 mb-3">{myApprovals.length} clip{myApprovals.length > 1 ? "s" : ""} waiting on you</p>
+          <div className="space-y-2">
+            {myApprovals.map(({ clip }) => (
+              <button key={clip.id} onClick={() => onSelectClip(clip.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform">
+                <p className="font-bold text-desert-night">{clip.title}</p>
+                <span className="chip chip-waiting !text-[10px] mt-1">Waiting for your greenlight</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming deadlines */}
+      {upcomingDeadlines.length > 0 && (
+        <div>
+          <h2 className="font-display text-2xl text-desert-night mb-3">Coming Up This Week</h2>
+          <div className="space-y-2">
+            {upcomingDeadlines.map((c) => {
+              const deadlines: { label: string; date: string; color: string }[] = [];
+              if (isThisWeek(c.idea_due_date)) deadlines.push({ label: "Spark-by", date: c.idea_due_date!, color: "text-cactus-teal" });
+              if (isThisWeek(c.clip_due_date)) deadlines.push({ label: "Drop-by", date: c.clip_due_date!, color: "text-copper-deep" });
+              if (isThisWeek(c.final_cut_due)) deadlines.push({ label: "Cut ready", date: c.final_cut_due!, color: "text-heat-orange" });
+              if (isThisWeek(c.approval_due)) deadlines.push({ label: "Greenlight", date: c.approval_due!, color: "text-heat-orange" });
+              if (isThisWeek(c.scheduled_date)) deadlines.push({ label: "Goes Live", date: c.scheduled_date!, color: "text-cactus-teal" });
+              return (
+                <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-bold text-desert-night truncate">{c.title}</p>
+                    {c.theme_id && themeMap.get(c.theme_id) && (
+                      <span className="text-xs text-copper-deep">🔥 {themeMap.get(c.theme_id)!.name}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-end shrink-0">
+                    {deadlines.map((d) => (
+                      <span key={d.label} className={`text-xs font-black ${d.color}`}>
+                        {d.label}: {new Date(d.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Going live */}
+      {goingLive.length > 0 && (
+        <div>
+          <h2 className="font-display text-2xl text-desert-night mb-3">Going Live This Week</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {goingLive.map((c) => (
+              <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-4 text-left hover:-translate-y-0.5 transition-transform bg-cactus-teal/10">
+                <p className="font-bold text-desert-night">{c.title}</p>
+                <p className="text-xs text-cactus-teal font-black mt-1">
+                  📅 {new Date(c.scheduled_date!).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+                </p>
+                {c.destination && <span className="chip chip-teal !text-[10px] mt-2">📍 {c.destination}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stuck */}
+      {stuck.length > 0 && (
+        <div>
+          <h2 className="font-display text-2xl text-heat-orange mb-3">⚠ Stuck / On Hold</h2>
+          <div className="space-y-2">
+            {stuck.map((c) => (
+              <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-bold text-desert-night">{c.title}</p>
+                  <span className={`chip ${STATUS_CHIP[c.status]} !text-[10px]`}>{c.status}</span>
+                </div>
+                {c.approvals_blocked > 0 && (
+                  <p className="text-xs text-copper-deep mt-1">{c.approvals_blocked} approval(s) blocked</p>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {upcomingDeadlines.length === 0 && goingLive.length === 0 && myApprovals.length === 0 && stuck.length === 0 && activeThemes.length === 0 && (
+        <div className="card p-10 text-center">
+          <div className="inline-block"><MascotImage pose="main" size={120} /></div>
+          <p className="font-display text-2xl text-desert-night mt-4">All clear this week.</p>
+          <p className="text-smoked-charcoal/70 mt-2">Nothing due, nothing stuck. Drop a clip or set some deadlines.</p>
+          <Link href="/portal/drop" className="btn btn-primary mt-6">Drop a Clip</Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// TREND DROPS — references and inspiration
+// ===========================================================================
+function TrendDropsTab({
+  trends, themes, currentMemberId, currentMemberName, canPlanContent, onRefresh,
+}: {
+  trends: TrendRef[];
+  themes: Theme[];
+  currentMemberId?: string;
+  currentMemberName?: string;
+  canPlanContent: boolean;
+  onRefresh: () => Promise<void>;
+}) {
+  const supabase = createClient();
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [notes, setNotes] = useState("");
+  const [platform, setPlatform] = useState<Platform>("tiktok");
+  const [themeId, setThemeId] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  async function addTrend() {
+    if (!title.trim() || !url.trim() || !currentMemberId || !currentMemberName) return;
+    setSaving(true);
+    const { error } = await supabase.from("trend_references").insert({
+      title: title.trim(),
+      url: url.trim(),
+      platform,
+      submitted_by: currentMemberId,
+      submitted_by_name: currentMemberName,
+      notes: notes.trim() || null,
+      theme_id: themeId || null,
+    });
+    if (error) alert(error.message);
+    setTitle(""); setUrl(""); setNotes(""); setThemeId(""); setPlatform("tiktok");
+    setShowForm(false);
+    await onRefresh();
+    setSaving(false);
+  }
+
+  async function updateTrendStatus(id: string, status: string) {
+    const { error } = await supabase.from("trend_references").update({ status }).eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
+
+  async function deleteTrend(id: string) {
+    if (!confirm("Remove this trend drop?")) return;
+    const { error } = await supabase.from("trend_references").delete().eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
+
+  const TREND_CHIP: Record<string, string> = {
+    New: "chip-cream",
+    Watching: "chip-yellow",
+    Assigned: "chip-copper",
+    Used: "chip-approved",
+    Passed: "chip-danger",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-smoked-charcoal/70">Trends, links, and inspiration the crew is watching. Anyone can drop one.</p>
+        <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-sm">
+          {showForm ? "Cancel" : "+ Drop a Trend"}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="card p-5 space-y-3">
+          <input className="field" placeholder="What's the trend? (title)" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input className="field" placeholder="Paste the link (TikTok, Reel, YouTube...)" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <div className="flex gap-3">
+            <select className="field !w-auto" value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}>
+              <option value="tiktok">TikTok</option>
+              <option value="instagram">Instagram</option>
+              <option value="youtube">YouTube</option>
+              <option value="facebook">Facebook</option>
+              <option value="other">Other</option>
+            </select>
+            {canPlanContent && (
+              <select className="field !w-auto" value={themeId} onChange={(e) => setThemeId(e.target.value)}>
+                <option value="">No Weekly Heat</option>
+                {themes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            )}
+          </div>
+          <textarea className="field min-h-[60px]" placeholder="Notes — how should we do this AZ Off Script style?" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <button onClick={addTrend} className="btn btn-primary" disabled={saving || !title.trim() || !url.trim()}>
+            {saving ? "Dropping…" : "Drop It"}
+          </button>
+        </div>
+      )}
+
+      {trends.length === 0 ? (
+        <div className="card p-10 text-center">
+          <span className="text-5xl">📡</span>
+          <p className="font-display text-2xl text-desert-night mt-4">No trend drops yet.</p>
+          <p className="text-smoked-charcoal/70 mt-2">See a trend on TikTok? Drop the link here so the crew can see it.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {trends.map((t) => {
+            const theme = themes.find((th) => th.id === t.theme_id);
+            const isMine = t.submitted_by === currentMemberId;
+            return (
+              <div key={t.id} className="card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-desert-night truncate">{t.title}</h3>
+                    <a href={t.url} target="_blank" rel="noopener noreferrer" className="text-xs text-cactus-teal hover:underline truncate block">
+                      {t.url}
+                    </a>
+                  </div>
+                  <span className={`chip ${TREND_CHIP[t.status] ?? "chip-cream"} !text-[10px] shrink-0`}>{t.status}</span>
+                </div>
+                {t.notes && <p className="text-sm text-smoked-charcoal/70 mt-2">{t.notes}</p>}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className="chip chip-dark !text-[10px]">{t.platform}</span>
+                  <span className="text-xs text-smoked-charcoal/50">by {t.submitted_by_name}</span>
+                  {theme && <span className="chip chip-copper !text-[10px]">🔥 {theme.name}</span>}
+                </div>
+                {/* Status changer — planner+ or owner */}
+                {(canPlanContent || isMine) && (
+                  <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-desert-night/10">
+                    {["New", "Watching", "Assigned", "Used", "Passed"].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => updateTrendStatus(t.id, s)}
+                        className={`chip !text-[9px] ${t.status === s ? TREND_CHIP[s] ?? "chip-cream" : "chip-cream opacity-50 hover:opacity-100"}`}
+                      >{s}</button>
+                    ))}
+                    {(canPlanContent || isMine) && (
+                      <button onClick={() => deleteTrend(t.id)} className="chip chip-danger !text-[9px] ml-auto">Delete</button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// WEEKLY HEAT — theme management
+// ===========================================================================
+function WeeklyHeatTab({
+  themes, clips, trends, canPlanContent, currentMemberId, onRefresh,
+}: {
+  themes: Theme[];
+  clips: ClipMeta[];
+  trends: TrendRef[];
+  canPlanContent: boolean;
+  currentMemberId?: string;
+  onRefresh: () => Promise<void>;
+}) {
+  const supabase = createClient();
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function createTheme() {
+    if (!name.trim() || !currentMemberId) return;
+    setSaving(true);
+    const { error } = await supabase.from("content_themes").insert({
+      name: name.trim(),
+      description: description.trim() || null,
+      start_date: startDate || null,
+      end_date: endDate || null,
+      created_by: currentMemberId,
+    });
+    if (error) alert(error.message);
+    setName(""); setDescription(""); setStartDate(""); setEndDate("");
+    setShowForm(false);
+    await onRefresh();
+    setSaving(false);
+  }
+
+  async function updateThemeStatus(id: string, status: string) {
+    const { error } = await supabase.from("content_themes").update({ status }).eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
+
+  async function deleteTheme(id: string) {
+    if (!confirm("Delete this Weekly Heat? Clips will keep their data but lose the theme link.")) return;
+    const { error } = await supabase.from("content_themes").delete().eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
+
+  const STATUS_CHIP: Record<string, string> = {
+    Planning: "chip-yellow",
+    Active: "chip-copper",
+    Wrapped: "chip-cream",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-smoked-charcoal/70">
+          Weekly Heat is the big focus for the week — a theme, a series, a vibe. Plan 2-4 weeks ahead, lock the next 7-10 days.
+        </p>
+        {canPlanContent && (
+          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-sm">
+            {showForm ? "Cancel" : "+ New Weekly Heat"}
+          </button>
+        )}
+      </div>
+
+      {showForm && canPlanContent && (
+        <div className="card p-5 space-y-3">
+          <input className="field" placeholder="Name (e.g. Arizona Summer Chaos)" value={name} onChange={(e) => setName(e.target.value)} />
+          <textarea className="field min-h-[60px]" placeholder="What's the vibe? What are we going for?" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <div className="flex gap-3">
+            <div>
+              <label className="label">Start date</label>
+              <input type="date" className="field !w-auto" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">End date</label>
+              <input type="date" className="field !w-auto" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+          </div>
+          <button onClick={createTheme} className="btn btn-primary" disabled={saving || !name.trim()}>
+            {saving ? "Creating…" : "Create Weekly Heat"}
+          </button>
+        </div>
+      )}
+
+      {themes.length === 0 ? (
+        <div className="card p-10 text-center">
+          <span className="text-5xl">🔥</span>
+          <p className="font-display text-2xl text-desert-night mt-4">No Weekly Heat yet.</p>
+          <p className="text-smoked-charcoal/70 mt-2">
+            {canPlanContent ? "Create one to start organizing your content by week." : "Ask an admin or planner to create one."}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {themes.map((t) => {
+            const themeClips = clips.filter((c) => c.theme_id === t.id);
+            const themeTrends = trends.filter((tr) => tr.theme_id === t.id);
+            return (
+              <div key={t.id} className="card p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-display text-2xl text-desert-night">{t.name}</h3>
+                      <span className={`chip ${STATUS_CHIP[t.status] ?? "chip-cream"} !text-[10px]`}>{t.status}</span>
+                    </div>
+                    {t.description && <p className="text-sm text-smoked-charcoal/70 mt-1">{t.description}</p>}
+                    {t.start_date && t.end_date && (
+                      <p className="text-xs text-copper-deep font-bold mt-2">
+                        {new Date(t.start_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — {new Date(t.end_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                  {canPlanContent && (
+                    <div className="flex flex-col gap-1 shrink-0">
+                      {["Planning", "Active", "Wrapped"].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => updateThemeStatus(t.id, s)}
+                          className={`chip !text-[9px] ${t.status === s ? STATUS_CHIP[s] : "chip-cream opacity-50 hover:opacity-100"}`}
+                        >{s}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className="chip chip-copper !text-[10px]">{themeClips.length} clips</span>
+                  <span className="chip chip-teal !text-[10px]">{themeTrends.length} trend drops</span>
+                </div>
+
+                {/* Clips in this theme */}
+                {themeClips.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {themeClips.map((c) => (
+                      <div key={c.id} className="bg-sandstone-cream/50 rounded-xl p-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-bold text-desert-night truncate">{c.title}</p>
+                          <span className={`chip ${STATUS_CHIP[c.status] ?? "chip-cream"} !text-[9px]`}>{c.status}</span>
+                        </div>
+                        {c.scheduled_date && (
+                          <span className="text-xs text-cactus-teal font-bold shrink-0">
+                            📅 {new Date(c.scheduled_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {canPlanContent && (
+                  <button onClick={() => deleteTheme(t.id)} className="btn btn-danger btn-sm mt-4">Delete</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

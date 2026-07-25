@@ -223,6 +223,7 @@ export interface Database {
           final_cut_due: string | null;
           approval_due: string | null;
           thumbnail_url: string | null;
+          theme_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -250,6 +251,7 @@ export interface Database {
           final_cut_due?: string | null;
           approval_due?: string | null;
           thumbnail_url?: string | null;
+          theme_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -277,8 +279,86 @@ export interface Database {
           final_cut_due?: string | null;
           approval_due?: string | null;
           thumbnail_url?: string | null;
+          theme_id?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+
+      content_themes: {
+        Relationships: [];
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          color: string;
+          status: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          color?: string;
+          status?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          color?: string;
+          status?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+
+      trend_references: {
+        Relationships: [];
+        Row: {
+          id: string;
+          title: string;
+          url: string;
+          platform: Platform;
+          submitted_by: string;
+          submitted_by_name: string;
+          notes: string | null;
+          theme_id: string | null;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          url: string;
+          platform?: Platform;
+          submitted_by: string;
+          submitted_by_name: string;
+          notes?: string | null;
+          theme_id?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          url?: string;
+          platform?: Platform;
+          submitted_by?: string;
+          submitted_by_name?: string;
+          notes?: string | null;
+          theme_id?: string | null;
+          status?: string;
+          created_at?: string;
         };
       };
 
@@ -505,6 +585,7 @@ export interface Database {
           final_cut_due: string | null;
           approval_due: string | null;
           thumbnail_url: string | null;
+          theme_id: string | null;
           created_at: string;
           updated_at: string;
           people_count: number;

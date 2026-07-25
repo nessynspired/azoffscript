@@ -65,6 +65,43 @@ exception when duplicate_object then null; end $$;
 -- (Helper functions are defined AFTER tables, since they reference them)
 -- ==========================================================================
 
+-- ==========================================================================
+-- content_themes: Weekly Heat / Series — the big content focus for a week
+-- ==========================================================================
+create table if not exists public.content_themes (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  description text,
+  start_date  date,
+  end_date    date,
+  color       text default 'copper-clay',
+  status      text not null default 'Planning',  -- Planning, Active, Wrapped
+  created_by  uuid references public.members(id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_themes_status on public.content_themes(status);
+create index if not exists idx_themes_dates on public.content_themes(start_date, end_date);
+
+-- ==========================================================================
+-- trend_references: Trend Drops — links/inspiration the crew is following
+-- ==========================================================================
+create table if not exists public.trend_references (
+  id            uuid primary key default gen_random_uuid(),
+  title         text not null,
+  url           text not null,
+  platform      public.platform default 'tiktok',
+  submitted_by  uuid not null references public.members(id) on delete cascade,
+  submitted_by_name text not null,
+  notes         text,
+  theme_id      uuid references public.content_themes(id) on delete set null,
+  status        text not null default 'New',  -- New, Watching, Assigned, Used, Passed
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists idx_trends_status on public.trend_references(status);
+create index if not exists idx_trends_theme on public.trend_references(theme_id);
+
 create table if not exists public.members (
   id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null unique,           -- references auth.users(id)
@@ -143,6 +180,7 @@ create table if not exists public.clips (
   final_cut_due  timestamptz,                     -- Final cut due date
   approval_due   timestamptz,                     -- Greenlight by: approval deadline
   thumbnail_url text,                          -- video thumbnail (from oEmbed or upload)
+  theme_id     uuid references public.content_themes(id) on delete set null,  -- link to Weekly Heat
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -150,6 +188,7 @@ create table if not exists public.clips (
 create index if not exists idx_clips_status on public.clips(status);
 create index if not exists idx_clips_submitted_by on public.clips(submitted_by);
 create index if not exists idx_clips_created_at on public.clips(created_at desc);
+create index if not exists idx_clips_theme on public.clips(theme_id);
 
 create table if not exists public.clip_people (
   id          uuid primary key default gen_random_uuid(),
