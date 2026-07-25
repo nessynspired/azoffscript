@@ -316,9 +316,9 @@ export default function LobbyPage() {
               if (c.scheduled_date) deadlines.push({ label: "Goes Live", date: c.scheduled_date });
               const next = deadlines.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
               return (
-                <Link key={c.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform flex items-center justify-between gap-4">
-                  <p className="font-bold text-desert-night truncate">{c.title}</p>
-                  <span className="chip chip-copper !text-[10px] shrink-0">
+                <Link key={c.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
+                  <p className="font-bold text-desert-night">{c.title}</p>
+                  <span className="chip chip-copper !text-xs md:!text-[10px] shrink-0 whitespace-nowrap">
                     {next.label}: {new Date(next.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                   </span>
                 </Link>

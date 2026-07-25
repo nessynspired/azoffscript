@@ -1460,16 +1460,16 @@ function ThisWeekTab({
               if (isThisWeek(c.approval_due)) deadlines.push({ label: "Greenlight", date: c.approval_due!, color: "text-heat-orange" });
               if (isThisWeek(c.scheduled_date)) deadlines.push({ label: "Goes Live", date: c.scheduled_date!, color: "text-cactus-teal" });
               return (
-                <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center justify-between gap-4">
+                <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="min-w-0">
-                    <p className="font-bold text-desert-night truncate">{c.title}</p>
+                    <p className="font-bold text-desert-night">{c.title}</p>
                     {c.theme_id && themeMap.get(c.theme_id) && (
                       <span className="text-xs text-copper-deep">🔥 {themeMap.get(c.theme_id)!.name}</span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2 justify-end shrink-0">
+                  <div className="flex flex-wrap gap-2 md:justify-end shrink-0">
                     {deadlines.map((d) => (
-                      <span key={d.label} className={`text-xs font-black ${d.color}`}>
+                      <span key={d.label} className={`text-xs font-black ${d.color} whitespace-nowrap`}>
                         {d.label}: {new Date(d.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                       </span>
                     ))}
