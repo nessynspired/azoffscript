@@ -14,7 +14,6 @@ const PHOTO_STATUSES: PhotoPermissionStatus[] = [
   "Pending Review",
   "Approved for Website",
   "Approved for Portal Only",
-  "Approved for Email Signature",
   "Rejected / Needs New Photo",
 ];
 
@@ -154,11 +153,10 @@ export default function PublicCardsAdminPage() {
               </div>
 
               {/* Photos preview */}
-              {(p.website_photo_url || p.portal_avatar_url || p.email_signature_photo_url) && (
+              {(p.website_photo_url || p.portal_avatar_url) && (
                 <div className="flex gap-3 flex-wrap">
                   {p.website_photo_url && <PhotoPreview label="Website" url={p.website_photo_url} />}
                   {p.portal_avatar_url && <PhotoPreview label="Portal" url={p.portal_avatar_url} />}
-                  {p.email_signature_photo_url && <PhotoPreview label="Email sig" url={p.email_signature_photo_url} />}
                 </div>
               )}
 

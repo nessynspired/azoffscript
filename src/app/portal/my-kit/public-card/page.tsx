@@ -44,7 +44,6 @@ export default function MyPublicCardPage() {
   // Editable form state (the crew member's requested values)
   const [displayName, setDisplayName] = useState("");
   const [preferredWebsiteName, setPreferredWebsiteName] = useState("");
-  const [preferredEmailName, setPreferredEmailName] = useState("");
   const [publicTitle, setPublicTitle] = useState("");
   const [secondaryRole, setSecondaryRole] = useState("");
   const [shortLine, setShortLine] = useState("");
@@ -54,7 +53,6 @@ export default function MyPublicCardPage() {
   const [visibility, setVisibility] = useState<ProfileVisibility>("public");
   const [websitePhoto, setWebsitePhoto] = useState<string | null>(null);
   const [portalAvatar, setPortalAvatar] = useState<string | null>(null);
-  const [emailSigPhoto, setEmailSigPhoto] = useState<string | null>(null);
   const [useSamePhoto, setUseSamePhoto] = useState(false);
   const [changeNote, setChangeNote] = useState("");
 
@@ -72,7 +70,6 @@ export default function MyPublicCardPage() {
       const p = profRes.data;
       setDisplayName(p.display_name ?? "");
       setPreferredWebsiteName(p.preferred_website_name ?? "");
-      setPreferredEmailName(p.preferred_email_signature_name ?? "");
       setPublicTitle(p.public_title ?? "");
       setSecondaryRole(p.secondary_role ?? "");
       setShortLine(p.short_personality_line ?? "");
@@ -82,18 +79,16 @@ export default function MyPublicCardPage() {
       setVisibility(p.profile_visibility ?? "public");
       setWebsitePhoto(p.website_photo_url ?? null);
       setPortalAvatar(p.portal_avatar_url ?? null);
-      setEmailSigPhoto(p.email_signature_photo_url ?? null);
     }
     setLoading(false);
   }, [member, supabase]);
 
   useEffect(() => { load(); }, [load]);
 
-  // When "use same photo" is on, mirror website photo to all three
+  // When "use same photo" is on, mirror website photo to portal avatar
   useEffect(() => {
     if (useSamePhoto && websitePhoto) {
       setPortalAvatar(websitePhoto);
-      setEmailSigPhoto(websitePhoto);
     }
   }, [useSamePhoto, websitePhoto]);
 
@@ -124,7 +119,6 @@ export default function MyPublicCardPage() {
       member_id: member.id,
       display_name: displayName || null,
       preferred_website_name: preferredWebsiteName || null,
-      preferred_email_signature_name: preferredEmailName || null,
       public_title: publicTitle || null,
       secondary_role: secondaryRole || null,
       short_personality_line: shortLine || null,
@@ -134,8 +128,7 @@ export default function MyPublicCardPage() {
       profile_visibility: visibility,
       website_photo_url: websitePhoto,
       portal_avatar_url: portalAvatar,
-      email_signature_photo_url: emailSigPhoto,
-      photo_permission_status: (websitePhoto || portalAvatar || emailSigPhoto) ? "Pending Review" as PhotoPermissionStatus : "Pending Upload" as PhotoPermissionStatus,
+      photo_permission_status: (websitePhoto || portalAvatar) ? "Pending Review" as PhotoPermissionStatus : "Pending Upload" as PhotoPermissionStatus,
       profile_approval_status: "Draft" as const,
       requested_changes_note: changeNote || null,
     };
@@ -156,7 +149,6 @@ export default function MyPublicCardPage() {
       member_id: member.id,
       display_name: displayName || null,
       preferred_website_name: preferredWebsiteName || null,
-      preferred_email_signature_name: preferredEmailName || null,
       public_title: publicTitle || null,
       secondary_role: secondaryRole || null,
       short_personality_line: shortLine || null,
@@ -166,8 +158,7 @@ export default function MyPublicCardPage() {
       profile_visibility: visibility,
       website_photo_url: websitePhoto,
       portal_avatar_url: portalAvatar,
-      email_signature_photo_url: emailSigPhoto,
-      photo_permission_status: (websitePhoto || portalAvatar || emailSigPhoto) ? "Pending Review" as PhotoPermissionStatus : "Pending Upload" as PhotoPermissionStatus,
+      photo_permission_status: (websitePhoto || portalAvatar) ? "Pending Review" as PhotoPermissionStatus : "Pending Upload" as PhotoPermissionStatus,
       profile_approval_status: "Submitted" as const,
       requested_changes_note: changeNote || null,
     };
@@ -179,7 +170,6 @@ export default function MyPublicCardPage() {
       member_id: member.id,
       display_name: displayName || null,
       preferred_website_name: preferredWebsiteName || null,
-      preferred_email_signature_name: preferredEmailName || null,
       public_title: publicTitle || null,
       secondary_role: secondaryRole || null,
       short_personality_line: shortLine || null,
@@ -189,7 +179,6 @@ export default function MyPublicCardPage() {
       profile_visibility: visibility,
       portal_avatar_url: portalAvatar,
       website_photo_url: websitePhoto,
-      email_signature_photo_url: emailSigPhoto,
       requested_changes_note: changeNote || null,
       status: "Submitted",
     });
@@ -222,7 +211,7 @@ export default function MyPublicCardPage() {
         <p className="text-sandstone-cream/70 text-sm font-bold uppercase tracking-wide">My Kit</p>
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">My Public Card</h1>
         <p className="text-sandstone-cream/60 text-sm mt-2 max-w-xl">
-          This is how you show up on the website, portal, member cards, and email signatures.
+          This is how you show up on the website, portal, and member cards.
           You can request changes — Vanessa approves before anything public changes.
         </p>
       </section>
@@ -284,10 +273,6 @@ export default function MyPublicCardPage() {
             <input className="field" value={preferredWebsiteName} onChange={(e) => setPreferredWebsiteName(e.target.value)} placeholder="Name for the website" />
           </div>
           <div>
-            <p className="label">Preferred email signature name</p>
-            <input className="field" value={preferredEmailName} onChange={(e) => setPreferredEmailName(e.target.value)} placeholder="Name for email signatures" />
-          </div>
-          <div>
             <p className="label">Social handle / tag</p>
             <input className="field" value={socialHandle} onChange={(e) => setSocialHandle(e.target.value)} placeholder="@yourhandle" />
           </div>
@@ -337,17 +322,17 @@ export default function MyPublicCardPage() {
             <h3 className="font-display text-lg text-desert-night">Photos</h3>
             <label className="flex items-center gap-2 text-sm text-smoked-charcoal">
               <input type="checkbox" checked={useSamePhoto} onChange={(e) => setUseSamePhoto(e.target.checked)} />
-              Use the same photo for all three
+              Use the same photo for both
             </label>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 gap-4">
             {/* Website photo */}
             <PhotoUpload
               label="Website photo"
               url={websitePhoto}
-              onUpload={(e) => uploadPhoto(e, useSamePhoto ? (u) => { setWebsitePhoto(u); setPortalAvatar(u); setEmailSigPhoto(u); } : setWebsitePhoto, "crew-photos")}
-              onClear={() => { setWebsitePhoto(null); if (useSamePhoto) { setPortalAvatar(null); setEmailSigPhoto(null); } }}
+              onUpload={(e) => uploadPhoto(e, useSamePhoto ? (u) => { setWebsitePhoto(u); setPortalAvatar(u); } : setWebsitePhoto, "crew-photos")}
+              onClear={() => { setWebsitePhoto(null); if (useSamePhoto) { setPortalAvatar(null); } }}
             />
             {/* Portal avatar */}
             <PhotoUpload
@@ -355,14 +340,6 @@ export default function MyPublicCardPage() {
               url={portalAvatar}
               onUpload={(e) => uploadPhoto(e, setPortalAvatar, "crew-photos")}
               onClear={() => setPortalAvatar(null)}
-              disabled={useSamePhoto}
-            />
-            {/* Email signature photo */}
-            <PhotoUpload
-              label="Email signature photo"
-              url={emailSigPhoto}
-              onUpload={(e) => uploadPhoto(e, setEmailSigPhoto, "crew-photos")}
-              onClear={() => setEmailSigPhoto(null)}
               disabled={useSamePhoto}
             />
           </div>
@@ -374,7 +351,7 @@ export default function MyPublicCardPage() {
               {PHOTO_WARNINGS.map((w) => <li key={w}>• {w}</li>)}
             </ul>
             <p className="text-[10px] text-yellow-800/60 mt-2">
-              Vanessa reviews every photo. She may approve it for the website, portal only, email signature only, or ask for a new one.
+              Vanessa reviews every photo. She may approve it for the website, portal only, or ask for a new one.
             </p>
           </div>
         </div>
@@ -426,13 +403,6 @@ export default function MyPublicCardPage() {
         </section>
       )}
 
-      {/* Email signature preview */}
-      <EmailSignaturePreview
-        name={preferredEmailName || displayName || member?.name || ""}
-        title={publicTitle || ""}
-        secondaryRole={secondaryRole || ""}
-        photoUrl={emailSigPhoto ?? undefined}
-      />
     </div>
   );
 }
@@ -475,111 +445,4 @@ function PhotoUpload({
       </div>
     </div>
   );
-}
-
-// ---------------------------------------------------------------------------
-// EmailSignaturePreview — branded signature with copy + download
-// ---------------------------------------------------------------------------
-function EmailSignaturePreview({
-  name,
-  title,
-  secondaryRole,
-  photoUrl,
-}: {
-  name: string;
-  title: string;
-  secondaryRole?: string;
-  photoUrl?: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const sigHtml = buildSignatureHtml({ name, title, secondaryRole, photoUrl });
-
-  async function copyHtml() {
-    try {
-      await navigator.clipboard.writeText(sigHtml);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback for browsers without clipboard HTML support
-      const ta = document.createElement("textarea");
-      ta.value = sigHtml;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }
-
-  function downloadHtml() {
-    const blob = new Blob([sigHtml], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `AZOffScript-signature-${name.replace(/\s+/g, "_")}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  return (
-    <section className="card p-5 space-y-3">
-      <h2 className="font-display text-xl text-desert-night">Your branded email signature</h2>
-      <p className="text-sm text-smoked-charcoal/60">
-        This is what your email signature will look like once approved. Copy the HTML to paste into your email client, or download it.
-      </p>
-
-      {/* Preview */}
-      <div className="bg-white rounded-xl p-4 border border-copper-clay/20">
-        <div dangerouslySetInnerHTML={{ __html: sigHtml }} />
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={copyHtml} className="btn btn-ghost btn-sm">
-          {copied ? "✓ Copied!" : "Copy HTML"}
-        </button>
-        <button onClick={downloadHtml} className="btn btn-ghost btn-sm">
-          Download HTML
-        </button>
-      </div>
-      <p className="text-[10px] text-smoked-charcoal/40">
-        Note: This is a preview based on your requested values. The final signature is locked once Vanessa approves.
-      </p>
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// buildSignatureHtml — the branded AZ Off Script email signature
-// ---------------------------------------------------------------------------
-function buildSignatureHtml(opts: { name: string; title: string; secondaryRole?: string; photoUrl?: string }): string {
-  const photoCell = opts.photoUrl
-    ? `<td style="padding-right:16px;vertical-align:top;"><img src="${opts.photoUrl}" alt="${escapeHtml(opts.name)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;" /></td>`
-    : "";
-  const secondaryLine = opts.secondaryRole
-    ? `<div style="color:#9a3412;font-size:12px;">${escapeHtml(opts.secondaryRole)}</div>`
-    : "";
-  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:Georgia,'Times New Roman',serif;color:#1f2937;max-width:420px;">
-  <tr>
-    ${photoCell}
-    <td style="vertical-align:top;">
-      <div style="font-size:18px;font-weight:bold;color:#7c2d12;">${escapeHtml(opts.name)}</div>
-      <div style="font-size:14px;color:#c2410c;font-weight:bold;">${escapeHtml(opts.title)}</div>
-      ${secondaryLine}
-      <div style="font-size:13px;color:#1f2937;margin-top:4px;"><strong>AZ Off Script</strong></div>
-      <div style="font-size:11px;color:#6b7280;margin-top:8px;font-style:italic;">Arizona, Our Way.<br/>The group chat got a camera.</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:6px;">
-        <a href="https://www.tiktok.com/@azoffscript" style="color:#6b7280;text-decoration:none;">TikTok: @azoffscript</a><br/>
-        <a href="https://www.instagram.com/@azoffscript" style="color:#6b7280;text-decoration:none;">Instagram: @azoffscript</a><br/>
-        <a href="https://azoffscript.com" style="color:#6b7280;text-decoration:none;">Website: azoffscript.com</a>
-      </div>
-    </td>
-  </tr>
-</table>`;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
