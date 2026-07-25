@@ -1,8 +1,12 @@
--- Create or replace the clips_with_meta view.
+-- Create the clips_with_meta view.
 -- Run this in the Supabase Dashboard → SQL Editor if the Run Sheet page
 -- shows "Can't load the Run Sheet" or clips aren't appearing.
+-- Uses DROP + CREATE (not CREATE OR REPLACE) because OR REPLACE cannot
+-- change the column list of an existing view.
 
-create or replace view public.clips_with_meta as
+drop view if exists public.clips_with_meta;
+
+create view public.clips_with_meta as
 select
   c.*,
   coalesce(cp.people_count, 0) as people_count,

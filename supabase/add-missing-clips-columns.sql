@@ -122,8 +122,12 @@ begin
   end if;
 end $$;
 
--- Recreate the view so it picks up the new columns
-create or replace view public.clips_with_meta as
+-- Recreate the view so it picks up the new columns.
+-- Must DROP first because CREATE OR REPLACE can't change the column list
+-- of an existing view (Postgres error 42P16).
+drop view if exists public.clips_with_meta;
+
+create view public.clips_with_meta as
 select
   c.*,
   coalesce(cp.people_count, 0) as people_count,
