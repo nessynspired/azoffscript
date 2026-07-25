@@ -1,8 +1,8 @@
 // AZ Off Script — Service Worker
-// Caches the app shell for offline use. Network-first for pages,
-// cache-first for static assets, stale-while-revalidate for images.
+// Caches the app shell for offline use. Network-first for pages and CSS,
+// stale-while-revalidate for images.
 
-const CACHE_VERSION = "azos-v2";
+const CACHE_VERSION = "azos-v4";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -30,11 +30,17 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key.startsWith("azos-") && key !== CACHE_VERSION + "-shell" && key !== CACHE_VERSION + "-assets" && key !== CACHE_VERSION + "-images")
+          .filter((key) => key.startsWith("azos-") && key !== SHELL_CACHE && key !== ASSET_CACHE && key !== IMAGE_CACHE)
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
   );
+});
+
+// On controller change (new SW took over), force all clients to reload
+// so they pick up the new CSS/JS instead of showing stale cached styles.
+self.addEventListener("controllerchange", () => {
+  // clients will reload themselves via the page-side check below
 });
 
 self.addEventListener("fetch", (event) => {
