@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
 import { HEAT_VIBES, POST_COUNTS, EFFORT_LEVELS, generateWeekPlan, calcDeadlinesFromLive, nextSunday, type PlannedItem } from "@/lib/plan-defaults";
-import { QUICK_DROP_TEMPLATES, getTemplate, getExampleFor, type QuickDropTemplate } from "@/lib/quick-drop-templates";
+import { QUICK_DROP_TEMPLATES, CONTENT_BUCKETS, getTemplate, getTemplatesByBucket, getExampleFor, type QuickDropTemplate } from "@/lib/quick-drop-templates";
 import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
@@ -1789,22 +1789,35 @@ function WeeklyHeatTab({
             </div>
           </div>
 
-          {/* Quick Drop Template — optional */}
+          {/* Quick Drop Template — optional, organized by bucket */}
           <div>
             <p className="label">Format <span className="font-normal text-desert-night/40">(optional — adds instructions for crew)</span></p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-2">
               <button
                 onClick={() => setSelectedTemplate("")}
                 className={`chip ${!selectedTemplate ? "chip-copper" : "chip-cream"}`}
               >No template</button>
-              {QUICK_DROP_TEMPLATES.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTemplate(t.id)}
-                  className={`chip ${selectedTemplate === t.id ? "chip-copper" : "chip-cream"}`}
-                  title={t.description}
-                >{t.name}</button>
-              ))}
+            </div>
+            <div className="space-y-2">
+              {CONTENT_BUCKETS.map((bucket) => {
+                const templates = getTemplatesByBucket(bucket);
+                if (templates.length === 0) return null;
+                return (
+                  <div key={bucket}>
+                    <p className="text-xs font-bold text-desert-night/40 uppercase mb-1">{bucket}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {templates.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setSelectedTemplate(t.id)}
+                          className={`chip !text-xs ${selectedTemplate === t.id ? "chip-copper" : "chip-cream"}`}
+                          title={t.description}
+                        >{t.name}</button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -2635,7 +2648,7 @@ function TemplatePicker({
       title: template.name,
       type: "video",
       status: "Planned",
-      category: template.category,
+      category: template.bucket,
       submitted_by: member.id,
       submitted_by_name: member.name,
       template_id: template.id,
@@ -2683,18 +2696,29 @@ function TemplatePicker({
     <div className="card p-5 space-y-4">
       <h2 className="font-display text-2xl text-desert-night">Create from Template</h2>
 
-      {/* Template selection */}
+      {/* Template selection — organized by bucket */}
       <div>
         <p className="label">Pick a format</p>
-        <div className="flex flex-wrap gap-2">
-          {QUICK_DROP_TEMPLATES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setSelectedId(t.id)}
-              className={`chip ${selectedId === t.id ? "chip-copper" : "chip-cream"}`}
-              title={t.description}
-            >{t.name}</button>
-          ))}
+        <div className="space-y-3 mt-2">
+          {CONTENT_BUCKETS.map((bucket) => {
+            const templates = getTemplatesByBucket(bucket);
+            if (templates.length === 0) return null;
+            return (
+              <div key={bucket}>
+                <p className="text-xs font-bold text-desert-night/40 uppercase mb-1.5">{bucket}</p>
+                <div className="flex flex-wrap gap-2">
+                  {templates.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedId(t.id)}
+                      className={`chip ${selectedId === t.id ? "chip-copper" : "chip-cream"}`}
+                      title={t.description}
+                    >{t.name}</button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -2733,6 +2757,27 @@ function TemplatePicker({
               <p className="text-xs text-smoked-charcoal/50 mt-2">Use these or make it their own.</p>
             </div>
           )}
+
+          {/* SEO + caption + hashtags — admin/planner only */}
+          <div className="bg-cactus-teal/10 rounded-lg p-3 space-y-2">
+            <div>
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Search phrase</p>
+              <p className="text-sm text-desert-night mt-0.5 font-bold">&ldquo;{template.seoPhrase}&rdquo;</p>
+              <p className="text-xs text-smoked-charcoal/50">Use in on-screen text, caption, hashtags, and website recap.</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Caption starter</p>
+              <p className="text-sm text-desert-night mt-0.5">{template.captionStarter}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Hashtags</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {template.hashtagStarter.map((tag) => (
+                  <span key={tag} className="chip chip-cream !text-[9px]">{tag}</span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
