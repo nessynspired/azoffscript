@@ -24,6 +24,8 @@ export interface ExhibitGroup {
   id: string;          // e.g. "main", "exhibit-a"
   label: string;       // e.g. "Main Agreement", "Exhibit A"
   title: string;       // e.g. "Posting Rules"
+  /** Section prefix for letter-prefixed exhibits (e.g. "A." for A.1, A.2). Empty for main. */
+  sectionPrefix?: string;
   /** Section numbers (from # N. Title headings) included in this exhibit */
   sections: number[];
 }
@@ -1329,7 +1331,10 @@ Electronic signature accepted: Yes
   ],
 };
 
-export const ALL_AGREEMENTS: AgreementDoc[] = [AGREEMENT_V1];
+// Import v2 from its own file (kept separate due to length)
+import { AGREEMENT_V2 } from "./agreement-v2";
+
+export const ALL_AGREEMENTS: AgreementDoc[] = [AGREEMENT_V1, AGREEMENT_V2];
 
 export function getAgreementByVersion(version: string): AgreementDoc | undefined {
   return ALL_AGREEMENTS.find((a) => a.version === version);

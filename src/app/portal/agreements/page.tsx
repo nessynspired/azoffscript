@@ -24,16 +24,18 @@ const STATUS_CHIP: Record<string, string> = {
 
 // ===========================================================================
 // Parsed section type — extracted from markdown headings like "# 5. Title"
+// or "# A.1. Title" for letter-prefixed exhibit sections
 // ===========================================================================
 interface ParsedSection {
   number: number;
+  prefix: string;       // e.g. "" for main, "A." for Exhibit A
   title: string;
   anchor: string;
   html: string;
 }
 
 interface ParsedExhibit {
-  group: { id: string; label: string; title: string; sections: number[] };
+  group: { id: string; label: string; title: string; sectionPrefix?: string; sections: number[] };
   sections: ParsedSection[];
 }
 
@@ -51,21 +53,38 @@ function parseAgreementSections(markdown: string): ParsedSection[] {
   }
 
   for (const line of lines) {
-    // Match "# N. Title" or "# N. Title" at any heading level
-    const match = line.match(/^#+\s+(\d+)\.\s+(.+)$/);
-    if (match) {
+    // Match "# N. Title" (plain number) OR "# A.1. Title" (letter-prefixed)
+    // Pattern 1: # 5. Title
+    const plainMatch = line.match(/^#+\s+(\d+)\.\s+(.+)$/);
+    // Pattern 2: # A.1. Title (or B.2. etc.)
+    const prefixedMatch = line.match(/^#+\s+([A-Z])\.(\d+)\.\s+(.+)$/);
+
+    if (prefixedMatch) {
       flush();
-      const num = parseInt(match[1], 10);
-      const title = match[2].trim();
+      const prefix = prefixedMatch[1] + ".";
+      const num = parseInt(prefixedMatch[2], 10);
+      const title = prefixedMatch[3].trim();
       currentSection = {
         number: num,
+        prefix,
+        title,
+        anchor: `section-${prefix}${num}`,
+        html: "",
+      };
+      buffer = [];
+    } else if (plainMatch) {
+      flush();
+      const num = parseInt(plainMatch[1], 10);
+      const title = plainMatch[2].trim();
+      currentSection = {
+        number: num,
+        prefix: "",
         title,
         anchor: `section-${num}`,
         html: "",
       };
       buffer = [];
     } else if (currentSection) {
-      // Skip the top-level "# AZ OFF SCRIPT LLC" and other non-numbered headings
       buffer.push(line);
     }
   }
@@ -73,10 +92,15 @@ function parseAgreementSections(markdown: string): ParsedSection[] {
   return sections;
 }
 
-function groupByExhibit(sections: ParsedSection[], exhibits: { id: string; label: string; title: string; sections: number[] }[]): ParsedExhibit[] {
+function groupByExhibit(
+  sections: ParsedSection[],
+  exhibits: { id: string; label: string; title: string; sectionPrefix?: string; sections: number[] }[]
+): ParsedExhibit[] {
   return exhibits.map((group) => ({
     group,
-    sections: sections.filter((s) => group.sections.includes(s.number)),
+    sections: sections.filter(
+      (s) => (group.sectionPrefix ?? "") === s.prefix && group.sections.includes(s.number)
+    ),
   }));
 }
 
@@ -94,7 +118,7 @@ function AgreementScrollViewer({
   title: string;
   version: string;
   bodyMarkdown: string;
-  exhibits: { id: string; label: string; title: string; sections: number[] }[];
+  exhibits: { id: string; label: string; title: string; sectionPrefix?: string; sections: number[] }[];
   onBack: () => void;
   onDownload: () => void;
 }) {
@@ -192,7 +216,7 @@ function AgreementScrollViewer({
                           : "text-smoked-charcoal/70 hover:bg-sandstone-cream/50"
                       }`}
                     >
-                      <span className="text-smoked-charcoal/40 mr-1">{sec.number}.</span>
+                      <span className="text-smoked-charcoal/40 mr-1">{sec.prefix}{sec.number}.</span>
                       {sec.title}
                     </button>
                   ))}
@@ -219,7 +243,7 @@ function AgreementScrollViewer({
               {ex.sections.map((sec) => (
                 <div key={sec.anchor} data-anchor={sec.anchor} className="mb-6 scroll-mt-4">
                   <h3 className="font-display text-base text-desert-night border-b border-desert-night/10 pb-1 mb-2">
-                    <span className="text-copper-deep">{sec.number}.</span> {sec.title}
+                    <span className="text-copper-deep">{sec.prefix}{sec.number}.</span> {sec.title}
                   </h3>
                   <div dangerouslySetInnerHTML={{ __html: sec.html }} />
                 </div>
@@ -242,6 +266,155 @@ function AgreementScrollViewer({
   );
 }
 
+// ===========================================================================
+// CUTE BRANDED POPUP — friendly summary of the main agreement + exhibit list
+// This is what crew see when invited to sign. Not the full legal text.
+// ===========================================================================
+function AgreementPopup({
+  doc,
+  onClose,
+  onSign,
+  onReadFull,
+  signing,
+  alreadySigned,
+}: {
+  doc: AgreementDoc;
+  onClose: () => void;
+  onSign?: () => void;
+  onReadFull: () => void;
+  signing?: boolean;
+  alreadySigned?: boolean;
+}) {
+  const exhibits = doc.exhibits ?? [];
+  const mainExhibit = exhibits.find((e) => e.id === "main") ?? exhibits[0];
+  const otherExhibits = exhibits.filter((e) => e.id !== "main");
+
+  // Friendly one-liners for each exhibit
+  const exhibitBlurbs: Record<string, string> = {
+    "exhibit-a": "How clips get approved, what not to post, and the Do Not Post rule.",
+    "exhibit-b": "Who owns what — your page stays yours, AZ Off Script content stays with the brand.",
+    "exhibit-c": "Money is not active yet. Future splits need written terms first.",
+    "exhibit-d": "What happens if someone leaves, gets removed, or has a dispute.",
+    "exhibit-e": "AZ Off Script can grow into other waves, cities, and casts later.",
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header — cute and branded */}
+        <div className="card-dark rounded-t-3xl p-6 relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-20">
+            <MascotImage pose="shades" size={140} />
+          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 text-sandstone-cream/50 hover:text-sandstone-cream text-2xl z-10"
+            aria-label="Close"
+          >×</button>
+          <div className="relative z-10">
+            <span className="chip chip-yellow mb-2">AZ Off Script</span>
+            <h2 className="font-display text-2xl text-sandstone-cream leading-tight">
+              Let's get on the same page
+            </h2>
+            <p className="text-sandstone-cream/60 text-sm mt-1">
+              First Wave Participation Rules + Media Release
+            </p>
+          </div>
+        </div>
+
+        {/* Body — friendly summary */}
+        <div className="p-6 space-y-4">
+          {/* Friendly intro */}
+          <div className="bg-cactus-teal/10 rounded-2xl p-4">
+            <p className="text-sm text-desert-night leading-relaxed">
+              Hey! Before we start recording, here's the friendly version of how AZ Off Script works.
+              It's not to make it weird — it's to protect the brand and protect everybody in the room.
+            </p>
+          </div>
+
+          {/* The main things — bullet points */}
+          <div>
+            <p className="font-display text-base text-desert-night mb-2">The main things:</p>
+            <ul className="space-y-1.5 text-sm text-smoked-charcoal">
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Official content posts on the official page first</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> No raw footage or drafts without approval</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Clips need approval before posting</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Do Not Post wins before something goes live</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> No kids by default</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Don't use the logo/mascot for your own thing</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Money isn't active yet — future splits need written terms</li>
+              <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Tagging is separate from posting approval</li>
+            </ul>
+          </div>
+
+          {/* Exhibits list — cute cards */}
+          <div>
+            <p className="font-display text-base text-desert-night mb-2">
+              The detailed rules live in exhibits:
+            </p>
+            <div className="space-y-2">
+              {otherExhibits.map((ex) => (
+                <div key={ex.id} className="bg-sandstone-cream/60 rounded-xl p-3 flex gap-3 items-start">
+                  <div className="shrink-0 w-9 h-9 rounded-full bg-copper-clay/20 flex items-center justify-center">
+                    <span className="font-display text-sm font-black text-copper-deep">
+                      {ex.label.replace("Exhibit ", "")}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-desert-night leading-tight">{ex.title}</p>
+                    <p className="text-xs text-smoked-charcoal/60 mt-0.5">
+                      {exhibitBlurbs[ex.id] ?? ex.title}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* One signature signs all */}
+          <div className="bg-copper-clay/10 rounded-2xl p-4 text-center">
+            <p className="font-display text-base text-copper-deep">
+              One signature signs everything
+            </p>
+            <p className="text-xs text-smoked-charcoal/60 mt-1">
+              Signing the Main Agreement means you agree to all exhibits A–E together.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-2 pt-2">
+            {alreadySigned ? (
+              <div className="bg-cactus-teal/20 rounded-xl p-3 text-center">
+                <p className="font-bold text-sm text-desert-night">✓ You already signed this version</p>
+              </div>
+            ) : onSign ? (
+              <button
+                onClick={onSign}
+                disabled={signing}
+                className="btn btn-primary btn-lg w-full"
+              >
+                {signing ? "Signing…" : "I've read it — sign me up"}
+              </button>
+            ) : null}
+            <button
+              onClick={onReadFull}
+              className="btn btn-ghost btn-sm w-full"
+            >
+              Read the full agreement →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AgreementsPage() {
   const { member } = useAuth();
   const supabase = createClient();
@@ -252,6 +425,7 @@ export default function AgreementsPage() {
   const [viewVersion, setViewVersion] = useState<string | null>(null);
   const [viewSignaturesFor, setViewSignaturesFor] = useState<string | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [popupPreview, setPopupPreview] = useState<AgreementDoc | null>(null);
 
   const load = useCallback(async () => {
     const [agRes, sigRes, memRes] = await Promise.all([
@@ -467,8 +641,9 @@ export default function AgreementsPage() {
                     <p className="font-display text-lg text-desert-night">{doc.version} — {doc.title}</p>
                     <p className="text-xs text-smoked-charcoal/60 mt-1">{doc.summary}</p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button onClick={() => setViewVersion(doc.version)} className="btn btn-ghost btn-sm !text-xs">Preview</button>
+                  <div className="flex gap-2 shrink-0 flex-wrap">
+                    <button onClick={() => setPopupPreview(doc)} className="btn btn-ghost btn-sm !text-xs">Preview Popup</button>
+                    <button onClick={() => setViewVersion(doc.version)} className="btn btn-ghost btn-sm !text-xs">Preview Full</button>
                     <button
                       onClick={() => publishVersion(doc)}
                       disabled={publishing === doc.version}
@@ -559,6 +734,18 @@ export default function AgreementsPage() {
           </div>
         )}
       </section>
+
+      {/* Popup preview — admin can see what crew will see */}
+      {popupPreview && (
+        <AgreementPopup
+          doc={popupPreview}
+          onClose={() => setPopupPreview(null)}
+          onReadFull={() => {
+            setViewVersion(popupPreview.version);
+            setPopupPreview(null);
+          }}
+        />
+      )}
     </div>
   );
 }
