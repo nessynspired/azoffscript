@@ -1192,8 +1192,8 @@ function TrendDropsTab({
 
       {showForm && (
         <div className="card p-5 space-y-3">
-          <input className="field" placeholder="What's the trend? (title)" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <input className="field" placeholder="Paste the link (TikTok, Reel, YouTube...)" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <input className="field" placeholder="Trend title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input className="field" placeholder="Paste the link" value={url} onChange={(e) => setUrl(e.target.value)} />
           <div className="flex gap-3">
             <select className="field !w-auto" value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}>
               <option value="tiktok">TikTok</option>
@@ -1209,7 +1209,7 @@ function TrendDropsTab({
               </select>
             )}
           </div>
-          <textarea className="field min-h-[60px]" placeholder="Notes — how should we do this AZ Off Script style?" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <textarea className="field min-h-[60px]" placeholder="How should we do this AZ style?" value={notes} onChange={(e) => setNotes(e.target.value)} />
           <button onClick={addTrend} className="btn btn-primary" disabled={saving || !title.trim() || !url.trim()}>
             {saving ? "Dropping…" : "Drop It"}
           </button>
@@ -1340,8 +1340,8 @@ function WeeklyHeatTab({
 
       {showForm && canPlanContent && (
         <div className="card p-5 space-y-3">
-          <input className="field" placeholder="Name (e.g. Arizona Summer Chaos)" value={name} onChange={(e) => setName(e.target.value)} />
-          <textarea className="field min-h-[60px]" placeholder="What's the vibe? What are we going for?" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <input className="field" placeholder="Theme name" value={name} onChange={(e) => setName(e.target.value)} />
+          <textarea className="field min-h-[60px]" placeholder="What's the vibe?" value={description} onChange={(e) => setDescription(e.target.value)} />
           <div className="flex gap-3">
             <div>
               <label className="label">Start date</label>
@@ -1583,7 +1583,7 @@ function AssignmentBoardTab({
                   <div className="mt-4 bg-sandstone-cream/50 rounded-xl p-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <select className="field" value={assignForm.member_id} onChange={(e) => setAssignForm({ ...assignForm, member_id: e.target.value })}>
-                        <option value="">Choose crew member…</option>
+                        <option value="">Pick someone…</option>
                         {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </select>
                       <select className="field" value={assignForm.role} onChange={(e) => setAssignForm({ ...assignForm, role: e.target.value })}>
@@ -1594,8 +1594,8 @@ function AssignmentBoardTab({
                       </select>
                       <input type="date" className="field" value={assignForm.drop_by_date} onChange={(e) => setAssignForm({ ...assignForm, drop_by_date: e.target.value })} title="Drop-by date" />
                     </div>
-                    <input className="field" placeholder="Task title (e.g. 'Record your answer to the prompt')" value={assignForm.task_title} onChange={(e) => setAssignForm({ ...assignForm, task_title: e.target.value })} />
-                    <textarea className="field min-h-[50px]" placeholder="Notes — what exactly do they need to do?" value={assignForm.task_notes} onChange={(e) => setAssignForm({ ...assignForm, task_notes: e.target.value })} />
+                    <input className="field" placeholder="Task title" value={assignForm.task_title} onChange={(e) => setAssignForm({ ...assignForm, task_title: e.target.value })} />
+                    <textarea className="field min-h-[50px]" placeholder="What do they need to do?" value={assignForm.task_notes} onChange={(e) => setAssignForm({ ...assignForm, task_notes: e.target.value })} />
                     <div className="flex items-center gap-3">
                       <label className="flex items-center gap-2 text-sm font-bold text-desert-night">
                         <input type="checkbox" checked={assignForm.is_required} onChange={(e) => setAssignForm({ ...assignForm, is_required: e.target.checked })} />

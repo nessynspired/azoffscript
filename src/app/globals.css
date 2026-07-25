@@ -418,7 +418,12 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 145, 125, 0.2);
 }
 .field::placeholder {
-  color: rgba(43, 43, 43, 0.45);
+  color: rgba(43, 43, 43, 0.55);
+}
+.field:not(textarea)::placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .field-error {
   border-color: var(--color-copper-deep);

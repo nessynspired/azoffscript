@@ -245,7 +245,7 @@ export default function DropPage() {
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Paste a TikTok / Reel link, or just type whatever's on your mind…"
+            placeholder="Paste a link or type an idea…"
             className="field min-h-[140px] text-lg resize-none border-0 focus:ring-0"
             style={{ border: "none", boxShadow: "none" }}
             autoFocus

@@ -483,7 +483,7 @@ export default function MyWaveKitPage() {
             </div>
             <div>
               <label className="label" htmlFor="kit-nickname">Your Title</label>
-              <input id="kit-nickname" className="field" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="e.g. The Real One, The Wild Card" />
+              <input id="kit-nickname" className="field" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="e.g. The Real One" />
             </div>
             <div>
               <label className="label" htmlFor="kit-twist">One-liner (optional)</label>
@@ -518,7 +518,7 @@ export default function MyWaveKitPage() {
             </div>
             <div>
               <label className="label" htmlFor="kit-address">Mailing Address <span className="text-xs text-cactus-teal font-bold normal-case">🔒 private</span></label>
-              <textarea id="kit-address" className="field min-h-[80px]" value={mailingAddress} onChange={(e) => setMailingAddress(e.target.value)} placeholder="Where should we send merch, kits, and surprises?&#10;Street, City, State, Zip" />
+              <textarea id="kit-address" className="field min-h-[80px]" value={mailingAddress} onChange={(e) => setMailingAddress(e.target.value)} placeholder="Where should we send merch?&#10;Street, City, State, Zip" />
             </div>
 
             {/* ===== COMFORT + RESPECT ===== */}

@@ -41,11 +41,11 @@ export function CollabForm() {
       </div>
       <div>
         <label className="label" htmlFor="biz-city">City</label>
-        <input id="biz-city" className="field" required placeholder="Phoenix, Tucson, Mesa, Goodyear…" value={form.city} onChange={(e) => update("city", e.target.value)} />
+        <input id="biz-city" className="field" required placeholder="Phoenix, Tucson, Mesa…" value={form.city} onChange={(e) => update("city", e.target.value)} />
       </div>
       <div>
         <label className="label" htmlFor="biz-feature">What do you want featured?</label>
-        <input id="biz-feature" className="field" required placeholder="Product, event, service, location…" value={form.whatToFeature} onChange={(e) => update("whatToFeature", e.target.value)} />
+        <input id="biz-feature" className="field" required placeholder="Product, event, service…" value={form.whatToFeature} onChange={(e) => update("whatToFeature", e.target.value)} />
       </div>
       <div>
         <label className="label" htmlFor="biz-type">Product / event / service</label>
@@ -55,6 +55,7 @@ export function CollabForm() {
         <div>
           <label className="label" htmlFor="biz-timeline">Timeline</label>
           <input id="biz-timeline" className="field" placeholder="ASAP, next month…" value={form.timeline} onChange={(e) => update("timeline", e.target.value)} />
+
         </div>
         <div>
           <label className="label" htmlFor="biz-budget">Budget range</label>
@@ -63,7 +64,7 @@ export function CollabForm() {
       </div>
       <div>
         <label className="label" htmlFor="biz-socials">Social handles</label>
-        <input id="biz-socials" className="field" placeholder="@yourbusiness on IG/TikTok/FB" value={form.socials} onChange={(e) => update("socials", e.target.value)} />
+        <input id="biz-socials" className="field" placeholder="@yourbusiness" value={form.socials} onChange={(e) => update("socials", e.target.value)} />
       </div>
       <div>
         <label className="label" htmlFor="biz-contact">Contact info</label>

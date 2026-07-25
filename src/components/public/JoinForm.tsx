@@ -51,11 +51,11 @@ export function JoinForm() {
       </div>
       <div>
         <label className="label" htmlFor="join-city">City</label>
-        <input id="join-city" className="field" required placeholder="Phoenix, Tucson, Mesa, Goodyear…" value={form.city} onChange={(e) => update("city", e.target.value)} />
+        <input id="join-city" className="field" required placeholder="Phoenix, Tucson, Mesa…" value={form.city} onChange={(e) => update("city", e.target.value)} />
       </div>
       <div>
         <label className="label" htmlFor="join-socials">Social handles</label>
-        <input id="join-socials" className="field" placeholder="@yourhandle on TikTok/IG" value={form.socials} onChange={(e) => update("socials", e.target.value)} />
+        <input id="join-socials" className="field" placeholder="@yourhandle" value={form.socials} onChange={(e) => update("socials", e.target.value)} />
       </div>
       <div>
         <label className="label" htmlFor="join-camera">Are you comfortable on camera?</label>
@@ -68,7 +68,7 @@ export function JoinForm() {
       </div>
       <div>
         <label className="label" htmlFor="join-content">What kind of content would you actually enjoy?</label>
-        <textarea id="join-content" className="field min-h-[80px]" placeholder="Hot takes, group games, reactions, local stuff…" value={form.contentType} onChange={(e) => update("contentType", e.target.value)} />
+        <textarea id="join-content" className="field min-h-[80px]" placeholder="Hot takes, games, reactions…" value={form.contentType} onChange={(e) => update("contentType", e.target.value)} />
       </div>
       <div>
         <label className="label">What role fits you best?</label>
@@ -87,11 +87,11 @@ export function JoinForm() {
       </div>
       <div>
         <label className="label" htmlFor="join-avail">Availability</label>
-        <input id="join-avail" className="field" placeholder="Weekdays after 5, weekends free…" value={form.availability} onChange={(e) => update("availability", e.target.value)} />
+        <input id="join-avail" className="field" placeholder="Weekdays after 5, weekends…" value={form.availability} onChange={(e) => update("availability", e.target.value)} />
       </div>
       <div>
         <label className="label" htmlFor="join-boundaries">Boundaries (optional)</label>
-        <input id="join-boundaries" className="field" placeholder="Things you don't want in content" value={form.boundaries} onChange={(e) => update("boundaries", e.target.value)} />
+        <input id="join-boundaries" className="field" placeholder="Things to avoid" value={form.boundaries} onChange={(e) => update("boundaries", e.target.value)} />
       </div>
       <div>
         <label className="label" htmlFor="join-why">Why does this interest you?</label>

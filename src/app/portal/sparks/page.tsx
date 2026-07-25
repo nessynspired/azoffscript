@@ -136,7 +136,7 @@ export default function SparkBoardPage() {
               className="field"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Red Flag or Real Life — we read a red flag and guess if it's real"
+              placeholder="What's the idea?"
               maxLength={200}
             />
           </div>
@@ -161,7 +161,7 @@ export default function SparkBoardPage() {
               className="field"
               value={newEnergy}
               onChange={(e) => setNewEnergy(e.target.value)}
-              placeholder="funny / easy / low-edit / high-energy"
+              placeholder="funny, easy, low-edit…"
               maxLength={80}
             />
           </div>
