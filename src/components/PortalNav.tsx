@@ -8,37 +8,68 @@ import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types/db";
 
 /**
- * Portal navigation.
+ * Portal navigation — role-based.
+ *
+ * Crew sees: Lobby, Drop, Run Sheet, My Kit, More (simple extras)
+ * Planner/Admin sees: Lobby, Drop, Run Sheet, Ready Bank, Crew, More (planning tools)
+ *
  * Desktop: top "studio bar" with primary items + "More" dropdown.
  * Mobile: bottom nav with oversized center Drop button + "More" sheet.
  */
 
-type NavItem = { href: string; label: string; adminOnly?: boolean };
+type NavItem = { href: string; label: string; center?: boolean };
 
-const PRIMARY_NAV: NavItem[] = [
+// ---- Crew menu (simple participation) ----
+const CREW_PRIMARY: NavItem[] = [
   { href: "/portal/lobby", label: "Lobby" },
   { href: "/portal/drop", label: "Drop" },
   { href: "/portal/run-sheet", label: "Run Sheet" },
-  { href: "/portal/crew", label: "Crew" },
   { href: "/portal/my-kit", label: "My Kit" },
 ];
 
-const MORE_NAV: NavItem[] = [
+const CREW_MORE: NavItem[] = [
+  { href: "/portal/crew", label: "Crew" },
   { href: "/portal/sparks", label: "Spark Board" },
-  { href: "/portal/ready-bank", label: "Ready Bank" },
   { href: "/portal/ready", label: "Greenlights" },
-  { href: "/portal/gear-board", label: "Gear", adminOnly: true },
-  { href: "/portal/invites", label: "Invites", adminOnly: true },
+  { href: "/portal/brand-locker", label: "Brand Locker" },
+  { href: "/portal/ground-rules", label: "Ground Rules" },
+  { href: "/portal/notifications", label: "Notifications" },
+];
+
+// ---- Planner/Admin menu (the planning machine) ----
+const PLANNER_PRIMARY: NavItem[] = [
+  { href: "/portal/lobby", label: "Lobby" },
+  { href: "/portal/drop", label: "Drop" },
+  { href: "/portal/run-sheet", label: "Run Sheet" },
+  { href: "/portal/ready-bank", label: "Ready Bank" },
+  { href: "/portal/crew", label: "Crew" },
+];
+
+const PLANNER_MORE: NavItem[] = [
+  { href: "/portal/my-kit", label: "My Kit" },
+  { href: "/portal/sparks", label: "Spark Board" },
+  { href: "/portal/ready", label: "Greenlights" },
+  { href: "/portal/gear-board", label: "Gear Board", },
+  { href: "/portal/invites", label: "Invites" },
   { href: "/portal/brand-locker", label: "Brand Locker" },
   { href: "/portal/ground-rules", label: "Ground Rules" },
   { href: "/portal/money-side", label: "Money Side" },
   { href: "/portal/notifications", label: "Notifications" },
 ];
 
-const MOBILE_PRIMARY: NavItem[] = [
+// ---- Mobile bottom nav ----
+const CREW_MOBILE: NavItem[] = [
   { href: "/portal/lobby", label: "Lobby" },
   { href: "/portal/run-sheet", label: "Run Sheet" },
-  { href: "/portal/drop", label: "Drop", center: true } as NavItem,
+  { href: "/portal/drop", label: "Drop", center: true },
+  { href: "/portal/my-kit", label: "My Kit" },
+];
+
+const PLANNER_MOBILE: NavItem[] = [
+  { href: "/portal/lobby", label: "Lobby" },
+  { href: "/portal/run-sheet", label: "Run Sheet" },
+  { href: "/portal/drop", label: "Drop", center: true },
+  { href: "/portal/ready-bank", label: "Ready Bank" },
   { href: "/portal/crew", label: "Crew" },
 ];
 
@@ -55,11 +86,14 @@ export function PortalTopBar({
 }: PortalNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useAuth();
-  const { member } = useAuth();
+  const { signOut, member } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
   const [unread, setUnread] = useState(propUnread);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  const isPlanner = memberRole === "admin" || member?.can_plan_content === true;
+  const primaryNav = isPlanner ? PLANNER_PRIMARY : CREW_PRIMARY;
+  const moreNav = isPlanner ? PLANNER_MORE : CREW_MORE;
 
   // Fetch unread notification count
   useEffect(() => {
@@ -74,9 +108,7 @@ export function PortalTopBar({
       setUnread(count ?? 0);
     }
     fetchUnread();
-    // Poll every 30 seconds for new notifications
     const interval = setInterval(fetchUnread, 30000);
-    // Also refetch when route changes
     return () => clearInterval(interval);
   }, [member, pathname]);
 
@@ -95,7 +127,6 @@ export function PortalTopBar({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const visibleMore = MORE_NAV.filter((item) => !item.adminOnly || memberRole === "admin");
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
@@ -107,7 +138,7 @@ export function PortalTopBar({
         </Link>
 
         <nav className="flex items-center gap-1 flex-1">
-          {PRIMARY_NAV.map((item) => (
+          {primaryNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -126,7 +157,7 @@ export function PortalTopBar({
             <button
               onClick={() => setMoreOpen(!moreOpen)}
               className={`px-3 py-2 rounded-full text-sm font-extrabold uppercase tracking-wide transition-colors flex items-center gap-1 ${
-                moreOpen || visibleMore.some((i) => isActive(i.href))
+                moreOpen || moreNav.some((i) => isActive(i.href))
                   ? "bg-copper-clay text-bone-white"
                   : "text-sandstone-cream/80 hover:text-sunburst-yellow hover:bg-white/5"
               }`}
@@ -138,7 +169,7 @@ export function PortalTopBar({
             </button>
             {moreOpen && (
               <div className="absolute top-full left-0 mt-2 bg-desert-night border border-copper-clay/40 rounded-2xl py-2 min-w-[180px] shadow-[var(--shadow-lift)] animate-pop">
-                {visibleMore.map((item) => (
+                {moreNav.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -170,10 +201,14 @@ export function PortalTopBar({
             <span className="font-extrabold text-sm">{memberName}</span>
             <span
               className={`chip ${
-                memberRole === "admin" ? "chip-yellow" : "chip-teal"
+                memberRole === "admin"
+                  ? "chip-yellow"
+                  : isPlanner
+                    ? "chip-copper"
+                    : "chip-teal"
               } !py-0.5 !px-2 !text-[10px]`}
             >
-              {memberRole === "admin" ? "Admin" : "Crew"}
+              {memberRole === "admin" ? "Admin" : isPlanner ? "Planner" : "Crew"}
             </span>
           </Link>
           <button
@@ -192,9 +227,13 @@ export function PortalTopBar({
 export function PortalBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, member } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
+  const isPlanner = member?.role === "admin" || member?.can_plan_content === true;
+  const mobileNav = isPlanner ? PLANNER_MOBILE : CREW_MOBILE;
+  const moreNav = isPlanner ? PLANNER_MORE : CREW_MORE;
 
   async function handleSignOut() {
     await signOut();
@@ -205,7 +244,7 @@ export function PortalBottomNav() {
     <>
       <nav className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-desert-night border-t-2 border-copper-clay/40">
         <div className="flex items-end justify-around h-[72px] px-2">
-          {MOBILE_PRIMARY.map((item) => {
+          {mobileNav.map((item) => {
             const active = isActive(item.href);
             if ("center" in item && item.center) {
               return (
@@ -249,7 +288,7 @@ export function PortalBottomNav() {
           <button
             onClick={() => setMoreOpen(true)}
             className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${
-              moreOpen || MORE_NAV.some((i) => isActive(i.href))
+              moreOpen || moreNav.some((i) => isActive(i.href))
                 ? "text-sunburst-yellow"
                 : "text-sandstone-cream/70"
             }`}
@@ -285,7 +324,7 @@ export function PortalBottomNav() {
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {MORE_NAV.map((item) => (
+              {moreNav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
