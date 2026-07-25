@@ -753,6 +753,84 @@ export interface Database {
           approved_by?: string | null;
         };
       };
+
+      agreements: {
+        Relationships: [];
+        Row: {
+          id: string;
+          created_at: string;
+          version: string;
+          title: string;
+          summary: string | null;
+          body_markdown: string;
+          status: "Draft" | "Active" | "Retired";
+          activated_at: string | null;
+          retired_at: string | null;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          version: string;
+          title: string;
+          summary?: string | null;
+          body_markdown: string;
+          status?: "Draft" | "Active" | "Retired";
+          activated_at?: string | null;
+          retired_at?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          version?: string;
+          title?: string;
+          summary?: string | null;
+          body_markdown?: string;
+          status?: "Draft" | "Active" | "Retired";
+          activated_at?: string | null;
+          retired_at?: string | null;
+        };
+      };
+
+      agreement_signatures: {
+        Relationships: [];
+        Row: {
+          id: string;
+          created_at: string;
+          agreement_id: string;
+          member_id: string;
+          member_name: string;
+          member_email: string | null;
+          member_phone: string | null;
+          social_handles: string | null;
+          printed_name: string;
+          ip_address: string | null;
+          user_agent: string | null;
+          acknowledged_checklist: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          agreement_id: string;
+          member_id: string;
+          member_name: string;
+          member_email?: string | null;
+          member_phone?: string | null;
+          social_handles?: string | null;
+          printed_name: string;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          acknowledged_checklist?: boolean;
+        };
+        Update: {
+          id?: string;
+          member_email?: string | null;
+          member_phone?: string | null;
+          social_handles?: string | null;
+          printed_name?: string;
+          acknowledged_checklist?: boolean;
+        };
+      };
     };
 
     Views: {
