@@ -136,9 +136,11 @@ export default function GroundRulesPage() {
       {/* Comfort + Respect Rules */}
       <div className="pt-4">
         <h2 className="font-display text-3xl text-desert-night mb-2">Comfort + Respect</h2>
-        <p className="text-smoked-charcoal/70 mb-4">
-          The one thing that matters most: <span className="font-bold text-copper-deep">if someone is not comfortable with how they are shown, the clip is not ready.</span>
-        </p>
+        <div className="card-dark p-5 mb-4">
+          <p className="text-sandstone-cream text-lg">
+            The one thing that matters most: <span className="font-bold text-sunburst-yellow">if someone is not comfortable with how they are shown, the clip is not ready.</span>
+          </p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {COMFORT_RULES.map((rule, i) => (
             <div key={i} className={`card p-5 ${i % 2 === 0 ? "sticker-right" : ""} bg-copper-deep/5 border-copper-clay/30`}>

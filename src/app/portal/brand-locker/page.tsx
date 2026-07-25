@@ -261,16 +261,16 @@ export default function BrandLockerPage() {
             </div>
           </div>
 
-          <div className="card p-6 bg-copper-deep/5 border-copper-clay/30">
-            <h2 className="font-display text-2xl text-desert-night mb-2">Comfort + Respect</h2>
-            <p className="text-sm text-copper-deep font-bold mb-4">
+          <div className="card-dark p-6">
+            <h2 className="font-display text-2xl text-sunburst-yellow mb-2">Comfort + Respect</h2>
+            <p className="text-sandstone-cream font-bold mb-4">
               If someone is not comfortable with how they are shown, the clip is not ready.
             </p>
             <div className="space-y-3">
               {COMFORT_RULES.map((r, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <span className="chip chip-copper !text-[10px] shrink-0 mt-0.5">{i + 1}</span>
-                  <p className="text-desert-night">{r}</p>
+                  <span className="chip chip-yellow !text-[10px] shrink-0 mt-0.5">{i + 1}</span>
+                  <p className="text-sandstone-cream">{r}</p>
                 </div>
               ))}
             </div>
