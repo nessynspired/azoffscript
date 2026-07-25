@@ -2,7 +2,7 @@
 // Caches the app shell for offline use. Network-first for pages,
 // cache-first for static assets, stale-while-revalidate for images.
 
-const CACHE_VERSION = "azos-v1";
+const CACHE_VERSION = "azos-v2";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -50,16 +50,18 @@ self.addEventListener("fetch", (event) => {
   // Skip Next.js HMR/dev requests
   if (url.pathname.startsWith("/_next/webpack-hmr")) return;
 
-  // Static assets (JS, CSS, fonts) — cache-first
+  // Static assets (JS, CSS, fonts) — network-first, cache as fallback
+  // Next.js hashes these filenames, so stale cached versions must not override new builds.
   if (url.pathname.startsWith("/_next/static/") || url.pathname.match(/\.(?:js|css|woff2?|ttf|otf)$/)) {
     event.respondWith(
-      caches.open(ASSET_CACHE).then(async (cache) => {
-        const cached = await cache.match(request);
-        if (cached) return cached;
-        const fetched = await fetch(request);
-        if (fetched.ok) cache.put(request, fetched.clone());
-        return fetched;
-      })
+      fetch(request)
+        .then((fetched) => {
+          if (fetched.ok) {
+            caches.open(ASSET_CACHE).then((cache) => cache.put(request, fetched.clone()));
+          }
+          return fetched;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
