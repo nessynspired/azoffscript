@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import type { UserRole } from "@/lib/types/db";
 
 /**
@@ -51,8 +52,16 @@ export function PortalTopBar({
   unreadNotifications = 0,
 }: PortalNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [showSignOut, setShowSignOut] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+  }
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
