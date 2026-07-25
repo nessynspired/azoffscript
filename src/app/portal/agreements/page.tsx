@@ -115,6 +115,7 @@ function AgreementScrollViewer({
   exhibits,
   onBack,
   onDownload,
+  initialExhibitId,
 }: {
   title: string;
   version: string;
@@ -122,6 +123,7 @@ function AgreementScrollViewer({
   exhibits: { id: string; label: string; title: string; sectionPrefix?: string; sections: number[] }[];
   onBack: () => void;
   onDownload: () => void;
+  initialExhibitId?: string | null;
 }) {
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
   const [mobileTocOpen, setMobileTocOpen] = useState(false);
@@ -129,6 +131,19 @@ function AgreementScrollViewer({
 
   const allSections = parseAgreementSections(bodyMarkdown);
   const grouped = groupByExhibit(allSections, exhibits.length > 0 ? exhibits : [{ id: "main", label: "Main", title, sections: allSections.map((s) => s.number) }]);
+
+  // Auto-scroll to a specific exhibit on mount (when opened from a link)
+  useEffect(() => {
+    if (!initialExhibitId) return;
+    const targetGroup = grouped.find((g) => g.group.id === initialExhibitId);
+    if (!targetGroup || targetGroup.sections.length === 0) return;
+    // Small delay to let the layout settle
+    const t = setTimeout(() => {
+      scrollToAnchor(targetGroup.sections[0].anchor);
+    }, 100);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialExhibitId]);
 
   // Track which section is active based on scroll position
   useEffect(() => {
@@ -273,124 +288,6 @@ function AgreementScrollViewer({
 // One signature signs the Main Agreement + all Exhibits A-E together.
 // ===========================================================================
 
-// ---------------------------------------------------------------------------
-// AgreementReaderPopup — same branded design as the summary popup, but the
-// body is the FULL agreement content with exhibit chips + scrollable area.
-// Opens on top of the summary popup when "Review Main Agreement" is clicked.
-// ---------------------------------------------------------------------------
-function AgreementReaderPopup({
-  doc,
-  onClose,
-}: {
-  doc: AgreementDoc;
-  onClose: () => void;
-}) {
-  const exhibits = doc.exhibits ?? [];
-  const [activeExhibitId, setActiveExhibitId] = useState<string>(exhibits[0]?.id ?? "main");
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const allSections = parseAgreementSections(doc.bodyMarkdown);
-  const grouped = groupByExhibit(allSections, exhibits.length > 0 ? exhibits : [{ id: "main", label: "Main", title: doc.title, sections: allSections.map((s) => s.number) }]);
-  const activeExhibit = grouped.find((g) => g.group.id === activeExhibitId) ?? grouped[0];
-
-  function jumpToExhibit(id: string) {
-    setActiveExhibitId(id);
-    // Scroll the content area back to top when switching exhibits
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-sandstone-cream rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header — same cute branded design as the summary popup */}
-        <div className="card-dark p-5 relative overflow-hidden shrink-0">
-          <div className="absolute -right-4 -top-4 opacity-20">
-            <MascotImage pose="shades" size={120} />
-          </div>
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 text-sandstone-cream/50 hover:text-sandstone-cream text-2xl z-10"
-            aria-label="Close"
-          >×</button>
-          <div className="relative z-10">
-            <span className="chip chip-yellow mb-2">AZ Off Script</span>
-            <h2 className="font-display text-xl text-sandstone-cream leading-tight">
-              {doc.title}
-            </h2>
-            <p className="text-sandstone-cream/60 text-xs mt-1">
-              Read the full agreement · {allSections.length} sections
-            </p>
-          </div>
-        </div>
-
-        {/* Exhibit chips — clickable navigation */}
-        <div className="bg-sandstone-cream border-b border-copper-clay/20 px-4 py-2.5 shrink-0 overflow-x-auto">
-          <div className="flex gap-1.5 min-w-max">
-            {grouped.map((ex) => (
-              <button
-                key={ex.group.id}
-                onClick={() => jumpToExhibit(ex.group.id)}
-                className={`chip !text-[10px] !py-1 whitespace-nowrap ${
-                  activeExhibitId === ex.group.id ? "chip-copper" : "chip-cream"
-                }`}
-              >
-                {ex.group.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Exhibit title bar */}
-        <div className="bg-copper-clay/5 px-5 py-2 shrink-0 border-b border-copper-clay/10">
-          <p className="text-[10px] font-black text-copper-deep uppercase tracking-wider">
-            {activeExhibit.group.label}
-          </p>
-          <p className="font-display text-sm text-desert-night leading-tight">
-            {activeExhibit.group.title}
-          </p>
-        </div>
-
-        {/* Scrollable content area — the actual agreement text */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-5 agreement-prose bg-white/40"
-        >
-          {activeExhibit.sections.length === 0 ? (
-            <p className="text-sm text-smoked-charcoal/50 text-center py-8">
-              No sections found for this exhibit.
-            </p>
-          ) : (
-            activeExhibit.sections.map((sec) => (
-              <div key={sec.anchor} className="mb-5">
-                <h3 className="font-display text-sm text-desert-night border-b border-desert-night/10 pb-1 mb-2">
-                  <span className="text-copper-deep">{sec.prefix}{sec.number}.</span> {sec.title}
-                </h3>
-                <div dangerouslySetInnerHTML={{ __html: sec.html }} />
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Footer — back to summary */}
-        <div className="bg-sandstone-cream border-t border-copper-clay/20 px-4 py-2.5 shrink-0 text-center">
-          <button
-            onClick={onClose}
-            className="btn btn-ghost btn-sm !text-xs"
-          >
-            ← Back to sign
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AgreementPopup({
   doc,
   onClose,
@@ -399,6 +296,7 @@ function AgreementPopup({
   alreadySigned,
   onSigned,
   previewMode,
+  onOpenExhibit,
 }: {
   doc: AgreementDoc;
   onClose: () => void;
@@ -407,10 +305,10 @@ function AgreementPopup({
   alreadySigned?: boolean;
   onSigned?: () => void;
   previewMode?: boolean;
+  onOpenExhibit?: (exhibitId: string | null) => void;
 }) {
   const supabase = createClient();
   const exhibits = doc.exhibits ?? [];
-  const otherExhibits = exhibits.filter((e) => e.id !== "main");
 
   // Signing state
   const [signatureData, setSignatureData] = useState<string | null>(null);
@@ -419,7 +317,6 @@ function AgreementPopup({
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(alreadySigned ?? false);
   const [error, setError] = useState<string | null>(null);
-  const [showReader, setShowReader] = useState(false);
 
   // Pre-sign disclosure (fetched from server so IP is real)
   const [whoami, setWhoami] = useState<{
@@ -452,15 +349,6 @@ function AgreementPopup({
       .catch(() => {})
       .finally(() => setWhoamiLoading(false));
   }, [previewMode, activeAgreementId, member, signed, whoami, whoamiLoading]);
-
-  // Friendly one-liners for each exhibit
-  const exhibitBlurbs: Record<string, string> = {
-    "exhibit-a": "How clips get approved, what not to post, and the Do Not Post rule.",
-    "exhibit-b": "Who owns what — your page stays yours, AZ Off Script content stays with the brand.",
-    "exhibit-c": "Money is not active yet. Future splits need written terms first.",
-    "exhibit-d": "What happens if someone leaves, gets removed, or has a dispute.",
-    "exhibit-e": "AZ Off Script can grow into other waves, cities, and casts later.",
-  };
 
   const emailBlocked = whoami && !whoami.emailVerified;
   const canSign = signatureData && printedName.trim() && signedDate && !signing && !signed && !previewMode && activeAgreementId && member && whoami && whoami.emailVerified && acknowledgedDevice;
@@ -549,30 +437,6 @@ function AgreementPopup({
               <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Money isn't active yet — future splits need written terms</li>
               <li className="flex gap-2"><span className="text-copper-deep font-black">·</span> Tagging is separate from posting approval</li>
             </ul>
-          </div>
-
-          {/* Exhibits list — cute cards */}
-          <div>
-            <p className="font-display text-base text-desert-night mb-2">
-              The detailed rules live in exhibits:
-            </p>
-            <div className="space-y-2">
-              {otherExhibits.map((ex) => (
-                <div key={ex.id} className="bg-sandstone-cream/60 rounded-xl p-3 flex gap-3 items-start">
-                  <div className="shrink-0 w-9 h-9 rounded-full bg-copper-clay/20 flex items-center justify-center">
-                    <span className="font-display text-sm font-black text-copper-deep">
-                      {ex.label.replace("Exhibit ", "")}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-desert-night leading-tight">{ex.title}</p>
-                    <p className="text-xs text-smoked-charcoal/60 mt-0.5">
-                      {exhibitBlurbs[ex.id] ?? ex.title}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* One signature signs all */}
@@ -727,22 +591,24 @@ function AgreementPopup({
             </div>
           ) : null}
 
-          {/* Review Main Agreement — opens the reader popup (same branded design) */}
-          <button
-            onClick={() => setShowReader(true)}
-            className="btn btn-ghost btn-sm w-full"
-          >
-            Review Main Agreement →
-          </button>
+          {/* Individual links to read each part — opens the full scroll viewer */}
+          {onOpenExhibit && (
+            <div className="space-y-1.5 pt-2 border-t border-copper-clay/20">
+              <p className="text-[10px] font-black text-desert-night/60 uppercase tracking-wide">Read the full document</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {exhibits.map((ex) => (
+                  <button
+                    key={ex.id}
+                    onClick={() => onOpenExhibit(ex.id)}
+                    className="btn btn-ghost btn-sm !text-xs justify-start"
+                  >
+                    {ex.label} →
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Reader popup — opens on top of this summary popup */}
-        {showReader && (
-          <AgreementReaderPopup
-            doc={doc}
-            onClose={() => setShowReader(false)}
-          />
-        )}
       </div>
     </div>
   );
@@ -756,6 +622,7 @@ export default function AgreementsPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewVersion, setViewVersion] = useState<string | null>(null);
+  const [viewExhibitId, setViewExhibitId] = useState<string | null>(null);
   const [viewSignaturesFor, setViewSignaturesFor] = useState<string | null>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
   const [popupPreview, setPopupPreview] = useState<AgreementDoc | null>(null);
@@ -874,8 +741,9 @@ export default function AgreementsPage() {
         version={viewVersion}
         bodyMarkdown={body}
         exhibits={exhibits}
-        onBack={() => setViewVersion(null)}
+        onBack={() => { setViewVersion(null); setViewExhibitId(null); }}
         onDownload={() => agreement && downloadAgreementDoc(agreement)}
+        initialExhibitId={viewExhibitId}
       />
     );
   }
@@ -1076,6 +944,11 @@ export default function AgreementsPage() {
           doc={popupPreview}
           onClose={() => setPopupPreview(null)}
           previewMode
+          onOpenExhibit={(exhibitId) => {
+            setViewExhibitId(exhibitId);
+            setViewVersion(popupPreview.version);
+            setPopupPreview(null);
+          }}
         />
       )}
     </div>
