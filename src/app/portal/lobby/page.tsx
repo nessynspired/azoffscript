@@ -235,7 +235,7 @@ export default function LobbyPage() {
               </div>
               <div className="bg-sandstone-cream/50 rounded-xl p-3 text-center">
                 <p className="font-display text-2xl text-desert-night">{plannerStats.readyForVanessa}</p>
-                <p className="text-xs text-smoked-charcoal/60">Ready for Vanessa</p>
+                <p className="text-xs text-smoked-charcoal/60">Ready for Review</p>
               </div>
               <div className="bg-sandstone-cream/50 rounded-xl p-3 text-center">
                 <p className="font-display text-2xl text-desert-night">{plannerStats.trendsToPlan}</p>

@@ -60,6 +60,15 @@ const ASSIGNMENT_STATUS_CHIP: Record<string, string> = {
   "Hold": "chip-hold",
 };
 
+// Display labels for assignment statuses — keeps "Waiting on Vanessa" as the
+// DB value but shows a generic label to crew members.
+const ASSIGNMENT_STATUS_LABEL: Record<string, string> = {
+  "Waiting on Vanessa": "Waiting on Review",
+};
+function assignmentStatusLabel(s: string): string {
+  return ASSIGNMENT_STATUS_LABEL[s] ?? s;
+}
+
 const ASSIGNMENT_ROLES = [
   "Lead", "On-Camera", "Reaction", "Clip Dropper", "Caption Help",
   "Trend Finder", "Editor", "Reviewer", "Planner", "Behind the Scenes",
@@ -1414,7 +1423,7 @@ function ThisWeekTab({
                       <p className="font-bold text-desert-night truncate">{clip?.title ?? "Content item"}</p>
                       <p className="text-xs text-smoked-charcoal/60 mt-0.5">Role: {a.role}</p>
                     </div>
-                    <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[10px] shrink-0`}>{a.status}</span>
+                    <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[10px] shrink-0`}>{assignmentStatusLabel(a.status)}</span>
                   </div>
                   {a.task_title && <p className="text-sm text-desert-night mt-2">{a.task_title}</p>}
                   {a.task_notes && <p className="text-xs text-smoked-charcoal/60 mt-1">{a.task_notes}</p>}
@@ -2327,7 +2336,7 @@ function AssignmentBoardTab({
                               )}
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
-                              <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[9px]`}>{a.status}</span>
+                              <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[9px]`}>{assignmentStatusLabel(a.status)}</span>
                               {canPlanContent && (
                                 <select
                                   className="field !py-1 !text-xs !w-auto"
@@ -2335,7 +2344,7 @@ function AssignmentBoardTab({
                                   onChange={(e) => updateAssignmentStatus(a.id, e.target.value)}
                                 >
                                   {["Not Started", "In Progress", "Dropped", "Waiting on Vanessa", "Needs Tweak", "Greenlit", "Done", "Skipped", "Hold"].map((s) => (
-                                    <option key={s} value={s}>{s}</option>
+                                    <option key={s} value={s}>{assignmentStatusLabel(s)}</option>
                                   ))}
                                 </select>
                               )}
@@ -2784,7 +2793,7 @@ function PlannerDashboard({
         </div>
         <div className="card p-4 text-center">
           <p className="font-display text-3xl text-desert-night">{readyForVanessa.length}</p>
-          <p className="text-xs text-smoked-charcoal/60 mt-1">Ready for Vanessa</p>
+          <p className="text-xs text-smoked-charcoal/60 mt-1">Ready for Review</p>
         </div>
       </div>
 
@@ -2853,10 +2862,10 @@ function PlannerDashboard({
         </section>
       )}
 
-      {/* Ready for Vanessa — clips in Review */}
+      {/* Ready for Review — clips in Review status (need greenlight) */}
       {readyForVanessa.length > 0 && (
         <section>
-          <h3 className="font-display text-xl text-desert-night mb-3">Ready for Vanessa</h3>
+          <h3 className="font-display text-xl text-desert-night mb-3">Ready for Review</h3>
           <div className="space-y-2">
             {readyForVanessa.map((clip) => {
               const clipApprovals = approvals[clip.id] ?? [];

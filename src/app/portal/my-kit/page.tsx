@@ -23,6 +23,12 @@ const GEAR_STATUS_LABELS: Record<GearStatus, string> = {
   hold: "Hold",
 };
 
+// Display label for assignment status — "Waiting on Vanessa" is the DB value
+// but we show a generic label to crew members.
+function assignmentStatusLabel(s: string): string {
+  return s === "Waiting on Vanessa" ? "Waiting on Review" : s;
+}
+
 const GEAR_STATUS_CHIP: Record<GearStatus, string> = {
   not_started: "chip-cream",
   needs_name_check: "chip-yellow",
@@ -309,7 +315,7 @@ export default function MyWaveKitPage() {
                           {isLate ? "⚠ Late — " : ""}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                         </span>
                       )}
-                      <span className="chip chip-cream !text-[9px]">{a.status}</span>
+                      <span className="chip chip-cream !text-[9px]">{assignmentStatusLabel(a.status)}</span>
                     </div>
                   </div>
                 </Link>

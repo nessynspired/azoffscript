@@ -218,7 +218,7 @@ export default function MyPublicCardPage() {
 
       {saved && (
         <div className="card p-4 bg-cactus-teal/15 border-2 border-cactus-teal animate-slide-in">
-          <p className="font-bold text-cactus-teal">Saved. Your request was sent to Vanessa for review.</p>
+          <p className="font-bold text-cactus-teal">Saved. Your request was submitted for review.</p>
         </div>
       )}
       {error && (
@@ -234,7 +234,7 @@ export default function MyPublicCardPage() {
           <p className="font-display text-lg text-desert-night">{status}</p>
           {pendingRequest && (
             <p className="text-xs text-smoked-charcoal/60 mt-0.5">
-              Submitted {new Date(pendingRequest.created_at).toLocaleDateString()} — waiting for Vanessa to review.
+              Submitted {new Date(pendingRequest.created_at).toLocaleDateString()} — waiting for review.
             </p>
           )}
         </div>
@@ -259,7 +259,7 @@ export default function MyPublicCardPage() {
       <section className="card p-6 space-y-5">
         <h2 className="font-display text-2xl text-desert-night">Request changes</h2>
         <p className="text-sm text-smoked-charcoal/60">
-          Edit any field below, then click <strong>Submit for Vanessa Approval</strong>. Nothing public changes until she approves.
+          Edit any field below, then click <strong>Submit for Review</strong>. Nothing public changes until it's approved.
         </p>
 
         {/* Names */}
@@ -351,15 +351,15 @@ export default function MyPublicCardPage() {
               {PHOTO_WARNINGS.map((w) => <li key={w}>• {w}</li>)}
             </ul>
             <p className="text-[10px] text-yellow-800/60 mt-2">
-              Vanessa reviews every photo. She may approve it for the website, portal only, or ask for a new one.
+              Every photo is reviewed before it goes live. It may be approved for the website, portal only, or you may be asked for a new one.
             </p>
           </div>
         </div>
 
         {/* Change note */}
         <div>
-          <p className="label">Note for Vanessa (optional)</p>
-          <textarea className="field min-h-[60px]" value={changeNote} onChange={(e) => setChangeNote(e.target.value)} placeholder="Anything you want her to know about this request" />
+          <p className="label">Note (optional)</p>
+          <textarea className="field min-h-[60px]" value={changeNote} onChange={(e) => setChangeNote(e.target.value)} placeholder="Anything you want us to know about this request" />
         </div>
 
         {/* Actions */}
@@ -368,7 +368,7 @@ export default function MyPublicCardPage() {
             {saving ? "Saving…" : "Save as draft"}
           </button>
           <button onClick={submitForApproval} disabled={submitting} className="btn btn-primary">
-            {submitting ? "Submitting…" : "Submit for Vanessa Approval"}
+            {submitting ? "Submitting…" : "Submit for Review"}
           </button>
         </div>
       </section>
@@ -388,7 +388,7 @@ export default function MyPublicCardPage() {
                     <p className="text-xs text-smoked-charcoal/60 mt-0.5">"{r.requested_changes_note}"</p>
                   )}
                   {r.admin_review_note && (
-                    <p className="text-xs text-copper-deep mt-1">Vanessa: "{r.admin_review_note}"</p>
+                    <p className="text-xs text-copper-deep mt-1">Review note: "{r.admin_review_note}"</p>
                   )}
                 </div>
                 <span className={`chip !text-[10px] ${
