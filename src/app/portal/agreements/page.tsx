@@ -328,6 +328,111 @@ function AgreementScrollViewer({
 // One signature signs the Main Agreement + all Exhibits A-E together.
 // ===========================================================================
 
+// ---------------------------------------------------------------------------
+// MainAgreementPopup — shows the Main Agreement text in a branded popup.
+// Exhibit mentions inside the text are clickable → open the full scroll viewer.
+// ---------------------------------------------------------------------------
+function MainAgreementPopup({
+  doc,
+  onClose,
+  onOpenExhibit,
+}: {
+  doc: AgreementDoc;
+  onClose: () => void;
+  onOpenExhibit: (exhibitId: string) => void;
+}) {
+  const exhibits = doc.exhibits ?? [];
+  const mainExhibit = exhibits.find((e) => e.id === "main");
+  const allSections = parseAgreementSections(doc.bodyMarkdown);
+  const mainSections = mainExhibit
+    ? allSections.filter((s) => s.prefix === "" && mainExhibit.sections.includes(s.number))
+    : allSections.filter((s) => s.prefix === "");
+
+  // Build a map of "Exhibit A" → exhibit id for linkify
+  const exhibitLinkMap: Record<string, string> = {};
+  for (const ex of exhibits) {
+    if (ex.id === "main") continue;
+    const letter = ex.label.replace("Exhibit ", "").trim();
+    exhibitLinkMap[`Exhibit ${letter}`] = ex.id;
+  }
+
+  function linkifyMainHtml(html: string): string {
+    let result = html;
+    for (const [exhibitName, exId] of Object.entries(exhibitLinkMap)) {
+      const escaped = exhibitName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(${escaped})`, "g");
+      result = result.replace(regex, `<a href="#" class="exhibit-link" data-exhibit-id="${exId}">$1</a>`);
+    }
+    return result;
+  }
+
+  function handleContentClick(e: React.MouseEvent<HTMLDivElement>) {
+    const target = e.target as HTMLElement;
+    const link = target.closest(".exhibit-link") as HTMLElement | null;
+    if (link?.dataset.exhibitId) {
+      e.preventDefault();
+      onOpenExhibit(link.dataset.exhibitId);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-sandstone-cream rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header — same branded design */}
+        <div className="card-dark p-5 relative overflow-hidden shrink-0">
+          <div className="absolute -right-4 -top-4 opacity-20">
+            <MascotImage pose="shades" size={120} />
+          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 text-sandstone-cream/50 hover:text-sandstone-cream text-2xl z-10"
+            aria-label="Close"
+          >×</button>
+          <div className="relative z-10">
+            <span className="chip chip-yellow mb-2">AZ Off Script</span>
+            <h2 className="font-display text-xl text-sandstone-cream leading-tight">Main Agreement</h2>
+            <p className="text-sandstone-cream/60 text-xs mt-1">
+              {mainSections.length} sections · scroll to read · exhibits are linked inside
+            </p>
+          </div>
+        </div>
+
+        {/* Scrollable main agreement text */}
+        <div
+          onClick={handleContentClick}
+          className="flex-1 overflow-y-auto p-5 agreement-prose bg-white/40"
+        >
+          {mainSections.length === 0 ? (
+            <p className="text-sm text-smoked-charcoal/50 text-center py-8">No main agreement sections found.</p>
+          ) : (
+            mainSections.map((sec) => (
+              <div key={sec.anchor} className="mb-5">
+                <h3 className="font-display text-sm text-desert-night border-b border-desert-night/10 pb-1 mb-2">
+                  <span className="text-copper-deep">{sec.prefix}{sec.number}.</span> {sec.title}
+                </h3>
+                <div dangerouslySetInnerHTML={{ __html: linkifyMainHtml(sec.html) }} />
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="bg-sandstone-cream border-t border-copper-clay/20 px-4 py-2.5 shrink-0 text-center">
+          <button onClick={onClose} className="btn btn-ghost btn-sm !text-xs">
+            ← Back to sign
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AgreementPopup({
   doc,
   onClose,
@@ -357,6 +462,7 @@ function AgreementPopup({
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(alreadySigned ?? false);
   const [error, setError] = useState<string | null>(null);
+  const [showMainAgreement, setShowMainAgreement] = useState(false);
 
   // Pre-sign disclosure (fetched from server so IP is real)
   const [whoami, setWhoami] = useState<{
@@ -631,11 +737,11 @@ function AgreementPopup({
             </div>
           ) : null}
 
-          {/* Link to read the Main Agreement — opens the full scroll viewer */}
+          {/* Link to read the Main Agreement — opens the main agreement popup */}
           {onOpenExhibit && (
             <div className="pt-2 border-t border-copper-clay/20">
               <button
-                onClick={() => onOpenExhibit("main")}
+                onClick={() => setShowMainAgreement(true)}
                 className="w-full text-left flex items-center gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-copper-clay/10 transition group"
               >
                 <span className="font-display text-sm font-bold text-desert-night group-hover:text-copper-deep transition">
@@ -650,6 +756,18 @@ function AgreementPopup({
           )}
         </div>
       </div>
+
+      {/* Main Agreement popup — opens on top of the summary popup */}
+      {showMainAgreement && (
+        <MainAgreementPopup
+          doc={doc}
+          onClose={() => setShowMainAgreement(false)}
+          onOpenExhibit={(exhibitId) => {
+            setShowMainAgreement(false);
+            onOpenExhibit?.(exhibitId);
+          }}
+        />
+      )}
     </div>
   );
 }
