@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
-import { getTemplate, getSampleLine } from "@/lib/quick-drop-templates";
+import { getTemplate, getExampleFor } from "@/lib/quick-drop-templates";
 import type { Database } from "@/lib/types/db";
 
 type Activity = Database["public"]["Tables"]["activity"]["Row"];
@@ -146,19 +146,29 @@ export default function LobbyPage() {
                       </p>
                     )}
 
-                    {/* Template instructions */}
+                    {/* Template — idea, vibe, examples (prompt, don't script) */}
                     {template && (
-                      <div className="mt-3 bg-white/5 rounded-xl p-3">
-                        <p className="text-xs font-bold text-sunburst-yellow/60 uppercase">What to record</p>
-                        <p className="text-sm text-sandstone-cream/90 mt-1">{template.instructions}</p>
-                        {template.sampleLines && (
-                          <div className="mt-2 bg-white/5 rounded-lg p-2">
-                            <p className="text-xs font-bold text-sunburst-yellow/60 uppercase">Your line</p>
+                      <div className="mt-3 bg-white/5 rounded-xl p-3 space-y-3">
+                        <div>
+                          <p className="text-xs font-bold text-sunburst-yellow/60 uppercase">Idea</p>
+                          <p className="text-sm text-sandstone-cream/90 mt-1">{template.idea}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-sunburst-yellow/60 uppercase">Vibe</p>
+                          <p className="text-sm text-sandstone-cream/90 mt-1">{template.vibe}</p>
+                        </div>
+                        {template.examples && (
+                          <div className="bg-white/5 rounded-lg p-2">
+                            <p className="text-xs font-bold text-sunburst-yellow/60 uppercase">Examples if you&apos;re stuck</p>
                             <p className="text-sm text-sandstone-cream font-script text-base mt-1">
-                              {getSampleLine(template, firstName)}
+                              &ldquo;{getExampleFor(template, firstName)}&rdquo;
                             </p>
+                            <p className="text-xs text-sandstone-cream/40 mt-1">Use it or make it your own.</p>
                           </div>
                         )}
+                        <p className="text-xs text-sandstone-cream/50 italic">
+                          One take is fine. We are looking for real, not perfect.
+                        </p>
                       </div>
                     )}
                   </div>

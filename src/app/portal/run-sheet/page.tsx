@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
 import { HEAT_VIBES, POST_COUNTS, EFFORT_LEVELS, generateWeekPlan, calcDeadlinesFromLive, nextSunday, type PlannedItem } from "@/lib/plan-defaults";
-import { QUICK_DROP_TEMPLATES, getTemplate, getSampleLine, type QuickDropTemplate } from "@/lib/quick-drop-templates";
+import { QUICK_DROP_TEMPLATES, getTemplate, getExampleFor, type QuickDropTemplate } from "@/lib/quick-drop-templates";
 import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
@@ -805,27 +805,87 @@ function ClipDetailModal({
           </div>
         )}
 
-        {/* ===== CREW VIEW — simple, only what they need to know ===== */}
+        {/* ===== CREW VIEW — prompt them, don't script them ===== */}
         {!canPlanContent && (
           <div className="mt-6 space-y-4">
-            {/* Template instructions if available */}
-            {clip.template_id && getTemplate(clip.template_id) && (
-              <div className="card p-4 bg-cactus-teal/10">
-                <p className="font-display text-lg text-desert-night">{getTemplate(clip.template_id)!.name}</p>
-                <p className="text-xs text-smoked-charcoal/60 mt-1">
-                  ⏱ {getTemplate(clip.template_id)!.timeEstimate} · {getTemplate(clip.template_id)!.effort}
-                </p>
-                <p className="text-sm text-desert-night mt-3">{getTemplate(clip.template_id)!.instructions}</p>
-                {getTemplate(clip.template_id)!.sampleLines && (
-                  <div className="mt-3 bg-sandstone-cream/70 rounded-lg p-3">
-                    <p className="text-xs font-bold text-desert-night/50 uppercase">Your line</p>
-                    <p className="text-sm text-desert-night mt-1 font-script text-lg">
-                      {getSampleLine(getTemplate(clip.template_id)!, currentMemberName)}
+            {/* Template — idea, vibe, what to drop, examples, make it yours */}
+            {clip.template_id && getTemplate(clip.template_id) && (() => {
+              const t = getTemplate(clip.template_id)!;
+              return (
+                <div className="card p-5 bg-cactus-teal/10 space-y-4">
+                  <div>
+                    <p className="font-display text-lg text-desert-night">{t.name}</p>
+                    <p className="text-xs text-smoked-charcoal/60 mt-1">
+                      ⏱ {t.timeEstimate} · {t.effort}
                     </p>
                   </div>
-                )}
-              </div>
-            )}
+
+                  {/* Idea */}
+                  <div>
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">Idea</p>
+                    <p className="text-sm text-desert-night mt-1">{t.idea}</p>
+                  </div>
+
+                  {/* Vibe */}
+                  <div>
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">Vibe</p>
+                    <p className="text-sm text-desert-night mt-1">{t.vibe}</p>
+                  </div>
+
+                  {/* What to drop */}
+                  <div>
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">What to drop</p>
+                    <p className="text-sm text-desert-night mt-1">{t.whatToDrop}</p>
+                  </div>
+
+                  {/* Easy way to film */}
+                  {t.easyWay && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Easy way to film</p>
+                      <p className="text-sm text-desert-night mt-1">{t.easyWay}</p>
+                    </div>
+                  )}
+
+                  {/* Transition options */}
+                  {t.transitions && t.transitions.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Transition ideas</p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {t.transitions.map((tr) => (
+                          <span key={tr} className="chip chip-cream !text-[10px]">{tr}</span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-smoked-charcoal/50 mt-2">Pick one or do your own. Keep it simple.</p>
+                    </div>
+                  )}
+
+                  {/* Examples — not scripts */}
+                  {t.examples && t.examples.length > 0 && (
+                    <div className="bg-sandstone-cream/70 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Examples if you&apos;re stuck</p>
+                      <ul className="mt-2 space-y-1">
+                        {t.examples.map((ex, i) => (
+                          <li key={i} className={`text-sm font-script text-base ${ex.toLowerCase().includes((currentMemberName ?? "").split(" ")[0].toLowerCase()) ? "text-copper-deep font-bold" : "text-desert-night/70"}`}>
+                            &ldquo;{ex}&rdquo;
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-smoked-charcoal/50 mt-2">Need a starting point? Use one of these or make it your own.</p>
+                    </div>
+                  )}
+
+                  {/* Make it yours */}
+                  <div className="bg-heat-orange/10 rounded-lg p-3">
+                    <p className="text-xs font-bold text-heat-orange uppercase">Make it yours</p>
+                    <p className="text-sm text-desert-night mt-1">{t.makeItYours}</p>
+                  </div>
+
+                  <p className="text-xs text-smoked-charcoal/50 text-center italic">
+                    One take is fine. We are looking for real, not perfect.
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* Crew drop-by — the only date they need to see */}
             {clip.clip_due_date && (
@@ -2649,15 +2709,28 @@ function TemplatePicker({
           <p className="text-xs text-smoked-charcoal/50">⏱ {template.timeEstimate} · 🏠 {template.homeFriendly ? "Home-friendly" : "Needs setup"} · ✂️ {template.adminStitches ? "Admin stitches" : "No stitching"}</p>
           {template.maxSeconds && <p className="text-xs text-smoked-charcoal/50">Max {template.maxSeconds}s per person</p>}
           <div className="bg-white/50 rounded-lg p-3 mt-2">
-            <p className="text-xs font-bold text-desert-night/50 uppercase">Crew instructions</p>
-            <p className="text-sm text-desert-night mt-1">{template.instructions}</p>
+            <p className="text-xs font-bold text-desert-night/50 uppercase">Idea</p>
+            <p className="text-sm text-desert-night mt-1">{template.idea}</p>
           </div>
-          {template.sampleLines && (
+          <div className="bg-white/50 rounded-lg p-3">
+            <p className="text-xs font-bold text-desert-night/50 uppercase">Vibe</p>
+            <p className="text-sm text-desert-night mt-1">{template.vibe}</p>
+          </div>
+          {template.transitions && template.transitions.length > 0 && (
             <div className="bg-white/50 rounded-lg p-3">
-              <p className="text-xs font-bold text-desert-night/50 uppercase">Sample lines</p>
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Transition ideas</p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {template.transitions.map((tr) => <span key={tr} className="chip chip-cream !text-[10px]">{tr}</span>)}
+              </div>
+            </div>
+          )}
+          {template.examples && (
+            <div className="bg-white/50 rounded-lg p-3">
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Examples (not scripts)</p>
               <ul className="text-sm text-desert-night mt-1 space-y-1">
-                {template.sampleLines.map((line, i) => <li key={i} className="font-script text-base">{line}</li>)}
+                {template.examples.map((line, i) => <li key={i} className="font-script text-base">&ldquo;{line}&rdquo;</li>)}
               </ul>
+              <p className="text-xs text-smoked-charcoal/50 mt-2">Use these or make it their own.</p>
             </div>
           )}
         </div>

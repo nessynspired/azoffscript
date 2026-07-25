@@ -1,18 +1,19 @@
 /**
  * Quick Drop Templates — reusable content formats.
  *
- * Each template defines:
- *  - A name and description
- *  - Effort level + time estimate
- *  - Whether it's home-friendly
- *  - Simple crew instructions (what to record)
- *  - Optional sample lines the crew can say
- *  - Best platforms
- *  - Whether admin needs to stitch clips
+ * PHILOSOPHY: Prompt them. Don't script them.
  *
- * When a template is used to create a content item, the crew sees a simple
- * card with just: title, drop-by date, time needed, instructions, sample line,
- * and a "Drop Mine" button. They do NOT see the full planning machine.
+ * Each template gives the crew enough direction to not feel lost,
+ * but enough freedom to bring their own personality.
+ *
+ * Structure:
+ *  - Idea: what the content is
+ *  - Vibe: the energy
+ *  - WhatToDrop: what they need to send
+ *  - EasyWay: optional recording help
+ *  - Examples: sample lines (NOT required — "use if stuck")
+ *  - MakeItYours: permission to add personality
+ *  - Transitions: optional transition ideas (pick one or do your own)
  */
 
 export interface QuickDropTemplate {
@@ -25,8 +26,13 @@ export interface QuickDropTemplate {
   multipleTakes: boolean;
   adminStitches: boolean;  // does Vanessa need to stitch clips together?
   maxSeconds?: number;     // max length per person
-  instructions: string;    // what the crew should do
-  sampleLines?: string[];  // optional lines they can say
+  idea: string;            // what the content is
+  vibe: string;            // the energy
+  whatToDrop: string;      // what they need to send
+  easyWay?: string;        // optional recording help
+  examples?: string[];     // sample lines — NOT required
+  makeItYours: string;     // permission to add personality
+  transitions?: string[];  // optional transition ideas
   platforms: string[];     // best platforms
   category: string;        // content lane
 }
@@ -35,22 +41,35 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
   {
     id: "first_wave_intro",
     name: "First Wave Intro Pass",
-    description: "Each person records a short intro using a simple transition. Stitched together into one intro video.",
+    description: "Each person records a short intro using a simple camera transition. Stitched together into one intro video.",
     effort: "10-Min Drop",
     timeEstimate: "5-10 min",
     homeFriendly: true,
     multipleTakes: false,
     adminStitches: true,
     maxSeconds: 10,
-    instructions:
-      "Record one quick intro clip. Start with your foot stepping toward the camera or your hand covering the camera. Then show your face and say your intro line. End by covering the camera again, stepping away, or zooming out to transition to the next person. Keep it under 10 seconds.",
-    sampleLines: [
+    idea: "Introduce yourself as part of AZ Off Script using a simple camera transition.",
+    vibe: "Confident, funny, chill, real. Don't overthink it.",
+    whatToDrop: "A short intro clip, 5-10 seconds.",
+    easyWay: "Step toward the camera, cover the camera, zoom in/out, or do your own transition.",
+    examples: [
       "I'm Vanessa, and I'm building the room.",
       "I'm Ronnie, and I bring the sweet touch.",
       "I'm Sholanda, and somebody had to say it.",
       "I'm Elaine, and my face says enough.",
       "I'm Latasha, and I'm the wild card.",
       "I'm Maria, and I bring the fresh energy.",
+    ],
+    makeItYours: "Say your name, your vibe, or why people need to watch you. Add your own attitude, humor, face, pose, line, or little moment. This is not a script — bring your own timing, face, attitude, or twist.",
+    transitions: [
+      "Step toward the camera",
+      "Cover the camera with your hand",
+      "Cover the camera with a tumbler or phone",
+      "Zoom into your face",
+      "Start close-up, then step back",
+      "Walk into frame",
+      "Point at the camera",
+      "Do your own transition",
     ],
     platforms: ["TikTok", "Reels", "Facebook", "Shorts"],
     category: "Meet the First Wave",
@@ -65,13 +84,17 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     multipleTakes: false,
     adminStitches: false,
     maxSeconds: 30,
-    instructions:
-      "Record your reaction to the red flag prompt. Say whether you think it's a red flag or real life, and why. One take is fine.",
-    sampleLines: [
+    idea: "React to a red flag prompt — is it a red flag or real life?",
+    vibe: "Quick, honest, funny. Your gut reaction is the point.",
+    whatToDrop: "Your reaction — say if it's a red flag or real life, and why.",
+    easyWay: "Just hit record and react. Don't think too hard about it.",
+    examples: [
       "That's a red flag — run.",
       "That's real life, that happens every day.",
       "Red flag? That's a whole red billboard.",
+      "Okay that's real but it's still a red flag.",
     ],
+    makeItYours: "Use your own words, your own face, your own reaction. The examples are just a starting point if you're stuck.",
     platforms: ["TikTok", "Reels", "Shorts"],
     category: "Hot Takes",
   },
@@ -85,13 +108,17 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     multipleTakes: false,
     adminStitches: false,
     maxSeconds: 15,
-    instructions:
-      "We'll give you two options. Just say which one you pick and why. Keep it short and fun.",
-    sampleLines: [
+    idea: "We give you two options. Pick one and tell us why.",
+    vibe: "Fast, fun, no overthinking. Pick and go.",
+    whatToDrop: "Your pick + a quick reason. 10-15 seconds.",
+    easyWay: "Just say which one and why. That's it.",
+    examples: [
       "That one, easy.",
       "Neither — I'm picking my own.",
       "Okay but why would anyone pick that one?",
+      "Both. I'm chaotic like that.",
     ],
+    makeItYours: "Your personality is the point. Don't try to match everybody — sound like you.",
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
     category: "Quick Games",
   },
@@ -105,8 +132,11 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     multipleTakes: false,
     adminStitches: false,
     maxSeconds: 10,
-    instructions:
-      "We'll show you something. Just react with your face — no talking. The camera stays on you. Your face does all the work.",
+    idea: "We show you something. You react with your face only — no talking.",
+    vibe: "Raw, real, unfiltered. Your face does all the work.",
+    whatToDrop: "Your reaction face. That's it. No words needed.",
+    easyWay: "Just look at the camera and react. Don't perform — just feel it.",
+    makeItYours: "There's no script here. Your face is the content. Whatever you feel, show it.",
     platforms: ["TikTok", "Reels", "Shorts"],
     category: "Reactions",
   },
@@ -120,13 +150,17 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     multipleTakes: false,
     adminStitches: false,
     maxSeconds: 20,
-    instructions:
-      "Give us your hottest take about living in Arizona. One sentence, strong opinion, no hedging. The hotter the better.",
-    sampleLines: [
+    idea: "Give us your hottest take about living in Arizona.",
+    vibe: "Bold, unfiltered, a little chaotic. No hedging.",
+    whatToDrop: "One sentence, strong opinion. 10-20 seconds.",
+    easyWay: "Just hit record and say the first thing that comes to mind.",
+    examples: [
       "Phoenix summers aren't that bad — it's a dry heat.",
       "Nobody actually knows how to use the roundabouts.",
       "Monsoon season is the only good thing about Arizona.",
+      "The 17 should be illegal on a Friday.",
     ],
+    makeItYours: "Your take, your words. The hotter the better. Don't hold back — we're looking for real, not safe.",
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
     category: "Hot Takes",
   },
@@ -140,13 +174,17 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     multipleTakes: false,
     adminStitches: true,
     maxSeconds: 20,
-    instructions:
-      "We'll give you a 'who's most likely to' prompt. Say who in the crew fits it and why. Don't hold back — we're all friends here.",
-    sampleLines: [
+    idea: "We give you a 'who's most likely to' prompt. Say who in the crew fits it.",
+    vibe: "Funny, honest, a little messy. Don't hold back — we're all friends here.",
+    whatToDrop: "Your pick + a quick reason. 15-20 seconds.",
+    easyWay: "Just say the first name that comes to mind and why.",
+    examples: [
       "Oh that's Sholanda, easy.",
       "All of us but mostly Latasha.",
       "I'm not naming names but... Ronnie.",
+      "Me. It's me. I'm the one.",
     ],
+    makeItYours: "Call people out with love. Your honest answer is the funny one. Use the examples only if you're stuck.",
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
     category: "Quick Games",
   },
@@ -160,17 +198,16 @@ export function getTemplate(id: string): QuickDropTemplate | undefined {
 }
 
 /**
- * Get a personalized sample line for a crew member.
- * Falls back to the first sample line if no name match.
+ * Get a personalized example for a crew member.
+ * Tries to find an example that mentions this person's first name.
  */
-export function getSampleLine(template: QuickDropTemplate, memberName?: string): string | null {
-  if (!template.sampleLines || template.sampleLines.length === 0) return null;
-  if (!memberName) return template.sampleLines[0];
+export function getExampleFor(template: QuickDropTemplate, memberName?: string): string | null {
+  if (!template.examples || template.examples.length === 0) return null;
+  if (!memberName) return template.examples[0];
 
-  // Try to find a line that mentions this person's first name
   const firstName = memberName.split(" ")[0];
-  const match = template.sampleLines.find((line) =>
+  const match = template.examples.find((line) =>
     line.toLowerCase().includes(firstName.toLowerCase())
   );
-  return match ?? template.sampleLines[0];
+  return match ?? template.examples[0];
 }
