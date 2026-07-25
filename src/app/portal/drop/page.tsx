@@ -209,7 +209,7 @@ export default function DropPage() {
           <div className="stamp-in inline-block">
             <MascotImage pose="shades" size={160} priority />
           </div>
-          <h1 className="font-display text-5xl text-desert-night mt-6 stamp-in">DROPPED.</h1>
+          <h1 className="font-display text-4xl md:text-5xl text-desert-night mt-6 stamp-in">DROPPED.</h1>
           <p className="text-lg text-smoked-charcoal/70 mt-3">
             {wasShared
               ? "That's in the room. Go back to what you were doing."
@@ -236,7 +236,7 @@ export default function DropPage() {
       <div className="max-w-lg mx-auto pt-6">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="font-display text-4xl text-desert-night">Drop something.</h1>
+          <h1 className="font-display text-3xl md:text-4xl text-desert-night">Drop something.</h1>
           <p className="text-smoked-charcoal/60 mt-2">
             One take is fine. No pressure to be perfect.
           </p>

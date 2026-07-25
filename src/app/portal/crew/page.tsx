@@ -55,7 +55,7 @@ export default function CrewPage() {
           <PosterImage poster="peace" fill alt="AZ Off Script crew poster" />
         </div>
         <div className="relative z-10">
-          <h1 className="font-display text-4xl md:text-5xl text-sandstone-cream leading-none drop-shadow-lg">The Crew</h1>
+          <h1 className="font-display text-3xl md:text-5xl text-sandstone-cream leading-none drop-shadow-lg">The Crew</h1>
           <p className="text-sandstone-cream/90 mt-2 text-lg drop-shadow">First Wave members of The Off Script Room.</p>
         </div>
       </section>
@@ -122,7 +122,7 @@ export default function CrewPage() {
                   )}
                 </div>
                 <div>
-                  <h2 className="font-display text-3xl text-desert-night leading-none">{selected.name}</h2>
+                  <h2 className="font-display text-2xl md:text-3xl text-desert-night leading-none">{selected.name}</h2>
                   {selected.nickname && <p className="text-cactus-teal font-bold mt-1">"{selected.nickname}"</p>}
                 </div>
               </div>

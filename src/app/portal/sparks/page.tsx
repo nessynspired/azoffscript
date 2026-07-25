@@ -119,7 +119,7 @@ export default function SparkBoardPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">Spark Board</h1>
+          <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Spark Board</h1>
           <p className="text-smoked-charcoal/70 mt-2 text-lg">Got a wild idea? Toss it in.</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-lg">

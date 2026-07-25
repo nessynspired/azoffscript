@@ -27,7 +27,7 @@ export default function JoinPage() {
       <section className="pt-32 md:pt-24 pb-8 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <span className="chip chip-copper mb-6">Join the Crew</span>
-          <h1 className="font-display text-4xl md:text-6xl text-desert-night leading-tight">
+          <h1 className="font-display text-3xl md:text-6xl text-desert-night leading-tight">
             Think you fit<br />the room?
           </h1>
           <p className="text-xl text-smoked-charcoal/80 mt-6 max-w-2xl mx-auto leading-relaxed">

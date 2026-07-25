@@ -33,7 +33,7 @@ export default function WatchPage() {
           <PosterImage poster="shades" fill alt="AZ Off Script watch page" />
         </div>
         <div className="relative z-10 max-w-6xl mx-auto px-4">
-          <h1 className="font-display text-4xl md:text-6xl text-desert-night leading-tight">
+          <h1 className="font-display text-3xl md:text-6xl text-desert-night leading-tight">
             Watch AZ Off Script
           </h1>
           <p className="text-lg md:text-xl text-smoked-charcoal/80 mt-4 max-w-2xl">

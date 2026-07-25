@@ -72,7 +72,7 @@ export default function MoneySidePage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">Money Side</h1>
+          <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Money Side</h1>
         </div>
 
         <div className="card-dark p-8 relative overflow-hidden">
@@ -123,7 +123,7 @@ export default function MoneySidePage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">Money Side</h1>
+          <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Money Side</h1>
           <p className="text-smoked-charcoal/70 mt-2">
             Revenue events, splits, and payouts. {isAdmin ? "You can approve payouts." : "You can view but not approve payouts."}
           </p>
@@ -286,7 +286,7 @@ function RevenueEventCard({ event, members, isAdmin, onUpdate }: {
       </div>
 
       {/* Money summary */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="bg-sandstone-cream/50 rounded-lg p-2 text-center">
           <p className="text-xs text-smoked-charcoal/50">Gross</p>
           <p className="font-bold text-desert-night text-sm">{formatMoney(event.gross_cents)}</p>
@@ -519,7 +519,7 @@ function RevenueEventForm({ member, members, onClose, onSaved }: {
         </div>
 
         {/* Money */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <p className="label">Gross amount ($)</p>
             <input type="number" className="field" value={grossDollars} onChange={(e) => setGrossDollars(e.target.value)} placeholder="500" />

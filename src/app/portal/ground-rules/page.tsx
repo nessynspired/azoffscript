@@ -115,7 +115,7 @@ export default function GroundRulesPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">How the Room Works</h1>
+          <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">How the Room Works</h1>
           <p className="text-smoked-charcoal/70 mt-2 text-lg">The vibe, the flow, and how we treat each other. Read once.</p>
         </div>
         <div className="hidden md:block shrink-0">
@@ -135,7 +135,7 @@ export default function GroundRulesPage() {
 
       {/* Comfort + Respect Rules */}
       <div className="pt-4">
-        <h2 className="font-display text-3xl text-desert-night mb-2">Comfort + Respect</h2>
+        <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-2">Comfort + Respect</h2>
         <div className="card-dark p-5 mb-4">
           <p className="text-sandstone-cream text-lg">
             The one thing that matters most: <span className="font-bold text-sunburst-yellow">if someone is not comfortable with how they are shown, the clip is not ready.</span>

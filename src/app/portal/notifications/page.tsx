@@ -107,7 +107,7 @@ export default function NotificationsPage() {
     <main className="portal-shell px-4 pt-6">
       <div className="max-w-lg mx-auto pt-4">
         <div className="flex items-center justify-between gap-4 mb-2">
-          <h1 className="font-display text-4xl text-desert-night">Notifications</h1>
+          <h1 className="font-display text-3xl md:text-4xl text-desert-night">Notifications</h1>
           {unreadCount > 0 && (
             <button onClick={markAllRead} className="btn btn-secondary btn-sm">
               Mark all read

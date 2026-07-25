@@ -33,7 +33,7 @@ export default function CrewPage() {
         </div>
         <div className="relative z-10 max-w-6xl mx-auto px-4">
           <span className="chip chip-yellow mb-4">First Wave</span>
-          <h1 className="font-display text-4xl md:text-6xl text-sandstone-cream leading-tight">
+          <h1 className="font-display text-3xl md:text-6xl text-sandstone-cream leading-tight">
             Meet the First Wave
           </h1>
           <p className="text-lg md:text-xl text-sandstone-cream/80 mt-4 max-w-2xl">

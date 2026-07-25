@@ -826,11 +826,11 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
                     <div key={c.id} className={`rounded-lg p-2 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
                       <p className="text-xs font-bold text-desert-night leading-tight">{c.title}</p>
                       {matchingDeadlines.map((d) => (
-                        <span key={d.label} className={`text-[9px] font-black ${d.color} block`}>{d.label}</span>
+                        <span key={d.label} className={`text-[10px] font-black ${d.color} block`}>{d.label}</span>
                       ))}
-                      <span className={`chip ${STATUS_CHIP[c.status]} !text-[9px] !py-0.5 mt-1`}>{c.status}</span>
+                      <span className={`chip ${STATUS_CHIP[c.status]} !text-[10px] !py-0.5 mt-1`}>{c.status}</span>
                       {c.theme_id && themeMap.get(c.theme_id) && (
-                        <span className="text-[9px] text-copper-deep block mt-1">🔥 {themeMap.get(c.theme_id)!.name}</span>
+                        <span className="text-[10px] text-copper-deep block mt-1">🔥 {themeMap.get(c.theme_id)!.name}</span>
                       )}
                     </div>
                   );

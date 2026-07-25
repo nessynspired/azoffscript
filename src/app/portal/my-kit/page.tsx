@@ -502,7 +502,7 @@ export default function MyWaveKitPage() {
             </div>
             <div>
               <label className="label">Best social handle</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {["tiktok", "instagram", "youtube", "twitter"].map((p) => (
                   <input key={p} className="field" placeholder={`${p} handle`} value={socials[p] ?? ""} onChange={(e) => setSocials({ ...socials, [p]: e.target.value })} />
                 ))}

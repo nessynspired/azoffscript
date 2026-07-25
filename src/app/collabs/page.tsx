@@ -51,7 +51,7 @@ export default function CollabsPage() {
       <section className="pt-32 md:pt-24 pb-8 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <span className="chip chip-teal mb-6">Collabs & Brands</span>
-          <h1 className="font-display text-4xl md:text-6xl text-desert-night leading-tight">
+          <h1 className="font-display text-3xl md:text-6xl text-desert-night leading-tight">
             Put your brand<br />in the room.
           </h1>
           <p className="text-xl text-smoked-charcoal/80 mt-6 max-w-2xl mx-auto leading-relaxed">

@@ -80,7 +80,7 @@ export default function AdminInvitesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">Invite Codes</h1>
+        <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Invite Codes</h1>
         <p className="text-smoked-charcoal/70 mt-2 text-lg">Generate a code for each crew member. They enter it when signing up.</p>
       </div>
 

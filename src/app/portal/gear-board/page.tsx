@@ -111,7 +111,7 @@ export default function AdminGearBoardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">Gear Board</h1>
+        <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Gear Board</h1>
         <p className="text-smoked-charcoal/70 mt-2 text-lg">Manage personalized gear for every member.</p>
       </div>
 
@@ -159,7 +159,7 @@ export default function AdminGearBoardPage() {
               {/* Add item form */}
               {addingFor === m.id && (
                 <div className="bg-sandstone-cream/50 rounded-xl p-4 space-y-3 mb-3 animate-slide-in">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="label">Item type</label>
                       <select className="field" value={newItemType} onChange={(e) => setNewItemType(e.target.value as GearItemType)}>
@@ -173,7 +173,7 @@ export default function AdminGearBoardPage() {
                       </select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="label">Personalized name</label>
                       <input className="field" value={newPersonalizedName} onChange={(e) => setNewPersonalizedName(e.target.value)} placeholder={m.name} />

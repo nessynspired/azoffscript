@@ -27,7 +27,7 @@ export default function AboutPage() {
       <section className="pt-32 md:pt-24 pb-8 px-4">
         <div className="max-w-3xl mx-auto">
           <span className="chip chip-copper mb-6">About</span>
-          <h1 className="font-display text-4xl md:text-6xl text-desert-night leading-tight">
+          <h1 className="font-display text-3xl md:text-6xl text-desert-night leading-tight">
             About AZ Off Script
           </h1>
         </div>
