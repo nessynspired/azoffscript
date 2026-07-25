@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
 import type { Database } from "@/lib/types/db";
 
@@ -188,6 +189,14 @@ function ClipReviewCard({
     if (!myApproval) return;
     setWorking(true);
     await supabase.from("approvals").update({ status }).eq("id", myApproval.id);
+    // Notify admins/planners about the approval decision
+    const statusLabel = status === "Approved" ? "greenlit" : status === "Do Not Post" ? "said Do Not Post on" : `marked ${status} on`;
+    await notifyAdminsAndPlanners(
+      supabase,
+      "approved",
+      `${myApproval.member_name} ${statusLabel} "${clip.title}"`,
+      "/portal/run-sheet",
+    );
     setWorking(false);
     // parent will reload via realtime
   }

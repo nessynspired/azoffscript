@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types/db";
 
 /**
@@ -49,13 +50,34 @@ interface PortalNavProps {
 export function PortalTopBar({
   memberName,
   memberRole,
-  unreadNotifications = 0,
+  unreadNotifications: propUnread = 0,
 }: PortalNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useAuth();
+  const { member } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [unread, setUnread] = useState(propUnread);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    if (!member) return;
+    const supabase = createClient();
+    async function fetchUnread() {
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", member!.id)
+        .eq("read", false);
+      setUnread(count ?? 0);
+    }
+    fetchUnread();
+    // Poll every 30 seconds for new notifications
+    const interval = setInterval(fetchUnread, 30000);
+    // Also refetch when route changes
+    return () => clearInterval(interval);
+  }, [member, pathname]);
 
   async function handleSignOut() {
     await signOut();
@@ -127,9 +149,9 @@ export function PortalTopBar({
                     }`}
                   >
                     {item.label}
-                    {item.href === "/portal/notifications" && unreadNotifications > 0 && (
+                    {item.href === "/portal/notifications" && unread > 0 && (
                       <span className="bg-sunburst-yellow text-desert-night text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
-                        {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                        {unread > 9 ? "9+" : unread}
                       </span>
                     )}
                   </Link>

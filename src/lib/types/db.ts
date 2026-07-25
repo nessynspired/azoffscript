@@ -624,6 +624,34 @@ export interface Database {
         };
       };
 
+      push_subscriptions: {
+        Relationships: [];
+        Row: {
+          id: string;
+          member_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth_key: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth_key: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          member_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth_key?: string;
+          created_at?: string;
+        };
+      };
+
       activity: {
         Relationships: [];
         Row: {

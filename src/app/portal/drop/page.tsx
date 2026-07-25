@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { notifyMember, notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage } from "@/components/MascotImage";
 import { DROP_LANES, LANE_META, DESTINATIONS } from "@/lib/crew-data";
 import type { Database, DropType } from "@/lib/types/db";
@@ -152,6 +153,14 @@ export default function DropPage() {
         await supabase.from("approvals").insert(
           tagged.map((m) => ({ clip_id: clip.id, member_id: m.id, member_name: m.name, status: "Waiting" as const }))
         );
+        // Notify tagged people they're in a clip
+        await Promise.all(
+          tagged.map((m) =>
+            m.id !== member.id
+              ? notifyMember(supabase, m.id, "tagged", `${member.name} tagged you in "${title}"`, "/portal/ready")
+              : Promise.resolve()
+          )
+        );
       }
 
       // Activity log
@@ -169,6 +178,9 @@ export default function DropPage() {
         kind: "dropped",
         body: activityBody,
       });
+
+      // Notify admins + planners that a new clip was dropped
+      await notifyAdminsAndPlanners(supabase, "dropped", activityBody, "/portal/run-sheet", member.id);
 
       setDropped(true);
       setSubmitting(false);

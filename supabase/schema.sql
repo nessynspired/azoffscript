@@ -311,6 +311,21 @@ create table if not exists public.activity (
 create index if not exists idx_activity_created_at on public.activity(created_at desc);
 
 -- ==========================================================================
+-- push_subscriptions: web push endpoints per member (phone, desktop, etc.)
+-- ==========================================================================
+create table if not exists public.push_subscriptions (
+  id          uuid primary key default gen_random_uuid(),
+  member_id   uuid not null references public.members(id) on delete cascade,
+  endpoint    text not null,
+  p256dh      text not null,
+  auth_key    text not null,
+  created_at  timestamptz not null default now(),
+  unique (member_id, endpoint)
+);
+
+create index if not exists idx_push_subs_member on public.push_subscriptions(member_id);
+
+-- ==========================================================================
 -- Helper functions: role checks (used by RLS)
 -- Defined AFTER tables because SQL-language functions validate body at creation.
 -- ==========================================================================
@@ -637,10 +652,14 @@ create policy comments_delete on public.comments
     public.is_admin() or author_id = public.current_member_id()
   );
 
--- notifications: a member only sees their own
+-- notifications: a member only sees their own; any authenticated user can insert (for notifying others)
 drop policy if exists notifications_read on public.notifications;
 create policy notifications_read on public.notifications
   for select to authenticated using (user_id = public.current_member_id());
+
+drop policy if exists notifications_insert on public.notifications;
+create policy notifications_insert on public.notifications
+  for insert to authenticated with check (auth.uid() is not null);
 
 drop policy if exists notifications_update on public.notifications;
 create policy notifications_update on public.notifications
@@ -649,6 +668,21 @@ create policy notifications_update on public.notifications
 drop policy if exists notifications_delete on public.notifications;
 create policy notifications_delete on public.notifications
   for delete to authenticated using (user_id = public.current_member_id());
+
+-- push_subscriptions: a member manages only their own
+alter table public.push_subscriptions enable row level security;
+
+drop policy if exists push_subs_read on public.push_subscriptions;
+create policy push_subs_read on public.push_subscriptions
+  for select to authenticated using (member_id = public.current_member_id());
+
+drop policy if exists push_subs_insert on public.push_subscriptions;
+create policy push_subs_insert on public.push_subscriptions
+  for insert to authenticated with check (member_id = public.current_member_id());
+
+drop policy if exists push_subs_delete on public.push_subscriptions;
+create policy push_subs_delete on public.push_subscriptions
+  for delete to authenticated using (member_id = public.current_member_id());
 
 -- activity: read all; insert allowed for any authenticated member (triggered from app)
 drop policy if exists activity_read on public.activity;

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage } from "@/components/MascotImage";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
 
@@ -153,6 +154,14 @@ export default function RunSheetPage() {
       kind: "status",
       body: `${member.name} moved "${clip?.title ?? "a clip"}" to ${status}`,
     });
+    // Notify tagged + assigned people about the status change
+    const notifBody = `"${clip?.title ?? "A clip"}" moved to ${status}`;
+    await notifyTaggedPeople(supabase, clipId, "status", notifBody, "/portal/run-sheet", member?.id);
+    await notifyAssignedPeople(supabase, clipId, "status", notifBody, "/portal/run-sheet", member?.id);
+    // If moved to Review, that means greenlights are needed — notify tagged people specifically
+    if (status === "Review") {
+      await notifyTaggedPeople(supabase, clipId, "approval", `Greenlight needed: "${clip?.title ?? "a clip"}"`, "/portal/ready", member?.id);
+    }
     await load();
   }
 
@@ -1488,6 +1497,11 @@ function AssignmentBoardTab({
       } else {
         alert(error.message);
       }
+    } else {
+      // Notify the assigned person
+      const clip = clips.find((c) => c.id === clipId);
+      const notifBody = `You're on "${clip?.title ?? "a clip"}" — ${assignForm.role}`;
+      await notifyMember(supabase, assignForm.member_id, "assignment", notifBody, "/portal/run-sheet");
     }
     setAssignForm({ member_id: "", role: "On-Camera", task_type: "Drop a Clip", task_title: "", task_notes: "", drop_by_date: "", is_required: true });
     setShowAssign(null);
