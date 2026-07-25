@@ -181,6 +181,7 @@ create table if not exists public.clips (
   approval_due   timestamptz,                     -- Greenlight by: approval deadline
   thumbnail_url text,                          -- video thumbnail (from oEmbed or upload)
   theme_id     uuid references public.content_themes(id) on delete set null,  -- link to Weekly Heat
+  template_id  text,                           -- Quick Drop Template ID (e.g. "first_wave_intro")
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );

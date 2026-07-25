@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
+import { getTemplate, getSampleLine } from "@/lib/quick-drop-templates";
 import type { Database } from "@/lib/types/db";
 
 type Activity = Database["public"]["Tables"]["activity"]["Row"];
@@ -107,13 +108,34 @@ export default function LobbyPage() {
                 const clip = assignmentClips[next.clip_id];
                 const now = new Date();
                 const isLate = next.drop_by_date && new Date(next.drop_by_date) < now;
+                const template = clip?.template_id ? getTemplate(clip.template_id) : null;
                 return (
                   <div className="mt-3">
                     <p className={`text-2xl font-display ${isLate ? "text-heat-orange" : "text-sandstone-cream"}`}>
                       {isLate ? "⚠ Late — " : ""}Drop-by {next.drop_by_date ? new Date(next.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "TBD"}
                     </p>
                     <p className="text-sandstone-cream/70 mt-1">{clip?.title ?? "Content item"}</p>
-                    <p className="text-sandstone-cream/50 text-sm">{next.role} · {next.task_type}</p>
+                    {template && (
+                      <p className="text-sunburst-yellow/70 text-sm mt-0.5">
+                        ⏱ {template.timeEstimate} · {template.effort}
+                      </p>
+                    )}
+
+                    {/* Template instructions */}
+                    {template && (
+                      <div className="mt-3 bg-white/5 rounded-xl p-3">
+                        <p className="text-xs font-bold text-sunburst-yellow/60 uppercase">What to record</p>
+                        <p className="text-sm text-sandstone-cream/90 mt-1">{template.instructions}</p>
+                        {template.sampleLines && (
+                          <div className="mt-2 bg-white/5 rounded-lg p-2">
+                            <p className="text-xs font-bold text-sunburst-yellow/60 uppercase">Your line</p>
+                            <p className="text-sm text-sandstone-cream font-script text-base mt-1">
+                              {getSampleLine(template, firstName)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -125,21 +147,10 @@ export default function LobbyPage() {
                 </p>
               )}
 
-              {/* Quick drop buttons */}
-              <div className="grid grid-cols-2 gap-2 mt-5">
-                <Link href="/portal/drop" className="bg-heat-orange text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
-                  🔗 Drop a Link
-                </Link>
-                <Link href="/portal/drop" className="bg-cactus-teal text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
-                  🎬 Drop a Clip
-                </Link>
-                <Link href="/portal/drop" className="bg-copper-clay text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
-                  💬 Answer Prompt
-                </Link>
-                <Link href="/portal/drop" className="bg-sunburst-yellow text-desert-night rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
-                  ✍️ Caption Idea
-                </Link>
-              </div>
+              {/* Drop Mine button — big and obvious */}
+              <Link href="/portal/drop" className="block bg-heat-orange text-bone-white rounded-xl p-4 text-center font-display text-lg hover:-translate-y-0.5 transition-transform mt-5">
+                Drop Mine 🎬
+              </Link>
 
               <p className="text-sandstone-cream/40 text-xs mt-3 text-center">
                 One take is fine. No pressure to be perfect.

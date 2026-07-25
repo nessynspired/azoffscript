@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
 import { HEAT_VIBES, POST_COUNTS, EFFORT_LEVELS, generateWeekPlan, calcDeadlinesFromLive, nextSunday, type PlannedItem } from "@/lib/plan-defaults";
+import { QUICK_DROP_TEMPLATES, getTemplate, getSampleLine, type QuickDropTemplate } from "@/lib/quick-drop-templates";
 import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
@@ -79,6 +80,14 @@ function getYouTubeEmbed(url: string): string | null {
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
 }
 
+// "Idea dropped by" vs "Clip dropped by" — based on what was actually submitted
+function droppedByLabel(clip: { type: string; submitted_by_name: string }): string {
+  const hasVideo = clip.type === "video" || clip.type === "final_cut";
+  if (hasVideo) return `Clip dropped by ${clip.submitted_by_name}`;
+  if (clip.type === "tiktok_link") return `Trend drop by ${clip.submitted_by_name}`;
+  return `Idea dropped by ${clip.submitted_by_name}`;
+}
+
 export default function RunSheetPage() {
   const { member } = useAuth();
   const supabase = createClient();
@@ -92,6 +101,7 @@ export default function RunSheetPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "heat" | "watch">("week");
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -236,7 +246,24 @@ export default function RunSheetPage() {
           <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">The Run Sheet</h1>
           <p className="text-smoked-charcoal/70 mt-2 text-lg">This is what&apos;s moving next.</p>
         </div>
+        {canPlanContent && (
+          <button
+            onClick={() => setShowTemplatePicker(!showTemplatePicker)}
+            className="btn btn-primary btn-sm"
+          >
+            + Create from Template
+          </button>
+        )}
       </div>
+
+      {/* Template picker — quick create from a template */}
+      {showTemplatePicker && canPlanContent && (
+        <TemplatePicker
+          member={member}
+          members={members}
+          onCreated={async () => { setShowTemplatePicker(false); await load(); }}
+        />
+      )}
 
       {/* Tab bar */}
       <div className="flex gap-2 bg-desert-night/10 rounded-full p-1 w-fit overflow-x-auto">
@@ -717,9 +744,9 @@ function ClipDetailModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <span className={`chip ${STATUS_CHIP[clip.status]}`}>{clip.status}</span>
+            {canPlanContent && <span className={`chip ${STATUS_CHIP[clip.status]}`}>{clip.status}</span>}
             <h2 className="font-display text-3xl text-desert-night mt-2 leading-none">{clip.title}</h2>
-            <p className="text-sm text-smoked-charcoal/60 mt-1">dropped by {clip.submitted_by_name}</p>
+            <p className="text-sm text-smoked-charcoal/60 mt-1">{droppedByLabel(clip)}</p>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">✕</button>
         </div>
@@ -759,39 +786,138 @@ function ClipDetailModal({
           </div>
         )}
 
-        {/* Weekly Heat — deadlines with branded language */}
-        {(clip.idea_due_date || clip.clip_due_date || clip.final_cut_due || clip.approval_due || clip.scheduled_date || canPlanContent) && (
-          <div className="mt-6 card p-4 bg-sandstone-cream/50">
-            <h3 className="font-display text-xl text-desert-night mb-3">Weekly Heat</h3>
-            <div className="space-y-2">
-              <DeadlineRow label="Drop-by (ideas)" value={clip.idea_due_date} canEdit={canPlanContent} fieldName="idea_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Send your clip by" value={clip.clip_due_date} canEdit={canPlanContent} fieldName="clip_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Send your final by" value={clip.final_cut_due} canEdit={canPlanContent} fieldName="final_cut_due" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Greenlight by" value={clip.approval_due} canEdit={canPlanContent} fieldName="approval_due" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Goes live" value={clip.scheduled_date} canEdit={canPlanContent} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
-            </div>
-            {canPlanContent && (
-              <>
-                {/* Theme assignment */}
-                <div className="mt-3 pt-3 border-t border-desert-night/10">
-                  <p className="label">Weekly Heat</p>
-                  <select
-                    className="field !w-auto"
-                    value={selectedTheme}
-                    onChange={(e) => setSelectedTheme(e.target.value)}
-                  >
-                    <option value="">No theme</option>
-                    {themes.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
-                  {savingDeadlines ? "Saving…" : "Save Deadlines + Theme"}
-                </button>
-              </>
+        {/* ===== CREW VIEW — simple, only what they need to know ===== */}
+        {!canPlanContent && (
+          <div className="mt-6 space-y-4">
+            {/* Template instructions if available */}
+            {clip.template_id && getTemplate(clip.template_id) && (
+              <div className="card p-4 bg-cactus-teal/10">
+                <p className="font-display text-lg text-desert-night">{getTemplate(clip.template_id)!.name}</p>
+                <p className="text-xs text-smoked-charcoal/60 mt-1">
+                  ⏱ {getTemplate(clip.template_id)!.timeEstimate} · {getTemplate(clip.template_id)!.effort}
+                </p>
+                <p className="text-sm text-desert-night mt-3">{getTemplate(clip.template_id)!.instructions}</p>
+                {getTemplate(clip.template_id)!.sampleLines && (
+                  <div className="mt-3 bg-sandstone-cream/70 rounded-lg p-3">
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">Your line</p>
+                    <p className="text-sm text-desert-night mt-1 font-script text-lg">
+                      {getSampleLine(getTemplate(clip.template_id)!, currentMemberName)}
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
+
+            {/* Crew drop-by — the only date they need to see */}
+            {clip.clip_due_date && (
+              <div className="card p-4 bg-heat-orange/10">
+                <p className="text-xs font-bold text-desert-night/50 uppercase">Drop-by</p>
+                <p className="font-display text-xl text-desert-night mt-1">
+                  {new Date(clip.clip_due_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                </p>
+                <p className="text-sm text-smoked-charcoal/60 mt-1">
+                  {new Date(clip.clip_due_date).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                </p>
+              </div>
+            )}
+
+            {/* Goes live — only if already scheduled */}
+            {clip.scheduled_date && clip.status === "Scheduled" && (
+              <div className="card p-4 bg-cactus-teal/10">
+                <p className="text-xs font-bold text-desert-night/50 uppercase">Goes Live</p>
+                <p className="font-display text-xl text-desert-night mt-1">
+                  {new Date(clip.scheduled_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                </p>
+              </div>
+            )}
+
+            {/* Greenlight — only if they have something to approve */}
+            {canApprove && clip.approval_due && (
+              <div className="card p-4 bg-sunburst-yellow/10">
+                <p className="text-xs font-bold text-desert-night/50 uppercase">Greenlight By</p>
+                <p className="font-display text-xl text-desert-night mt-1">
+                  {new Date(clip.approval_due).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                </p>
+              </div>
+            )}
+
+            {/* Drop Mine button */}
+            <Link href="/portal/drop" className="btn btn-primary btn-lg w-full">
+              Drop Mine 🎬
+            </Link>
+            <p className="text-center text-xs text-desert-night/40">
+              One take is fine. No pressure to be perfect.
+            </p>
           </div>
+        )}
+
+        {/* ===== ADMIN VIEW — the full machine ===== */}
+        {canPlanContent && (
+          <>
+            {/* Weekly Heat — deadlines with clean labels */}
+            {(clip.idea_due_date || clip.clip_due_date || clip.final_cut_due || clip.approval_due || clip.scheduled_date) && (
+              <div className="mt-6 card p-4 bg-sandstone-cream/50">
+                <h3 className="font-display text-xl text-desert-night mb-3">Timeline</h3>
+                <div className="space-y-2">
+                  <DeadlineRow label="Crew Drop-by" value={clip.clip_due_date} canEdit={canPlanContent} fieldName="clip_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+                  <DeadlineRow label="Cut Ready" value={clip.final_cut_due} canEdit={canPlanContent} fieldName="final_cut_due" deadlines={deadlines} setDeadlines={setDeadlines} />
+                  <DeadlineRow label="Greenlight By" value={clip.approval_due} canEdit={canPlanContent} fieldName="approval_due" deadlines={deadlines} setDeadlines={setDeadlines} />
+                  <DeadlineRow label="Goes Live" value={clip.scheduled_date} canEdit={canPlanContent} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+                </div>
+                {canPlanContent && (
+                  <>
+                    {/* Theme assignment */}
+                    <div className="mt-3 pt-3 border-t border-desert-night/10">
+                      <p className="label">Weekly Heat</p>
+                      <select
+                        className="field !w-auto"
+                        value={selectedTheme}
+                        onChange={(e) => setSelectedTheme(e.target.value)}
+                      >
+                        <option value="">No theme</option>
+                        {themes.map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
+                      {savingDeadlines ? "Saving…" : "Save Timeline + Theme"}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Platform */}
+            {clip.destination && (
+              <div className="mt-4">
+                <span className="chip chip-teal">📍 Platform: {clip.destination}</span>
+              </div>
+            )}
+
+            {/* Crew submission status */}
+            {people.length > 0 && (
+              <div className="mt-4 card p-4">
+                <h3 className="font-display text-lg text-desert-night mb-3">Crew</h3>
+                <div className="space-y-2">
+                  {people.map((p) => {
+                    const approval = approvals.find((a) => a.member_id === p.member_id);
+                    const status = approval?.status ?? "Waiting";
+                    return (
+                      <div key={p.id} className="flex items-center justify-between text-sm">
+                        <span className="font-bold text-desert-night">{p.member_name}</span>
+                        <span className={`chip !text-[9px] ${
+                          status === "Approved" ? "chip-approved" :
+                          status === "Do Not Post" ? "chip-danger" :
+                          "chip-cream"
+                        }`}>{status}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Destination */}
@@ -1377,6 +1503,7 @@ function WeeklyHeatTab({
   const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
   const [generatedPlan, setGeneratedPlan] = useState<PlannedItem[] | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
   async function createTheme() {
     if (!name.trim() || !currentMemberId) return;
@@ -1449,6 +1576,7 @@ function WeeklyHeatTab({
       submitted_by: currentMemberId,
       submitted_by_name: currentMemberName,
       theme_id: theme.id,
+      template_id: selectedTemplate || null,
       idea_due_date: item.deadlines.idea_due_date,
       clip_due_date: item.deadlines.clip_due_date,
       final_cut_due: item.deadlines.final_cut_due,
@@ -1555,6 +1683,25 @@ function WeeklyHeatTab({
                   className={`chip ${effort === e.id ? "chip-copper" : "chip-cream"}`}
                   title={e.desc}
                 >{e.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Drop Template — optional */}
+          <div>
+            <p className="label">Format <span className="font-normal text-desert-night/40">(optional — adds instructions for crew)</span></p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedTemplate("")}
+                className={`chip ${!selectedTemplate ? "chip-copper" : "chip-cream"}`}
+              >No template</button>
+              {QUICK_DROP_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedTemplate(t.id)}
+                  className={`chip ${selectedTemplate === t.id ? "chip-copper" : "chip-cream"}`}
+                  title={t.description}
+                >{t.name}</button>
               ))}
             </div>
           </div>
@@ -2087,6 +2234,154 @@ function WatchTab({
           <p className="text-smoked-charcoal/70">No clips on {PLATFORM_LABEL[filter]} yet.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// TEMPLATE PICKER — quick create a clip from a Quick Drop Template
+// ===========================================================================
+function TemplatePicker({
+  member,
+  members,
+  onCreated,
+}: {
+  member?: Member;
+  members: Member[];
+  onCreated: () => Promise<void>;
+}) {
+  const supabase = createClient();
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
+  const [creating, setCreating] = useState(false);
+
+  const template = selectedId ? getTemplate(selectedId) : null;
+
+  async function create() {
+    if (!template || !member) return;
+    setCreating(true);
+
+    const sunday = nextSunday();
+    const deadlines = calcDeadlinesFromLive(sunday);
+
+    const { data: clip, error } = await supabase.from("clips").insert({
+      title: template.name,
+      type: "video",
+      status: "Planned",
+      category: template.category,
+      submitted_by: member.id,
+      submitted_by_name: member.name,
+      template_id: template.id,
+      destination: template.platforms[0] ?? null,
+      idea_due_date: deadlines.idea_due_date,
+      clip_due_date: deadlines.clip_due_date,
+      final_cut_due: deadlines.final_cut_due,
+      approval_due: deadlines.approval_due,
+      scheduled_date: deadlines.scheduled_date,
+    }).select().single();
+
+    if (error || !clip) {
+      alert(error?.message ?? "Could not create clip");
+      setCreating(false);
+      return;
+    }
+
+    // Assign selected crew
+    if (selectedCrew.length > 0) {
+      const assignmentInserts = selectedCrew.map((crewId) => {
+        const crewMember = members.find((m) => m.id === crewId);
+        return {
+          clip_id: clip.id,
+          member_id: crewId,
+          member_name: crewMember?.name ?? "",
+          role: "On-Camera",
+          task_type: "Drop a Clip",
+          drop_by_date: deadlines.clip_due_date,
+          is_required: true,
+          created_by: member.id,
+        };
+      });
+      await supabase.from("content_assignments").insert(assignmentInserts);
+      // Notify crew
+      await Promise.all(selectedCrew.map((id) =>
+        notifyMember(supabase, id, "assignment", `You're on "${template.name}" — Drop-by ${new Date(deadlines.clip_due_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`, "/portal/drop")
+      ));
+    }
+
+    await onCreated();
+    setCreating(false);
+  }
+
+  return (
+    <div className="card p-5 space-y-4">
+      <h2 className="font-display text-2xl text-desert-night">Create from Template</h2>
+
+      {/* Template selection */}
+      <div>
+        <p className="label">Pick a format</p>
+        <div className="flex flex-wrap gap-2">
+          {QUICK_DROP_TEMPLATES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedId(t.id)}
+              className={`chip ${selectedId === t.id ? "chip-copper" : "chip-cream"}`}
+              title={t.description}
+            >{t.name}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Template preview */}
+      {template && (
+        <div className="bg-sandstone-cream/50 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <p className="font-display text-lg text-desert-night">{template.name}</p>
+            <span className="chip chip-cream !text-[9px]">{template.effort}</span>
+          </div>
+          <p className="text-sm text-smoked-charcoal/70">{template.description}</p>
+          <p className="text-xs text-smoked-charcoal/50">⏱ {template.timeEstimate} · 🏠 {template.homeFriendly ? "Home-friendly" : "Needs setup"} · ✂️ {template.adminStitches ? "Admin stitches" : "No stitching"}</p>
+          {template.maxSeconds && <p className="text-xs text-smoked-charcoal/50">Max {template.maxSeconds}s per person</p>}
+          <div className="bg-white/50 rounded-lg p-3 mt-2">
+            <p className="text-xs font-bold text-desert-night/50 uppercase">Crew instructions</p>
+            <p className="text-sm text-desert-night mt-1">{template.instructions}</p>
+          </div>
+          {template.sampleLines && (
+            <div className="bg-white/50 rounded-lg p-3">
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Sample lines</p>
+              <ul className="text-sm text-desert-night mt-1 space-y-1">
+                {template.sampleLines.map((line, i) => <li key={i} className="font-script text-base">{line}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Crew assignment */}
+      {template && members.length > 0 && (
+        <div>
+          <p className="label">Assign crew <span className="font-normal text-desert-night/40">(optional)</span></p>
+          <div className="flex flex-wrap gap-2">
+            {members.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedCrew(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
+                className={`chip ${selectedCrew.includes(m.id) ? "chip-copper" : "chip-cream"}`}
+              >{m.name}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Create button */}
+      {template && (
+        <button onClick={create} disabled={creating} className="btn btn-primary btn-lg w-full">
+          {creating ? "Creating…" : `Create "${template.name}"`}
+        </button>
+      )}
+
+      <p className="text-xs text-desert-night/40 text-center">
+        Deadlines auto-set: Drop-by 3 days before, Cut ready 2 days before, Greenlight 1 day before, Goes live Sunday.
+      </p>
     </div>
   );
 }
