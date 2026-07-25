@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage } from "@/components/MascotImage";
+import { SignaturePad } from "@/components/SignaturePad";
 import {
   ALL_AGREEMENTS,
   getAgreementByVersion,
@@ -267,27 +268,40 @@ function AgreementScrollViewer({
 }
 
 // ===========================================================================
-// CUTE BRANDED POPUP — friendly summary of the main agreement + exhibit list
-// This is what crew see when invited to sign. Not the full legal text.
+// CUTE BRANDED POPUP — friendly summary + signature pad
+// Crew sign here with finger/stylus/mouse on phone, laptop, or iPad.
+// One signature signs the Main Agreement + all Exhibits A-E together.
 // ===========================================================================
 function AgreementPopup({
   doc,
   onClose,
-  onSign,
   onReadFull,
-  signing,
+  activeAgreementId,
+  member,
   alreadySigned,
+  onSigned,
+  previewMode,
 }: {
   doc: AgreementDoc;
   onClose: () => void;
-  onSign?: () => void;
   onReadFull: () => void;
-  signing?: boolean;
+  activeAgreementId?: string | null;
+  member?: { id: string; name: string; email?: string | null; phone?: string | null } | null;
   alreadySigned?: boolean;
+  onSigned?: () => void;
+  previewMode?: boolean;
 }) {
+  const supabase = createClient();
   const exhibits = doc.exhibits ?? [];
-  const mainExhibit = exhibits.find((e) => e.id === "main") ?? exhibits[0];
   const otherExhibits = exhibits.filter((e) => e.id !== "main");
+
+  // Signing state
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [printedName, setPrintedName] = useState(member?.name ?? "");
+  const [signedDate, setSignedDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [signing, setSigning] = useState(false);
+  const [signed, setSigned] = useState(alreadySigned ?? false);
+  const [error, setError] = useState<string | null>(null);
 
   // Friendly one-liners for each exhibit
   const exhibitBlurbs: Record<string, string> = {
@@ -297,6 +311,33 @@ function AgreementPopup({
     "exhibit-d": "What happens if someone leaves, gets removed, or has a dispute.",
     "exhibit-e": "AZ Off Script can grow into other waves, cities, and casts later.",
   };
+
+  const canSign = signatureData && printedName.trim() && signedDate && !signing && !signed && !previewMode && activeAgreementId && member;
+
+  async function handleSign() {
+    if (!canSign || !activeAgreementId || !member) return;
+    setError(null);
+    setSigning(true);
+    const { error: insertError } = await supabase.from("agreement_signatures").insert({
+      agreement_id: activeAgreementId,
+      member_id: member.id,
+      member_name: member.name,
+      member_email: member.email ?? null,
+      member_phone: member.phone ?? null,
+      printed_name: printedName.trim(),
+      signature_data: signatureData,
+      signed_date: signedDate,
+      acknowledged_checklist: true,
+      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    });
+    setSigning(false);
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+    setSigned(true);
+    onSigned?.();
+  }
 
   return (
     <div
@@ -325,6 +366,11 @@ function AgreementPopup({
             <p className="text-sandstone-cream/60 text-sm mt-1">
               First Wave Participation Rules + Media Release
             </p>
+            {previewMode && (
+              <p className="text-sandstone-cream/40 text-[10px] mt-1 uppercase tracking-wide">
+                Admin preview — signing is disabled
+              </p>
+            )}
           </div>
         </div>
 
@@ -387,28 +433,87 @@ function AgreementPopup({
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="space-y-2 pt-2">
-            {alreadySigned ? (
-              <div className="bg-cactus-teal/20 rounded-xl p-3 text-center">
-                <p className="font-bold text-sm text-desert-night">✓ You already signed this version</p>
+          {/* Signature section */}
+          {signed ? (
+            <div className="bg-cactus-teal/20 rounded-2xl p-5 text-center space-y-2">
+              <p className="font-display text-lg text-desert-night">✓ Signed!</p>
+              <p className="text-sm text-smoked-charcoal/70">
+                You signed the Main Agreement and all Exhibits A–E on {signedDate}.
+              </p>
+              <p className="text-xs text-smoked-charcoal/50">
+                A copy can be emailed to you from the agreements page.
+              </p>
+            </div>
+          ) : !previewMode && activeAgreementId && member ? (
+            <div className="space-y-3 pt-2 border-t border-copper-clay/20">
+              <p className="font-display text-base text-desert-night">Sign here:</p>
+
+              {/* Printed name */}
+              <div>
+                <p className="label">Printed name</p>
+                <input
+                  type="text"
+                  value={printedName}
+                  onChange={(e) => setPrintedName(e.target.value)}
+                  placeholder="Your full legal name"
+                  className="field"
+                />
               </div>
-            ) : onSign ? (
+
+              {/* Date */}
+              <div>
+                <p className="label">Date</p>
+                <input
+                  type="date"
+                  value={signedDate}
+                  onChange={(e) => setSignedDate(e.target.value)}
+                  className="field !w-auto"
+                />
+              </div>
+
+              {/* Signature pad */}
+              <SignaturePad onChange={setSignatureData} label="Draw your signature" />
+
+              {/* Error */}
+              {error && (
+                <p className="text-xs text-red-700 bg-red-50 rounded p-2">{error}</p>
+              )}
+
+              {/* Submit */}
               <button
-                onClick={onSign}
-                disabled={signing}
+                onClick={handleSign}
+                disabled={!canSign}
                 className="btn btn-primary btn-lg w-full"
               >
-                {signing ? "Signing…" : "I've read it — sign me up"}
+                {signing ? "Signing…" : "Sign the full agreement"}
               </button>
-            ) : null}
-            <button
-              onClick={onReadFull}
-              className="btn btn-ghost btn-sm w-full"
-            >
-              Read the full agreement →
-            </button>
-          </div>
+              {!signatureData && (
+                <p className="text-[10px] text-smoked-charcoal/40 text-center">
+                  Draw your signature above to continue
+                </p>
+              )}
+            </div>
+          ) : previewMode ? (
+            <div className="bg-sandstone-cream/60 rounded-2xl p-4 text-center">
+              <p className="text-xs text-smoked-charcoal/50">
+                Signature pad appears here for crew once this version is activated.
+              </p>
+            </div>
+          ) : !activeAgreementId ? (
+            <div className="bg-sandstone-cream/60 rounded-2xl p-4 text-center">
+              <p className="text-xs text-smoked-charcoal/50">
+                This version isn't active yet. Signing will be available once an admin activates it.
+              </p>
+            </div>
+          ) : null}
+
+          {/* Read full */}
+          <button
+            onClick={onReadFull}
+            className="btn btn-ghost btn-sm w-full"
+          >
+            Read the full agreement →
+          </button>
         </div>
       </div>
     </div>
@@ -505,6 +610,8 @@ export default function AgreementsPage() {
       socialHandles: sig.social_handles ?? "",
       signedAt,
       signatureId: sig.id,
+      signatureData: sig.signature_data,
+      signedDate: sig.signed_date,
     });
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -744,6 +851,7 @@ export default function AgreementsPage() {
             setViewVersion(popupPreview.version);
             setPopupPreview(null);
           }}
+          previewMode
         />
       )}
     </div>
@@ -791,9 +899,17 @@ function buildSignedHtml(opts: {
   socialHandles: string;
   signedAt: string;
   signatureId: string;
+  signatureData?: string | null;  // base64 PNG data URL of drawn signature
+  signedDate?: string | null;     // date the participant entered
 }): string {
   // Very small markdown -> HTML converter (headings, bold, lists, hr, paragraphs)
   const html = markdownToHtml(opts.bodyMarkdown);
+  const sigImg = opts.signatureData
+    ? `<div style="margin: 12px 0;"><img src="${opts.signatureData}" alt="Signature" style="max-height: 120px; max-width: 320px; border: 1px solid #d1d5db; border-radius: 4px; padding: 8px; background: #fff;" /></div>`
+    : "";
+  const dateRow = opts.signedDate
+    ? `<div class="sig-row"><span class="sig-label">Date Signed</span><span class="sig-value">${escapeHtml(opts.signedDate)}</span></div>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -828,11 +944,13 @@ function buildSignedHtml(opts: {
   ${html}
   <div class="signature-block">
     <h2>Electronic Signature</h2>
+    ${sigImg}
     <div class="sig-row"><span class="sig-label">Printed Name</span><span class="sig-value">${escapeHtml(opts.printedName)}</span></div>
     <div class="sig-row"><span class="sig-label">Member</span><span class="sig-value">${escapeHtml(opts.memberName)}</span></div>
     <div class="sig-row"><span class="sig-label">Email</span><span class="sig-value">${escapeHtml(opts.email)}</span></div>
     <div class="sig-row"><span class="sig-label">Phone</span><span class="sig-value">${escapeHtml(opts.phone)}</span></div>
     <div class="sig-row"><span class="sig-label">Social Handles</span><span class="sig-value">${escapeHtml(opts.socialHandles)}</span></div>
+    ${dateRow}
     <div class="sig-row"><span class="sig-label">Signed At</span><span class="sig-value">${escapeHtml(opts.signedAt)}</span></div>
     <div class="sig-row"><span class="sig-label">Signature ID</span><span class="sig-value">${escapeHtml(opts.signatureId)}</span></div>
     <div class="sig-row"><span class="sig-label">Electronic Signature Accepted</span><span class="sig-value">Yes</span></div>

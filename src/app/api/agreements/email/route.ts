@@ -76,6 +76,8 @@ export async function POST(request: NextRequest) {
       socialHandles: sig.social_handles ?? "",
       signedAt,
       signatureId: sig.id,
+      signatureData: sig.signature_data,
+      signedDate: sig.signed_date,
     });
     const textBody = `AZ Off Script — ${agreement.title} (${agreement.version})
 
@@ -148,8 +150,16 @@ function buildSignedEmailHtml(opts: {
   socialHandles: string;
   signedAt: string;
   signatureId: string;
+  signatureData?: string | null;
+  signedDate?: string | null;
 }): string {
   const body = markdownToHtml(opts.bodyMarkdown);
+  const sigImg = opts.signatureData
+    ? `<div style="margin:10px 0;"><img src="${opts.signatureData}" alt="Signature" style="max-height:110px;max-width:300px;border:1px solid #d1d5db;border-radius:4px;padding:6px;background:#fff;" /></div>`
+    : "";
+  const dateRow = opts.signedDate
+    ? `<div class="sig-row"><span class="sig-label">Date Signed</span><span>${escapeHtml(opts.signedDate)}</span></div>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8" />
 <title>AZ Off Script — ${escapeHtml(opts.title)} — Signed</title>
@@ -175,11 +185,13 @@ function buildSignedEmailHtml(opts: {
   ${body}
   <div class="signature-block">
     <h2>Electronic Signature</h2>
+    ${sigImg}
     <div class="sig-row"><span class="sig-label">Printed Name</span><span>${escapeHtml(opts.printedName)}</span></div>
     <div class="sig-row"><span class="sig-label">Member</span><span>${escapeHtml(opts.memberName)}</span></div>
     <div class="sig-row"><span class="sig-label">Email</span><span>${escapeHtml(opts.email)}</span></div>
     <div class="sig-row"><span class="sig-label">Phone</span><span>${escapeHtml(opts.phone)}</span></div>
     <div class="sig-row"><span class="sig-label">Social Handles</span><span>${escapeHtml(opts.socialHandles)}</span></div>
+    ${dateRow}
     <div class="sig-row"><span class="sig-label">Signed At</span><span>${escapeHtml(opts.signedAt)}</span></div>
     <div class="sig-row"><span class="sig-label">Signature ID</span><span>${escapeHtml(opts.signatureId)}</span></div>
     <div class="sig-row"><span class="sig-label">Electronic Signature Accepted</span><span>Yes</span></div>

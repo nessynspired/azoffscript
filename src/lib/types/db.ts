@@ -807,6 +807,8 @@ export interface Database {
           ip_address: string | null;
           user_agent: string | null;
           acknowledged_checklist: boolean;
+          signature_data: string | null;
+          signed_date: string | null;
         };
         Insert: {
           id?: string;
@@ -821,6 +823,8 @@ export interface Database {
           ip_address?: string | null;
           user_agent?: string | null;
           acknowledged_checklist?: boolean;
+          signature_data?: string | null;
+          signed_date?: string | null;
         };
         Update: {
           id?: string;
@@ -829,6 +833,8 @@ export interface Database {
           social_handles?: string | null;
           printed_name?: string;
           acknowledged_checklist?: boolean;
+          signature_data?: string | null;
+          signed_date?: string | null;
         };
       };
     };
