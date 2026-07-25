@@ -100,7 +100,7 @@ export default function RunSheetPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "heat" | "watch">("week");
+  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "heat" | "watch" | "planner">("week");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
@@ -231,6 +231,7 @@ export default function RunSheetPage() {
 
   const TABS: { key: typeof tab; label: string; count?: number }[] = [
     { key: "week", label: "This Week" },
+    ...(canPlanContent ? [{ key: "planner" as const, label: "Planner" }] : []),
     { key: "calendar", label: "Calendar" },
     { key: "flow", label: "Studio Flow", count: productionClips.length },
     { key: "board", label: "Assignment Board", count: assignments.length },
@@ -352,6 +353,7 @@ export default function RunSheetPage() {
           currentMemberId={member?.id}
           currentMemberName={member?.name}
           canPlanContent={canPlanContent}
+          isAdmin={isAdmin}
           onRefresh={load}
         />
       )}
@@ -364,6 +366,7 @@ export default function RunSheetPage() {
           trends={trends}
           members={members}
           canPlanContent={canPlanContent}
+          isAdmin={isAdmin}
           currentMemberId={member?.id}
           currentMemberName={member?.name}
           onRefresh={load}
@@ -381,6 +384,22 @@ export default function RunSheetPage() {
           canPlanContent={canPlanContent}
           currentMemberId={member?.id}
           currentMemberName={member?.name}
+          onSelectClip={(id) => setSelectedClip(id)}
+          onRefresh={load}
+        />
+      )}
+
+      {/* PLANNER — dashboard for planners (What's Stuck, Ready for Vanessa, Needs Planning) */}
+      {tab === "planner" && canPlanContent && (
+        <PlannerDashboard
+          clips={clips}
+          assignments={assignments}
+          approvals={approvals}
+          people={people}
+          themes={themes}
+          trends={trends}
+          members={members}
+          isAdmin={isAdmin}
           onSelectClip={(id) => setSelectedClip(id)}
           onRefresh={load}
         />
@@ -994,10 +1013,13 @@ function ClipDetailModal({
                   onClick={() => onStatusChange(clip.id, "Hold")}
                   className="chip chip-hold"
                 >Hold — Comfort Review</button>
-                <button
-                  onClick={() => onStatusChange(clip.id, "Do Not Post")}
-                  className="chip chip-danger"
-                >Do Not Post</button>
+                {/* Do Not Post is admin-only — planners cannot override */}
+                {isAdmin && (
+                  <button
+                    onClick={() => onStatusChange(clip.id, "Do Not Post")}
+                    className="chip chip-danger"
+                  >Do Not Post</button>
+                )}
               </div>
             </div>
             {/* Delete is admin-only */}
@@ -1284,13 +1306,14 @@ function ThisWeekTab({
 // TREND DROPS — references and inspiration
 // ===========================================================================
 function TrendDropsTab({
-  trends, themes, currentMemberId, currentMemberName, canPlanContent, onRefresh,
+  trends, themes, currentMemberId, currentMemberName, canPlanContent, isAdmin, onRefresh,
 }: {
   trends: TrendRef[];
   themes: Theme[];
   currentMemberId?: string;
   currentMemberName?: string;
   canPlanContent: boolean;
+  isAdmin: boolean;
   onRefresh: () => Promise<void>;
 }) {
   const supabase = createClient();
@@ -1460,7 +1483,7 @@ function TrendDropsTab({
                         className={`chip !text-[9px] ${t.status === s ? TREND_CHIP[s] ?? "chip-cream" : "chip-cream opacity-50 hover:opacity-100"}`}
                       >{s}</button>
                     ))}
-                    {(canPlanContent || isMine) && (
+                    {isAdmin && (
                       <button onClick={() => deleteTrend(t.id)} className="chip chip-danger !text-[9px] ml-auto">Delete</button>
                     )}
                   </div>
@@ -1478,13 +1501,14 @@ function TrendDropsTab({
 // WEEKLY HEAT — theme management
 // ===========================================================================
 function WeeklyHeatTab({
-  themes, clips, trends, members, canPlanContent, currentMemberId, currentMemberName, onRefresh,
+  themes, clips, trends, members, canPlanContent, isAdmin, currentMemberId, currentMemberName, onRefresh,
 }: {
   themes: Theme[];
   clips: ClipMeta[];
   trends: TrendRef[];
   members: Member[];
   canPlanContent: boolean;
+  isAdmin: boolean;
   currentMemberId?: string;
   currentMemberName?: string;
   onRefresh: () => Promise<void>;
@@ -1853,7 +1877,7 @@ function WeeklyHeatTab({
                   </div>
                 )}
 
-                {canPlanContent && (
+                {isAdmin && (
                   <button onClick={() => deleteTheme(t.id)} className="btn btn-danger btn-sm mt-4">Delete</button>
                 )}
               </div>
@@ -2250,6 +2274,267 @@ function WatchTab({
       {filtered.length === 0 && liveClips.length > 0 && (
         <div className="card p-6 text-center">
           <p className="text-smoked-charcoal/70">No clips on {PLATFORM_LABEL[filter]} yet.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// PLANNER DASHBOARD — What's Stuck, Ready for Vanessa, Needs Planning
+// ===========================================================================
+function PlannerDashboard({
+  clips, assignments, approvals, people, themes, trends, members, isAdmin, onSelectClip, onRefresh,
+}: {
+  clips: ClipMeta[];
+  assignments: Assignment[];
+  approvals: Record<string, Approval[]>;
+  people: Record<string, ClipPerson[]>;
+  themes: Theme[];
+  trends: TrendRef[];
+  members: Member[];
+  isAdmin: boolean;
+  onSelectClip: (id: string) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const supabase = createClient();
+  const now = new Date();
+
+  // Active theme
+  const activeTheme = themes.find((t) => t.status === "Active" || t.status === "Planning");
+
+  // Needs planning: trend drops that are New or Watching
+  const needsPlanningTrends = trends.filter((t) => t.status === "New" || t.status === "Watching");
+
+  // Clips in planning stages (Planned, Dropped, Cutting)
+  const planningClips = clips.filter((c) => c.status === "Planned" || c.status === "Dropped" || c.status === "Cutting");
+
+  // What's stuck: clips with past drop-by dates but no video submitted
+  const stuckClips = planningClips.filter((c) => {
+    if (!c.clip_due_date) return false;
+    return new Date(c.clip_due_date) < now;
+  });
+
+  // Waiting on: assignments not yet dropped
+  const waitingOn = assignments.filter((a) => a.status !== "Done" && a.status !== "Greenlit" && a.status !== "Dropped");
+  const overdueAssignments = waitingOn.filter((a) => a.drop_by_date && new Date(a.drop_by_date) < now);
+
+  // Ready for Vanessa: clips in Review status (need greenlight)
+  const readyForVanessa = clips.filter((c) => c.status === "Review");
+
+  // Clips with all approvals approved but not yet scheduled
+  const approvedNotScheduled = clips.filter((c) => {
+    if (c.status !== "Review") return false;
+    const clipApprovals = approvals[c.id] ?? [];
+    if (clipApprovals.length === 0) return false;
+    return clipApprovals.every((a) => a.status === "Approved" || a.status === "Approved With Edits");
+  });
+
+  // Missing assignments: clips with no one assigned
+  const clipsWithoutAssignments = planningClips.filter((c) => !assignments.some((a) => a.clip_id === c.id));
+
+  async function sendReminder(assignment: Assignment) {
+    const clip = clips.find((c) => c.id === assignment.clip_id);
+    const member = members.find((m) => m.id === assignment.member_id);
+    if (!clip || !member) return;
+    await notifyMember(
+      supabase,
+      member.id,
+      "reminder",
+      `Reminder: "${clip.title}" is waiting on you. Drop-by ${assignment.drop_by_date ? new Date(assignment.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "soon"}.`,
+      "/portal/drop",
+    );
+    alert(`Reminder sent to ${member.name}`);
+  }
+
+  async function moveToStatus(clipId: string, status: ClipStatus) {
+    const { error } = await supabase.from("clips").update({ status }).eq("id", clipId);
+    if (error) { alert(error.message); return; }
+    await onRefresh();
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="font-display text-3xl text-desert-night">Planner View</h2>
+        <p className="text-smoked-charcoal/70 mt-1">
+          {isAdmin ? "You have full admin access." : "You can plan and organize. Vanessa has final say."}
+        </p>
+      </div>
+
+      {/* Active theme */}
+      {activeTheme && (
+        <div className="card-dark p-5">
+          <p className="text-sunburst-yellow text-sm font-black uppercase">This Week&apos;s Heat</p>
+          <p className="font-display text-2xl text-sandstone-cream mt-1">{activeTheme.name}</p>
+          {activeTheme.description && <p className="text-sandstone-cream/60 text-sm mt-1">{activeTheme.description}</p>}
+        </div>
+      )}
+
+      {/* Summary counts */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="card p-4 text-center">
+          <p className="font-display text-3xl text-desert-night">{needsPlanningTrends.length}</p>
+          <p className="text-xs text-smoked-charcoal/60 mt-1">Trends to plan</p>
+        </div>
+        <div className="card p-4 text-center">
+          <p className="font-display text-3xl text-desert-night">{stuckClips.length}</p>
+          <p className="text-xs text-smoked-charcoal/60 mt-1">Stuck / late</p>
+        </div>
+        <div className="card p-4 text-center">
+          <p className="font-display text-3xl text-desert-night">{waitingOn.length}</p>
+          <p className="text-xs text-smoked-charcoal/60 mt-1">Waiting on crew</p>
+        </div>
+        <div className="card p-4 text-center">
+          <p className="font-display text-3xl text-desert-night">{readyForVanessa.length}</p>
+          <p className="text-xs text-smoked-charcoal/60 mt-1">Ready for Vanessa</p>
+        </div>
+      </div>
+
+      {/* What's Stuck — overdue clips */}
+      {stuckClips.length > 0 && (
+        <section>
+          <h3 className="font-display text-xl text-desert-night mb-3">⚠ What&apos;s Stuck</h3>
+          <div className="space-y-2">
+            {stuckClips.map((clip) => (
+              <button
+                key={clip.id}
+                onClick={() => onSelectClip(clip.id)}
+                className="card p-4 w-full text-left hover:-translate-y-0.5 transition-transform"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-desert-night truncate">{clip.title}</p>
+                    <p className="text-xs text-heat-orange font-bold mt-0.5">
+                      Drop-by was {new Date(clip.clip_due_date!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                  <span className="chip chip-danger !text-[9px] shrink-0">{clip.status}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Waiting on crew — assignments not yet dropped */}
+      {waitingOn.length > 0 && (
+        <section>
+          <h3 className="font-display text-xl text-desert-night mb-3">Waiting on crew</h3>
+          <div className="space-y-2">
+            {overdueAssignments.length > 0 && (
+              <p className="text-sm text-heat-orange font-bold mb-2">
+                {overdueAssignments.length} overdue — send reminders:
+              </p>
+            )}
+            {waitingOn.slice(0, 10).map((a) => {
+              const clip = clips.find((c) => c.id === a.clip_id);
+              const isOverdue = a.drop_by_date && new Date(a.drop_by_date) < now;
+              return (
+                <div key={a.id} className="card p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-desert-night text-sm truncate">{clip?.title ?? "Content item"}</p>
+                    <p className="text-xs text-smoked-charcoal/60">
+                      {a.member_name} · {a.role}
+                      {a.drop_by_date && (
+                        <span className={isOverdue ? "text-heat-orange font-bold" : ""}>
+                          {" · "}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => sendReminder(a)}
+                    className="btn btn-secondary btn-sm !text-xs shrink-0"
+                  >
+                    Remind
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Ready for Vanessa — clips in Review */}
+      {readyForVanessa.length > 0 && (
+        <section>
+          <h3 className="font-display text-xl text-desert-night mb-3">Ready for Vanessa</h3>
+          <div className="space-y-2">
+            {readyForVanessa.map((clip) => {
+              const clipApprovals = approvals[clip.id] ?? [];
+              const approved = clipApprovals.filter((a) => a.status === "Approved" || a.status === "Approved With Edits").length;
+              const total = clipApprovals.length;
+              const allApproved = total > 0 && approved === total;
+              return (
+                <div key={clip.id} className="card p-4 flex items-center justify-between gap-3">
+                  <button onClick={() => onSelectClip(clip.id)} className="text-left min-w-0 flex-1">
+                    <p className="font-bold text-desert-night truncate">{clip.title}</p>
+                    <p className="text-xs text-smoked-charcoal/60 mt-0.5">
+                      {allApproved ? "✅ All greenlit" : `${approved}/${total} greenlit`}
+                    </p>
+                  </button>
+                  {allApproved && (
+                    <button
+                      onClick={() => moveToStatus(clip.id, "Scheduled")}
+                      className="btn btn-primary btn-sm !text-xs shrink-0"
+                    >
+                      Schedule
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Needs planning — trends + clips without assignments */}
+      {(needsPlanningTrends.length > 0 || clipsWithoutAssignments.length > 0) && (
+        <section>
+          <h3 className="font-display text-xl text-desert-night mb-3">Needs planning</h3>
+          <div className="space-y-2">
+            {needsPlanningTrends.length > 0 && (
+              <div className="card p-3 bg-sandstone-cream/50">
+                <p className="text-sm font-bold text-desert-night mb-2">
+                  {needsPlanningTrends.length} trend {needsPlanningTrends.length === 1 ? "drop" : "drops"} to review
+                </p>
+                <button
+                  onClick={() => onSelectClip(needsPlanningTrends[0].id)}
+                  className="btn btn-secondary btn-sm !text-xs"
+                >
+                  Go to Trend Drops →
+                </button>
+              </div>
+            )}
+            {clipsWithoutAssignments.length > 0 && (
+              <div className="card p-3 bg-sandstone-cream/50">
+                <p className="text-sm font-bold text-desert-night mb-2">
+                  {clipsWithoutAssignments.length} {clipsWithoutAssignments.length === 1 ? "clip" : "clips"} with no one assigned
+                </p>
+                <div className="space-y-1">
+                  {clipsWithoutAssignments.slice(0, 5).map((clip) => (
+                    <button
+                      key={clip.id}
+                      onClick={() => onSelectClip(clip.id)}
+                      className="text-sm text-copper-deep hover:underline block"
+                    >
+                      {clip.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Nothing to plan */}
+      {stuckClips.length === 0 && waitingOn.length === 0 && readyForVanessa.length === 0 && needsPlanningTrends.length === 0 && clipsWithoutAssignments.length === 0 && (
+        <div className="card p-10 text-center">
+          <p className="font-display text-2xl text-desert-night">Everything&apos;s moving.</p>
+          <p className="text-smoked-charcoal/70 mt-2">Nothing stuck. Nothing waiting. You&apos;re all caught up.</p>
         </div>
       )}
     </div>

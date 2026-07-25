@@ -28,12 +28,16 @@ export default function LobbyPage() {
   const [activeThemes, setActiveThemes] = useState<Theme[]>([]);
   const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
   const [assignmentClips, setAssignmentClips] = useState<Record<string, ClipMeta>>({});
+  const [plannerStats, setPlannerStats] = useState<{ stuck: number; waiting: number; readyForVanessa: number; trendsToPlan: number } | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isPlanner = member?.role === "admin" || member?.can_plan_content === true;
 
   useEffect(() => {
     async function load() {
       if (!member) { setLoading(false); return; }
-      const [actRes, reviewRes, readyRes, schedRes, clipsRes, themesRes, asgnRes] = await Promise.all([
+      const isPlannerUser = member.role === "admin" || member.can_plan_content === true;
+      const [actRes, reviewRes, readyRes, schedRes, clipsRes, themesRes, asgnRes, trendsRes, allAssignmentsRes] = await Promise.all([
         supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(8),
         supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Review"),
         supabase.from("ideas").select("id", { count: "exact", head: true }).eq("status", "Planned"),
@@ -41,6 +45,9 @@ export default function LobbyPage() {
         supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }).limit(20),
         supabase.from("content_themes").select("*").order("start_date", { ascending: false }).limit(5),
         supabase.from("content_assignments").select("*").eq("member_id", member.id).order("drop_by_date", { ascending: true }),
+        // Planner stats
+        isPlannerUser ? supabase.from("trend_references").select("id", { count: "exact", head: true }).in("status", ["New", "Watching"]) : Promise.resolve(null),
+        isPlannerUser ? supabase.from("content_assignments").select("status, drop_by_date").in("status", ["Assigned", "Waiting"]) : Promise.resolve(null),
       ]);
       setActivity(actRes.data ?? []);
       setHeat({
@@ -67,6 +74,25 @@ export default function LobbyPage() {
       const clipMap: Record<string, ClipMeta> = {};
       (clipsRes.data ?? []).forEach((c) => { clipMap[c.id] = c; });
       setAssignmentClips(clipMap);
+
+      // Planner stats
+      if (isPlannerUser && trendsRes && allAssignmentsRes) {
+        const now = new Date();
+        const stuck = (clipsRes.data ?? []).filter((c) =>
+          (c.status === "Planned" || c.status === "Dropped" || c.status === "Cutting") &&
+          c.clip_due_date && new Date(c.clip_due_date) < now
+        ).length;
+        const waiting = (allAssignmentsRes.data ?? []).length;
+        const overdueWaiting = (allAssignmentsRes.data ?? []).filter((a: { drop_by_date?: string | null }) =>
+          a.drop_by_date && new Date(a.drop_by_date) < now
+        ).length;
+        setPlannerStats({
+          stuck: overdueWaiting > 0 ? stuck + overdueWaiting : stuck,
+          waiting,
+          readyForVanessa: reviewRes.count ?? 0,
+          trendsToPlan: trendsRes.count ?? 0,
+        });
+      }
 
       setLoading(false);
     }
@@ -99,7 +125,6 @@ export default function LobbyPage() {
       {/* YOUR WEEK — one clean card with quick drop buttons */}
       <section>
         <div className="card-dark p-6">
-          <p className="text-sunburst-yellow text-sm font-black uppercase tracking-wide">{firstName}&apos;s Week</p>
           {myAssignments.length > 0 ? (
             <>
               {/* Next deadline */}
@@ -172,6 +197,41 @@ export default function LobbyPage() {
           )}
         </div>
       </section>
+
+      {/* PLANNER CARD — only for admins + planners */}
+      {isPlanner && plannerStats && (
+        <section>
+          <div className="card p-5 border-l-4 border-copper-clay">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-copper-deep text-sm font-black uppercase">Planner View</p>
+                <p className="font-display text-xl text-desert-night mt-1">What needs your attention</p>
+              </div>
+              <Link href="/portal/run-sheet" className="btn btn-secondary btn-sm shrink-0">
+                Open Planner →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <div className="bg-sandstone-cream/50 rounded-xl p-3 text-center">
+                <p className="font-display text-2xl text-desert-night">{plannerStats.stuck}</p>
+                <p className="text-xs text-smoked-charcoal/60">Stuck / late</p>
+              </div>
+              <div className="bg-sandstone-cream/50 rounded-xl p-3 text-center">
+                <p className="font-display text-2xl text-desert-night">{plannerStats.waiting}</p>
+                <p className="text-xs text-smoked-charcoal/60">Waiting on crew</p>
+              </div>
+              <div className="bg-sandstone-cream/50 rounded-xl p-3 text-center">
+                <p className="font-display text-2xl text-desert-night">{plannerStats.readyForVanessa}</p>
+                <p className="text-xs text-smoked-charcoal/60">Ready for Vanessa</p>
+              </div>
+              <div className="bg-sandstone-cream/50 rounded-xl p-3 text-center">
+                <p className="font-display text-2xl text-desert-night">{plannerStats.trendsToPlan}</p>
+                <p className="text-xs text-smoked-charcoal/60">Trends to plan</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Quick actions */}
       <section>
