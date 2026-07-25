@@ -192,6 +192,10 @@ export default function MyWaveKitPage() {
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">
           You&apos;re part of the First Wave.
         </h1>
+        <Link href="/portal/my-kit/public-card" className="inline-flex items-center gap-2 mt-4 bg-copper-clay/20 hover:bg-copper-clay/30 text-sandstone-cream rounded-xl px-4 py-2 text-sm font-bold transition">
+          <span>My Public Card</span>
+          <span className="text-sandstone-cream/60">→</span>
+        </Link>
       </section>
 
       {saved && (

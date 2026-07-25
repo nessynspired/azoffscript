@@ -52,6 +52,7 @@ const PLANNER_MORE: NavItem[] = [
   { href: "/portal/gear-board", label: "Gear Board" },
   { href: "/portal/invites", label: "Invites" },
   { href: "/portal/agreements", label: "Agreements" },
+  { href: "/portal/public-cards", label: "Public Cards" },
   { href: "/portal/brand-locker", label: "Brand Locker" },
   { href: "/portal/ground-rules", label: "Ground Rules" },
   { href: "/portal/money-side", label: "Money Side" },

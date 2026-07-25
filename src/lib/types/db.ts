@@ -4,6 +4,16 @@
  */
 
 export type UserRole = "admin" | "member";
+export type ProfileApprovalStatus = "Draft" | "Submitted" | "Needs Review" | "Approved" | "Rejected" | "Archived";
+export type PhotoPermissionStatus =
+  | "Pending Upload"
+  | "Pending Review"
+  | "Approved for Website"
+  | "Approved for Portal Only"
+  | "Approved for Email Signature"
+  | "Rejected / Needs New Photo";
+export type TagPreference = "yes" | "no" | "ask_every_time";
+export type ProfileVisibility = "public" | "portal_only" | "hidden";
 
 export type ClipStatus =
   | "Dropped" | "Needs Info" | "Planned" | "Shot" | "Cutting"
@@ -751,6 +761,158 @@ export interface Database {
           paid_at?: string | null;
           clip_id?: string | null;
           approved_by?: string | null;
+        };
+      };
+
+      approved_public_profile: {
+        Relationships: [];
+        Row: {
+          id: string;
+          member_id: string;
+          legal_name: string | null;
+          display_name: string | null;
+          preferred_website_name: string | null;
+          preferred_email_signature_name: string | null;
+          public_title: string | null;
+          secondary_role: string | null;
+          short_personality_line: string | null;
+          website_bio: string | null;
+          portal_avatar_url: string | null;
+          website_photo_url: string | null;
+          email_signature_photo_url: string | null;
+          social_handle: string | null;
+          tag_preference: TagPreference | null;
+          profile_visibility: ProfileVisibility | null;
+          photo_permission_status: PhotoPermissionStatus | null;
+          profile_approval_status: ProfileApprovalStatus | null;
+          requested_changes_note: string | null;
+          admin_review_note: string | null;
+          approved_by: string | null;
+          approved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          legal_name?: string | null;
+          display_name?: string | null;
+          preferred_website_name?: string | null;
+          preferred_email_signature_name?: string | null;
+          public_title?: string | null;
+          secondary_role?: string | null;
+          short_personality_line?: string | null;
+          website_bio?: string | null;
+          portal_avatar_url?: string | null;
+          website_photo_url?: string | null;
+          email_signature_photo_url?: string | null;
+          social_handle?: string | null;
+          tag_preference?: TagPreference | null;
+          profile_visibility?: ProfileVisibility | null;
+          photo_permission_status?: PhotoPermissionStatus | null;
+          profile_approval_status?: ProfileApprovalStatus | null;
+          requested_changes_note?: string | null;
+          admin_review_note?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          legal_name?: string | null;
+          display_name?: string | null;
+          preferred_website_name?: string | null;
+          preferred_email_signature_name?: string | null;
+          public_title?: string | null;
+          secondary_role?: string | null;
+          short_personality_line?: string | null;
+          website_bio?: string | null;
+          portal_avatar_url?: string | null;
+          website_photo_url?: string | null;
+          email_signature_photo_url?: string | null;
+          social_handle?: string | null;
+          tag_preference?: TagPreference | null;
+          profile_visibility?: ProfileVisibility | null;
+          photo_permission_status?: PhotoPermissionStatus | null;
+          profile_approval_status?: ProfileApprovalStatus | null;
+          requested_changes_note?: string | null;
+          admin_review_note?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          updated_at?: string;
+        };
+      };
+
+      profile_change_requests: {
+        Relationships: [];
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          member_id: string;
+          display_name: string | null;
+          preferred_website_name: string | null;
+          preferred_email_signature_name: string | null;
+          public_title: string | null;
+          secondary_role: string | null;
+          short_personality_line: string | null;
+          website_bio: string | null;
+          portal_avatar_url: string | null;
+          website_photo_url: string | null;
+          email_signature_photo_url: string | null;
+          social_handle: string | null;
+          tag_preference: TagPreference | null;
+          profile_visibility: ProfileVisibility | null;
+          requested_changes_note: string | null;
+          status: ProfileApprovalStatus;
+          admin_review_note: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          member_id: string;
+          display_name?: string | null;
+          preferred_website_name?: string | null;
+          preferred_email_signature_name?: string | null;
+          public_title?: string | null;
+          secondary_role?: string | null;
+          short_personality_line?: string | null;
+          website_bio?: string | null;
+          portal_avatar_url?: string | null;
+          website_photo_url?: string | null;
+          email_signature_photo_url?: string | null;
+          social_handle?: string | null;
+          tag_preference?: TagPreference | null;
+          profile_visibility?: ProfileVisibility | null;
+          requested_changes_note?: string | null;
+          status?: ProfileApprovalStatus;
+          admin_review_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Update: {
+          display_name?: string | null;
+          preferred_website_name?: string | null;
+          preferred_email_signature_name?: string | null;
+          public_title?: string | null;
+          secondary_role?: string | null;
+          short_personality_line?: string | null;
+          website_bio?: string | null;
+          portal_avatar_url?: string | null;
+          website_photo_url?: string | null;
+          email_signature_photo_url?: string | null;
+          social_handle?: string | null;
+          tag_preference?: TagPreference | null;
+          profile_visibility?: ProfileVisibility | null;
+          requested_changes_note?: string | null;
+          status?: ProfileApprovalStatus;
+          admin_review_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          updated_at?: string;
         };
       };
 
