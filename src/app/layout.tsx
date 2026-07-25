@@ -23,6 +23,7 @@ const script = Permanent_Marker({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://azoffscript.com"),
   title: "AZ Off Script — The Off Script Room",
   description:
     "A creator clubhouse for Arizona's funniest, realest, most off-script voices. Drop clips, share ideas, greenlight final cuts.",
