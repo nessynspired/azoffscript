@@ -267,8 +267,10 @@ export function PortalBottomNav() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMoreOpen(false)}
-                  className={`card p-4 text-center ${
-                    isActive(item.href) ? "bg-copper-clay/20 border-copper-clay" : ""
+                  className={`p-4 text-center rounded-2xl border transition-colors ${
+                    isActive(item.href)
+                      ? "bg-copper-clay/30 border-copper-clay"
+                      : "bg-white/5 border-white/10 hover:bg-white/10"
                   }`}
                 >
                   <span className="font-display text-lg text-sandstone-cream">{item.label}</span>
