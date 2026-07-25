@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ImmersiveHome } from "@/components/ImmersiveHome";
+import { AnimatedIntro } from "@/components/AnimatedIntro";
 import { OrganizationSchema, WebSiteSchema } from "@/components/public/StructuredData";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function HomePage() {
     <>
       <OrganizationSchema />
       <WebSiteSchema />
+      <AnimatedIntro />
       <ImmersiveHome />
     </>
   );
