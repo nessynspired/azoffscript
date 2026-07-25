@@ -8,12 +8,12 @@ import { MascotImage, PosterImage } from "@/components/MascotImage";
 export const metadata: Metadata = {
   title: "About AZ Off Script — Arizona, Our Way",
   description:
-    "AZ Off Script is an Arizona-based creator brand making short-form videos, group reactions, hot takes, and local content from across Arizona.",
+    "AZ Off Script is an Arizona women-led creator crew making reaction videos, group games, hot takes, local humor, quick trend remixes, and off-script moments. Different women. Same room. Arizona, our way.",
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About AZ Off Script — Arizona, Our Way",
     description:
-      "AZ Off Script is an Arizona-based creator brand making short-form videos, group reactions, hot takes, and local content from across Arizona.",
+      "AZ Off Script is an Arizona women-led creator crew making reaction videos, group games, hot takes, local humor, quick trend remixes, and off-script moments. Different women. Same room. Arizona, our way.",
   },
 };
 
@@ -45,16 +45,33 @@ export default function AboutPage() {
 
           <div className="card p-6">
             <p className="text-lg text-desert-night leading-relaxed">
-              We are a women-led Arizona creator crew making short-form content around real
-              reactions, group games, hot takes, local humor, and off-script moments. The brand
-              started in Arizona and is built to grow across the state.
+              We are an Arizona women-led creator crew making short-form content around real
+              reactions, group games, hot takes, local humor, quick trend remixes, and off-script
+              moments. The group chat got a camera — and nobody is reading from a script.
+            </p>
+          </div>
+
+          <div className="card p-6">
+            <p className="text-lg text-desert-night leading-relaxed">
+              The First Wave started with the women who showed up first and helped shape the room.
+              The first group brings strong Black and Latina energy, but the brand is not limited
+              to one background. As AZ Off Script grows, the room will expand with more Arizona
+              women, more perspectives, and more personalities.
+            </p>
+          </div>
+
+          <div className="card p-6 bg-copper-clay/10 border-l-4 border-copper-clay">
+            <p className="font-display text-2xl text-desert-night leading-tight">
+              Different women. Same room. Arizona, our way.
             </p>
           </div>
 
           <div className="card p-6">
             <p className="text-lg text-desert-night leading-relaxed">
               The goal is to create content people recognize themselves in — the kind of clip you
-              send to a friend because somebody finally said it out loud.
+              send to a friend because somebody finally said it out loud. Not about one type of
+              woman, but about what happens when different Arizona women get the same prompt and
+              nobody answers the same way.
             </p>
           </div>
 

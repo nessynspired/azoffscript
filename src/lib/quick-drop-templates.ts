@@ -1,5 +1,9 @@
 /**
- * Quick Drop Library — 12 content categories for AZ Off Script.
+ * Quick Drop Library — AZ Off Script content format library.
+ *
+ * POSITIONING: AZ Off Script is an Arizona women-led creator crew.
+ * Not about one type of woman — about what happens when different Arizona
+ * women get the same prompt and nobody answers the same way.
  *
  * PHILOSOPHY: Prompt them. Don't script them.
  * We give the idea. They bring the moment.
@@ -8,9 +12,7 @@
  *  - Idea, Vibe, WhatToDrop, EasyWay, Examples, MakeItYours
  *  - Effort label: "2-Min Drop", "5-Min Drop", "10-Min Drop", "Group Day", "Edit Heavy"
  *  - Home-friendly, needs talking, needs editing flags
- *  - SEO phrase (for on-screen text, caption, hashtags, website recap)
- *  - Caption starter
- *  - Hashtag starter (5-8 hashtags, not 25)
+ *  - SEO phrase, caption starter, hashtag starter (5-8, not 25)
  *  - Category bucket
  */
 
@@ -19,7 +21,7 @@ export type EffortLabel = "2-Min Drop" | "5-Min Drop" | "10-Min Drop" | "Group D
 export interface QuickDropTemplate {
   id: string;
   name: string;
-  bucket: string;           // one of the 12 categories
+  bucket: string;
   description: string;
   effort: EffortLabel;
   timeEstimate: string;
@@ -35,13 +37,12 @@ export interface QuickDropTemplate {
   examples?: string[];
   makeItYours: string;
   transitions?: string[];
-  seoPhrase: string;        // main search phrase
-  captionStarter: string;   // caption template
-  hashtagStarter: string[]; // 5-8 hashtags
+  seoPhrase: string;
+  captionStarter: string;
+  hashtagStarter: string[];
   platforms: string[];
 }
 
-// The 12 content buckets
 export const CONTENT_BUCKETS = [
   "Transitions",
   "Face-Only Reactions",
@@ -51,14 +52,28 @@ export const CONTENT_BUCKETS = [
   "Soft POVs",
   "BTS / Real Process",
   "AZ Tried It",
-  "Black + Latina Lens",
   "Friendship Energy",
   "Comment-to-Clip",
   "Search Explainers",
+  "Arizona Real Life",
+  "What Type Are You",
+  "Quiet Girl Friendly",
+  "Off Script Looks",
+  "Real But Not Too Deep",
+  "Fake Scenario Court",
+  "Arizona Woman Math",
+  "Text Translation",
+  "Rank It",
+  "Room Temperature Check",
+  "Don't Overthink It",
+  "Two-Second Opinion",
+  "Different Women Different Answer",
+  "First Wave / Future Wave",
+  "Black + Latina Lens",
 ] as const;
 
 export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
-  // 1. TRANSITIONS
+  // ===== TRANSITIONS =====
   {
     id: "first_wave_intro",
     name: "First Wave Intro Pass",
@@ -95,50 +110,155 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
       "Do your own transition",
     ],
     seoPhrase: "Arizona creator crew",
-    captionStarter: "Meet the AZ Off Script crew. 👋 Who's your favorite?",
+    captionStarter: "Meet the AZ Off Script crew. Who's your favorite?",
     hashtagStarter: ["#AZOffScript", "#ArizonaCreators", "#ArizonaTikTok", "#CreatorCrew", "#MeetTheCrew"],
     platforms: ["TikTok", "Reels", "Facebook", "Shorts"],
   },
   {
-    id: "transition_remix",
-    name: "Transition Remix",
+    id: "step_into_the_room",
+    name: "Step Into the Room",
     bucket: "Transitions",
-    description: "Use a trending transition to answer a prompt or reveal something.",
+    description: "Each person steps toward the camera and gives one line.",
     effort: "5-Min Drop",
     timeEstimate: "3-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: true,
+    adminStitches: true,
+    maxSeconds: 8,
+    idea: "Step toward the camera and give one line — your answer to the prompt.",
+    vibe: "Quick, confident, your entrance is the energy.",
+    whatToDrop: "A short clip stepping into frame with your answer. 5-8 seconds.",
+    easyWay: "Start off-frame, step in, say your line, step out.",
+    examples: [
+      "My answer is yes, and I'm not explaining.",
+      "That's a no from me.",
+      "I'm not saying it's me, but it's me.",
+    ],
+    makeItYours: "Your walk, your line, your energy. The step is the style — your personality is the content.",
+    transitions: ["Step toward camera", "Walk into frame", "Doorway intro", "Do your own"],
+    seoPhrase: "transition reaction video",
+    captionStarter: "We stepped into the room with our answers. What's yours?",
+    hashtagStarter: ["#AZOffScript", "#ArizonaCreators", "#TransitionTrend", "#ReactionVideo", "#StepIntoTheRoom"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+  {
+    id: "zoom_verdict",
+    name: "Zoom Verdict",
+    bucket: "Transitions",
+    description: "Start close, zoom out, answer the question.",
+    effort: "2-Min Drop",
+    timeEstimate: "1-2 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 10,
+    idea: "Start close-up, zoom out, and give your verdict on the prompt.",
+    vibe: "Dramatic, quick, satisfying zoom reveal.",
+    whatToDrop: "A zoom-out clip with your answer. 5-10 seconds.",
+    easyWay: "Start with camera close to your face, zoom out as you answer.",
+    makeItYours: "Your zoom speed, your face, your answer. Make the reveal yours.",
+    transitions: ["Zoom out from face", "Zoom into face", "Do your own"],
+    seoPhrase: "zoom reaction video",
+    captionStarter: "Zoom out for the verdict. Did we get it right?",
+    hashtagStarter: ["#AZOffScript", "#ZoomVerdict", "#ArizonaCreators", "#ReactionVideo"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+  {
+    id: "cover_camera",
+    name: "Cover the Camera",
+    bucket: "Transitions",
+    description: "Use hand, tumbler, purse, phone, shirt, or sunglasses to cover and reveal.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
     homeFriendly: true,
     needsTalking: false,
     needsEditing: true,
     adminStitches: true,
     maxSeconds: 10,
-    idea: "Use a simple transition to answer a prompt or reveal your take.",
-    vibe: "Quick, visual, satisfying. Let the transition do the work.",
-    whatToDrop: "A short clip with a transition — before and after.",
-    easyWay: "Record the 'before,' do your transition, record the 'after.'",
-    examples: [
-      "Cover camera → reveal your answer face",
-      "Step toward camera → close-up reaction",
-      "Zoom out → show the whole room",
-    ],
-    makeItYours: "Pick any transition or invent your own. The transition is the style — your face is the content.",
-    transitions: [
-      "Step toward the camera",
-      "Cover the camera with your hand",
-      "Cover with tumbler or phone",
-      "Zoom in / zoom out",
-      "Walk into frame",
-      "Turn head to next person",
-      "Throw object / next person catches",
-      "Phone drop transition",
-      "Do your own",
-    ],
-    seoPhrase: "transition challenge reaction",
-    captionStarter: "We tried the transition trend. How did we do? 🔥",
-    hashtagStarter: ["#AZOffScript", "#TransitionTrend", "#ArizonaCreators", "#TikTokTransition", "#ReactionVideo"],
+    idea: "Cover the camera with something, then reveal your answer or reaction.",
+    vibe: "Smooth, satisfying, creative. The cover is the style.",
+    whatToDrop: "A cover-and-reveal clip. 5-10 seconds.",
+    easyWay: "Cover the lens with your hand or an object, pull away to show your answer.",
+    makeItYours: "Use whatever's near you — tumbler, phone, sunglasses, purse. Your object, your reveal.",
+    transitions: ["Cover with hand", "Cover with tumbler", "Cover with phone", "Cover with sunglasses", "Cover with shirt", "Do your own"],
+    seoPhrase: "cover camera transition",
+    captionStarter: "Cover, reveal, react. How would you answer?",
+    hashtagStarter: ["#AZOffScript", "#CoverCamera", "#TransitionTrend", "#ArizonaCreators"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+  {
+    id: "walk_off_answer",
+    name: "Walk-Off Answer",
+    bucket: "Transitions",
+    description: "Answer the prompt and walk out of frame.",
+    effort: "2-Min Drop",
+    timeEstimate: "1-2 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 8,
+    idea: "Answer the prompt, then walk out of frame like you're done.",
+    vibe: "Confident, final, a little sassy. Said it, done.",
+    whatToDrop: "Your answer + walk off. 5-8 seconds.",
+    easyWay: "Hit record, say your answer, walk away.",
+    makeItYours: "Your walk, your energy. The walk-off is the mic drop.",
+    transitions: ["Walk out of frame", "Turn and leave", "Do your own"],
+    seoPhrase: "walk off reaction video",
+    captionStarter: "Said it and walked off. Would you do the same?",
+    hashtagStarter: ["#AZOffScript", "#WalkOff", "#ArizonaCreators", "#ReactionVideo"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+  {
+    id: "object_pass",
+    name: "Object Pass",
+    bucket: "Transitions",
+    description: "Pass the tumbler, phone, sunglasses, or cactus sticker to the next person.",
+    effort: "Group Day",
+    timeEstimate: "10-15 min",
+    homeFriendly: true,
+    needsTalking: false,
+    needsEditing: true,
+    adminStitches: true,
+    maxSeconds: 60,
+    idea: "Pass an object to the camera to transition to the next person's clip.",
+    vibe: "Connected, smooth, group energy. The object is the link.",
+    whatToDrop: "Your clip — end by passing an object toward the camera.",
+    easyWay: "Record your part, then toss or hand an object toward the lens.",
+    makeItYours: "Your object, your throw, your energy. The pass connects the room.",
+    transitions: ["Pass tumbler", "Pass phone", "Pass sunglasses", "Pass cactus sticker", "Do your own"],
+    seoPhrase: "pass the object transition",
+    captionStarter: "We passed it around the room. Who had the best answer?",
+    hashtagStarter: ["#AZOffScript", "#ObjectPass", "#ArizonaCreators", "#GroupVideo", "#TransitionTrend"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+  {
+    id: "chair_spin",
+    name: "Chair Spin",
+    bucket: "Transitions",
+    description: "Start turned away, spin to camera, answer.",
+    effort: "2-Min Drop",
+    timeEstimate: "1-2 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 8,
+    idea: "Start turned away from the camera, spin around, and give your answer.",
+    vibe: "Playful, dramatic, a little theatrical. The spin is the reveal.",
+    whatToDrop: "A chair-spin clip with your answer. 5-8 seconds.",
+    easyWay: "Sit turned away, spin to face the camera, say your line.",
+    makeItYours: "Your spin speed, your face when you land, your answer. Make the spin yours.",
+    transitions: ["Chair spin to camera", "Turn head to camera", "Do your own"],
+    seoPhrase: "chair spin reaction",
+    captionStarter: "Spun around with the answer. What would you say?",
+    hashtagStarter: ["#AZOffScript", "#ChairSpin", "#ArizonaCreators", "#ReactionVideo"],
     platforms: ["TikTok", "Reels", "Shorts"],
   },
 
-  // 2. FACE-ONLY REACTIONS
+  // ===== FACE-ONLY REACTIONS =====
   {
     id: "face_only_reaction",
     name: "Face-Only Reaction",
@@ -165,12 +285,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "There's no script here. Your face is the content. Whatever you feel, show it.",
     seoPhrase: "face reaction video",
-    captionStarter: "No words needed. Just the face. 😳 What's yours?",
+    captionStarter: "No words needed. Just the face. What's yours?",
     hashtagStarter: ["#AZOffScript", "#FaceReaction", "#ReactionVideo", "#ArizonaCreators", "#NoWords"],
     platforms: ["TikTok", "Reels", "Shorts"],
   },
 
-  // 3. ONE-LINE VERDICTS
+  // ===== ONE-LINE VERDICTS =====
   {
     id: "one_line_verdict",
     name: "One-Line Verdict",
@@ -197,12 +317,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Your words, your delivery. The shorter the better. Don't explain — just verdict.",
     seoPhrase: "hot take reaction",
-    captionStarter: "One line. That's it. Do you agree? 👇",
+    captionStarter: "One line. That's it. Do you agree?",
     hashtagStarter: ["#AZOffScript", "#HotTakes", "#OneLineVerdict", "#ArizonaCreators", "#ReactionVideo"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
 
-  // 4. ARIZONA MICRO-MOMENTS
+  // ===== ARIZONA MOMENTS =====
   {
     id: "arizona_micro_moment",
     name: "Arizona Micro-Moment",
@@ -229,12 +349,70 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Your Arizona, your words. The more specific the better. West Valley, Buckeye, Phoenix — rep your area.",
     seoPhrase: "Arizona hot take",
-    captionStarter: "Only Arizona people will understand this. 🌵 You get it?",
+    captionStarter: "Only Arizona people will understand this. You get it?",
     hashtagStarter: ["#AZOffScript", "#ArizonaTikTok", "#ArizonaHotTake", "#WestValleyAZ", "#ArizonaCreators", "#ArizonaLife"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
+  {
+    id: "arizona_made_me",
+    name: "Arizona Made Me This Way",
+    bucket: "Arizona Moments",
+    description: "How living in Arizona shaped your habits and instincts.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 20,
+    idea: "Finish the sentence: 'Arizona made me...' with a habit or instinct AZ gave you.",
+    vibe: "Local, funny, real. Everyone in AZ has one.",
+    whatToDrop: "Your 'Arizona made me' line. 10-20 seconds.",
+    easyWay: "Just say what Arizona made you do or think.",
+    examples: [
+      "Arizona made me judge parking spots by shade first.",
+      "Arizona made me think a 20-minute drive is a relationship test.",
+      "Arizona made me plan errands like a survival mission.",
+      "Arizona made me suspicious of anyone who says 'let's meet outside.'",
+      "Arizona made me believe summer needs a cancellation policy.",
+    ],
+    makeItYours: "Your habit, your words. The more specific the funnier. Works with every personality.",
+    seoPhrase: "Arizona made me this way",
+    captionStarter: "Arizona made us this way. What did it do to you?",
+    hashtagStarter: ["#AZOffScript", "#ArizonaMadeMe", "#ArizonaTikTok", "#ArizonaCreators", "#ArizonaLife"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+  {
+    id: "only_arizona_understand",
+    name: "Only Arizona People Understand",
+    bucket: "Arizona Moments",
+    description: "Things only Arizona locals get.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 15,
+    idea: "Finish the sentence: 'Only Arizona people understand why...' with something local.",
+    vibe: "Local, relatable, searchable. The 'you get it' energy.",
+    whatToDrop: "Your 'Only Arizona' line. 10-15 seconds.",
+    easyWay: "Just say something only AZ people would understand.",
+    examples: [
+      "Only Arizona people understand why 7 AM can already feel late.",
+      "Only Arizona people understand why the steering wheel is personal.",
+      "Only Arizona people understand why shade is a luxury item.",
+      "Only Arizona people understand why 'just down the road' can mean 35 minutes.",
+      "Only Arizona people understand why fall is a personality shift.",
+    ],
+    makeItYours: "Your Arizona moment. The more specific the better. Very searchable.",
+    seoPhrase: "only Arizona people understand",
+    captionStarter: "Only Arizona people will get this. Are you from here?",
+    hashtagStarter: ["#AZOffScript", "#OnlyArizona", "#ArizonaTikTok", "#ArizonaCreators", "#ArizonaLife"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
 
-  // 5. GROUP CHAT COURT
+  // ===== GROUP CHAT COURT =====
   {
     id: "group_chat_court",
     name: "Group Chat Court",
@@ -258,12 +436,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Your verdict, your reasoning. Call it like you see it. The comments will vote too.",
     seoPhrase: "group reaction video",
-    captionStarter: "The room decides: guilty or not guilty? 🧑‍⚖️ You vote too.",
+    captionStarter: "The room decides: guilty or not guilty? You vote too.",
     hashtagStarter: ["#AZOffScript", "#GroupChatCourt", "#GroupReaction", "#ArizonaCreators", "#ReactionVideo", "#GuiltyOrNot"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
 
-  // 6. SOFT POVs
+  // ===== SOFT POVs =====
   {
     id: "soft_pov",
     name: "Soft POV",
@@ -288,12 +466,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Your face, your body language, your timing. The POV is the setup — your reaction is the content.",
     seoPhrase: "POV relatable video",
-    captionStarter: "POV: you've been here. 😅 Tag someone who does this.",
+    captionStarter: "POV: you've been here. Tag someone who does this.",
     hashtagStarter: ["#AZOffScript", "#POV", "#Relatable", "#ArizonaCreators", "#POVTikTok"],
     platforms: ["TikTok", "Reels", "Shorts"],
   },
 
-  // 7. BTS / REAL PROCESS
+  // ===== BTS / REAL PROCESS =====
   {
     id: "bts_real_process",
     name: "BTS / Real Process",
@@ -318,12 +496,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Show your real process. The mess is the content. Don't clean up — that's the point.",
     seoPhrase: "behind the scenes content creator",
-    captionStarter: "This is what it actually looks like. 😂 No filter.",
+    captionStarter: "This is what it actually looks like. No filter.",
     hashtagStarter: ["#AZOffScript", "#BTS", "#BehindTheScenes", "#ArizonaCreators", "#ContentCreator", "#RealProcess"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
 
-  // 8. AZ TRIED IT
+  // ===== AZ TRIED IT =====
   {
     id: "az_tried_it",
     name: "AZ Tried It",
@@ -348,42 +526,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Your honest reaction. If you love it, say it. If you don't, say that too. Real reviews only.",
     seoPhrase: "Arizona local business reaction",
-    captionStarter: "We tried it so you don't have to. Would you go? 📍",
+    captionStarter: "We tried it so you don't have to. Would you go?",
     hashtagStarter: ["#AZOffScript", "#AZTriedIt", "#ArizonaLocal", "#ArizonaCreators", "#LocalBusiness", "#ArizonaFood", "#WestValleyAZ"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
 
-  // 9. BLACK + LATINA LENS
-  {
-    id: "black_latina_lens",
-    name: "Black + Latina Lens",
-    bucket: "Black + Latina Lens",
-    description: "Cultural takes — natural, not performed. Let the women answer as themselves.",
-    effort: "5-Min Drop",
-    timeEstimate: "3-5 min",
-    homeFriendly: true,
-    needsTalking: true,
-    needsEditing: false,
-    adminStitches: true,
-    maxSeconds: 20,
-    idea: "Answer a cultural prompt as yourself — not performing, just being.",
-    vibe: "Real, warm, honest. No stereotypes. No performing culture.",
-    whatToDrop: "Your take on the prompt. 15-20 seconds.",
-    easyWay: "Just answer like you're talking to your family or your group chat.",
-    examples: [
-      "What would your auntie/tía say?",
-      "Family group chat translation.",
-      "The look your mom gives before she says something wild.",
-      "Black and Latina women in Arizona reacting to...",
-    ],
-    makeItYours: "Answer as yourself. Do not force accents, stereotypes, or 'performing culture.' Your real voice is the point.",
-    seoPhrase: "Black Latina women creators Arizona",
-    captionStarter: "The auntie would say... 😂 What would yours say?",
-    hashtagStarter: ["#AZOffScript", "#BlackWomenCreators", "#LatinaCreators", "#ArizonaWomen", "#ArizonaCreators", "#CulturalReaction"],
-    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
-  },
-
-  // 10. FRIENDSHIP ENERGY
+  // ===== FRIENDSHIP ENERGY =====
   {
     id: "friendship_energy",
     name: "Friendship Energy",
@@ -408,12 +556,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Call out someone in the crew, or describe your friend type. The warmth is the content.",
     seoPhrase: "friendship group video",
-    captionStarter: "Every group has this friend. 🫶 Tag yours.",
+    captionStarter: "Every group has this friend. Tag yours.",
     hashtagStarter: ["#AZOffScript", "#FriendshipEnergy", "#ArizonaCreators", "#GroupChemistry", "#FriendshipGoals"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
 
-  // 11. COMMENT-TO-CLIP
+  // ===== COMMENT-TO-CLIP =====
   {
     id: "comment_to_clip",
     name: "Comment-to-Clip",
@@ -437,12 +585,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     makeItYours: "Your response, your energy. The comment is the prompt — your reaction is the content.",
     seoPhrase: "comment reaction video",
-    captionStarter: "You said it, we're responding. 💬 What now?",
+    captionStarter: "You said it, we're responding. What now?",
     hashtagStarter: ["#AZOffScript", "#CommentReaction", "#ArizonaCreators", "#ReactionVideo", "#CommentCourt"],
     platforms: ["TikTok", "Reels", "Shorts"],
   },
 
-  // 12. SEARCH EXPLAINERS
+  // ===== SEARCH EXPLAINERS =====
   {
     id: "search_explainer",
     name: "Search Explainer",
@@ -460,39 +608,536 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     whatToDrop: "A 10-second explainer. What is AZ Off Script?",
     easyWay: "Just say what we are in your own words.",
     examples: [
-      "AZ Off Script is a Black and Latina women-led creator crew in Arizona.",
+      "AZ Off Script is an Arizona women-led creator crew.",
       "We do reactions, group debates, and local hot takes.",
-      "It's a room of women keeping it real, off script.",
+      "It's a room of different women keeping it real, off script.",
     ],
     makeItYours: "Your words, your take. The point is clarity — say what we are so people and search understand.",
     seoPhrase: "what is AZ Off Script",
-    captionStarter: "So what is AZ Off Script? Here's the 10-second version. 👇",
+    captionStarter: "So what is AZ Off Script? Here's the 10-second version.",
     hashtagStarter: ["#AZOffScript", "#ArizonaCreators", "#CreatorCrew", "#ArizonaTikTok", "#WhatIsAZOffScript"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== ARIZONA REAL LIFE =====
+  {
+    id: "before_i_leave_house",
+    name: "Before I Leave the House",
+    bucket: "Arizona Real Life",
+    description: "What you need before leaving the house in Arizona.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 15,
+    idea: "Finish the sentence: 'Before I leave the house in Arizona, I need...'",
+    vibe: "Relatable, funny, real. Everyone has their list.",
+    whatToDrop: "Your 'before I leave' list. 10-15 seconds.",
+    easyWay: "Just say what you actually need before walking out the door.",
+    examples: [
+      "Before I leave the house, I need water, sunglasses, emotional support, and a reason.",
+      "Before I leave the house, I need to know if this errand is really worth melting.",
+      "Before I leave the house, somebody better explain why this can't be delivered.",
+    ],
+    makeItYours: "Your list, your words. The more honest the funnier.",
+    seoPhrase: "before I leave the house Arizona",
+    captionStarter: "Before I leave the house in Arizona, I need... What's on your list?",
+    hashtagStarter: ["#AZOffScript", "#ArizonaLife", "#ArizonaTikTok", "#ArizonaCreators", "#BeforeILeave"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+  {
+    id: "kitchen_counter_confessions",
+    name: "Kitchen Counter Confessions",
+    bucket: "Arizona Real Life",
+    description: "Easy home setup. One take. Just you and the counter.",
+    effort: "2-Min Drop",
+    timeEstimate: "1-2 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 15,
+    idea: "Stand at your kitchen counter and make a confession — something honest and small.",
+    vibe: "Casual, real, a little messy. Like you're talking to yourself.",
+    whatToDrop: "Your kitchen counter confession. 10-15 seconds.",
+    easyWay: "Stand at the counter, hit record, say your confession.",
+    examples: [
+      "Kitchen counter confession: I'm not going if parking is bad.",
+      "Kitchen counter confession: I said 'let me know' and immediately regretted it.",
+      "Kitchen counter confession: I do not trust 'quick question.'",
+    ],
+    makeItYours: "Your confession, your kitchen, your energy. The casual is the point.",
+    seoPhrase: "kitchen counter confession",
+    captionStarter: "Kitchen counter confession time. What's yours?",
+    hashtagStarter: ["#AZOffScript", "#KitchenCounterConfessions", "#ArizonaCreators", "#Confession", "#Relatable"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+
+  // ===== WHAT TYPE ARE YOU =====
+  {
+    id: "which_one_are_you",
+    name: "Which One Are You?",
+    bucket: "What Type Are You",
+    description: "Pick which friend type you are. Very shareable.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 15,
+    idea: "We list friend types. You pick which one you are.",
+    vibe: "Fun, self-aware, shareable. People tag themselves.",
+    whatToDrop: "Your pick + why. 10-15 seconds.",
+    easyWay: "Just say which one you are and why.",
+    examples: [
+      "The friend who plans everything.",
+      "The friend who shows up late.",
+      "The friend who says 'I'm outside' from the couch.",
+      "The friend who needs the address 4 times.",
+      "The friend who brings snacks.",
+      "The friend who gives the face before the words.",
+    ],
+    makeItYours: "Pick yours or make up your own type. Your personality is the answer.",
+    seoPhrase: "which friend are you",
+    captionStarter: "Which one are you? Tag yourself. Don't lie.",
+    hashtagStarter: ["#AZOffScript", "#WhichOneAreYou", "#ArizonaCreators", "#FriendType", "#Relatable"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+  {
+    id: "arizona_which_one",
+    name: "Arizona: Which One Are You?",
+    bucket: "What Type Are You",
+    description: "Arizona-specific friend types.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 15,
+    idea: "We list Arizona friend types. You pick which one you are.",
+    vibe: "Local, funny, self-aware. Arizona-specific.",
+    whatToDrop: "Your AZ type pick. 10-15 seconds.",
+    easyWay: "Just say which Arizona type you are.",
+    examples: [
+      "The one who parks far for shade.",
+      "The one who refuses outdoor seating.",
+      "The one who says 'it's not that hot.'",
+      "The one who keeps a water bottle everywhere.",
+      "The one who needs AC before conversation.",
+    ],
+    makeItYours: "Your type, your words. Or make up your own Arizona type.",
+    seoPhrase: "Arizona friend type",
+    captionStarter: "Which Arizona type are you? Be honest.",
+    hashtagStarter: ["#AZOffScript", "#ArizonaLife", "#ArizonaTikTok", "#WhichOneAreYou", "#ArizonaCreators"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== QUIET GIRL FRIENDLY =====
+  {
+    id: "no_words_needed",
+    name: "No Words Needed",
+    bucket: "Quiet Girl Friendly",
+    description: "Face reactions only — perfect for quiet personalities.",
+    effort: "2-Min Drop",
+    timeEstimate: "1-2 min",
+    homeFriendly: true,
+    needsTalking: false,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 10,
+    idea: "Your face when you hear the prompt. No talking required.",
+    vibe: "Quiet, real, powerful. Your face is enough.",
+    whatToDrop: "Your face reaction. 5-10 seconds. No words.",
+    easyWay: "Read the prompt, hit record, give your honest face.",
+    examples: [
+      "Your face when someone says they're five minutes away.",
+      "Your face when the group chat says 'be honest.'",
+      "Your face when someone says Arizona summer is not that bad.",
+      "Your face when someone says 'quick favor.'",
+      "Your face when plans move from indoors to outside.",
+    ],
+    makeItYours: "Your face, your reaction. No performing. This helps quiet personalities shine.",
+    seoPhrase: "face reaction no words",
+    captionStarter: "No words needed. Just the face. What's yours?",
+    hashtagStarter: ["#AZOffScript", "#NoWordsNeeded", "#FaceReaction", "#ArizonaCreators", "#QuietGirlEnergy"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+
+  // ===== OFF SCRIPT LOOKS =====
+  {
+    id: "off_script_looks",
+    name: "Off Script Looks",
+    bucket: "Off Script Looks",
+    description: "Outfit, style, merch — polished but still real.",
+    effort: "10-Min Drop",
+    timeEstimate: "5-10 min",
+    homeFriendly: true,
+    needsTalking: false,
+    needsEditing: true,
+    adminStitches: true,
+    maxSeconds: 15,
+    idea: "Show your fit — what you'd wear to an AZ Off Script content day.",
+    vibe: "Cool, styled, confident. Less goofy, more vibe.",
+    whatToDrop: "A fit check or outfit reveal. 10-15 seconds.",
+    easyWay: "Just show your outfit — full look, accessories, tumbler if you have one.",
+    examples: [
+      "What I'd wear to an AZ Off Script content day.",
+      "Black shirt or white shirt?",
+      "Tumbler check.",
+      "Arizona, our way — outfit edition.",
+      "First Wave fit check.",
+    ],
+    makeItYours: "Your style, your fit. This can show merch without hard-selling.",
+    seoPhrase: "Arizona creator outfit",
+    captionStarter: "Off Script fit check. How would you style it?",
+    hashtagStarter: ["#AZOffScript", "#FitCheck", "#ArizonaCreators", "#OffScriptLooks", "#ArizonaStyle"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+
+  // ===== REAL BUT NOT TOO DEEP =====
+  {
+    id: "real_quick",
+    name: "Real Quick",
+    bucket: "Real But Not Too Deep",
+    description: "One real thought, delivered quick. Gives the brand heart.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 15,
+    idea: "Share one real thought — quick, honest, not a whole speech.",
+    vibe: "Real, warm, brief. Use sparingly. Gives dimension.",
+    whatToDrop: "Your 'real quick' thought. 10-15 seconds.",
+    easyWay: "Just say one real thing. Don't make it a speech.",
+    examples: [
+      "Real quick: adult friendships are harder than people admit.",
+      "Real quick: sometimes the group chat is therapy and chaos.",
+      "Real quick: you can be low-key and still have presence.",
+      "Real quick: not every woman wants to be loud, and that's fine.",
+      "Real quick: showing up is a love language too.",
+    ],
+    makeItYours: "Your thought, your words. Keep it short. The real is the point.",
+    seoPhrase: "real quick honest thought",
+    captionStarter: "Real quick... what's one thing you've learned?",
+    hashtagStarter: ["#AZOffScript", "#RealQuick", "#ArizonaCreators", "#Honest", "#RealTalk"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== FAKE SCENARIO COURT =====
+  {
+    id: "fake_scenario_court",
+    name: "Fake Scenario Court",
+    bucket: "Fake Scenario Court",
+    description: "Fake situations, real reactions. Drama energy without real drama.",
+    effort: "5-Min Drop",
+    timeEstimate: "3-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 20,
+    idea: "React to a fake scenario — give your verdict on a made-up situation.",
+    vibe: "Drama energy, but safe. Fake situations, real reactions.",
+    whatToDrop: "Your reaction to the fake scenario. 15-20 seconds.",
+    easyWay: "Just react to the scenario like it's real. Your honest take.",
+    examples: [
+      "Fake scenario: Your friend says she's not mad, then sends 'k.'",
+      "Fake scenario: Someone invites the group but leaves one person out.",
+      "Fake scenario: He says he forgot to text back, but posted three stories.",
+      "Fake scenario: Your friend says 'be honest' but clearly wants agreement.",
+    ],
+    makeItYours: "Your reaction, your verdict. The scenario is fake — your take is real.",
+    seoPhrase: "fake scenario reaction",
+    captionStarter: "Fake scenario, real reaction. What would you do?",
+    hashtagStarter: ["#AZOffScript", "#FakeScenario", "#ReactionVideo", "#ArizonaCreators", "#WhatWouldYouDo"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== ARIZONA WOMAN MATH =====
+  {
+    id: "arizona_woman_math",
+    name: "Arizona Woman Math",
+    bucket: "Arizona Woman Math",
+    description: "Funny Arizona logic. Don't overuse.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 15,
+    idea: "Finish the sentence: 'Arizona woman math: ...' with your AZ logic.",
+    vibe: "Funny, relatable, a little chaotic. Arizona-specific logic.",
+    whatToDrop: "Your 'Arizona woman math' line. 10-15 seconds.",
+    easyWay: "Just say your Arizona logic. The more absurd the better.",
+    examples: [
+      "Arizona woman math: If the parking spot has shade, it counts as closer.",
+      "Arizona woman math: A 30-minute drive is only acceptable if food is involved.",
+      "Arizona woman math: If it is over 105, the outfit has to be cute AND survivable.",
+      "Arizona woman math: If I already took my bra off, I'm not leaving again.",
+    ],
+    makeItYours: "Your math, your logic. The more specific the funnier. Don't overuse this one.",
+    seoPhrase: "Arizona woman math",
+    captionStarter: "Arizona woman math. What's your equation?",
+    hashtagStarter: ["#AZOffScript", "#ArizonaWomanMath", "#ArizonaTikTok", "#ArizonaCreators", "#ArizonaLife"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== TEXT TRANSLATION =====
+  {
+    id: "what_she_really_means",
+    name: "What She Really Means",
+    bucket: "Text Translation",
+    description: "Translate common phrases. Easy, searchable, relatable.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 15,
+    idea: "We give you a phrase. You translate what it really means.",
+    vibe: "Funny, honest, relatable. Everyone knows these phrases.",
+    whatToDrop: "Your translation of the phrase. 10-15 seconds.",
+    easyWay: "Just say what the phrase actually means.",
+    examples: [
+      "When she says 'it's fine.'",
+      "When she says 'do whatever you want.'",
+      "When she says 'I'm not mad.'",
+      "When she says 'we'll see.'",
+      "When she says 'I'll let you know.'",
+    ],
+    makeItYours: "Your translation, your delivery. The honest read is the funny one.",
+    seoPhrase: "what she really means text",
+    captionStarter: "When she says 'it's fine'... what does she really mean?",
+    hashtagStarter: ["#AZOffScript", "#WhatSheReallyMeans", "#ArizonaCreators", "#TextTranslation", "#Relatable"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== RANK IT =====
+  {
+    id: "rank_it",
+    name: "Rank It",
+    bucket: "Rank It",
+    description: "Rank a list of Arizona problems. Hold up fingers or say the number.",
+    effort: "5-Min Drop",
+    timeEstimate: "3-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 20,
+    idea: "We give you a list. You rank it from worst to least worst.",
+    vibe: "Quick, opinionated, visual. Hold up fingers or say the number.",
+    whatToDrop: "Your ranking. 15-20 seconds.",
+    easyWay: "Just hold up fingers or say the number for each item.",
+    examples: [
+      "Rank these Arizona problems: hot car seat, steering wheel burn, bad parking, long drive, outside plans, no shade.",
+      "Rank these group chat problems: voice notes, 'k', read receipts, no reply, typing but never sending.",
+    ],
+    makeItYours: "Your ranking, your logic. The ranking is the opinion.",
+    seoPhrase: "rank it Arizona problems",
+    captionStarter: "We ranked these Arizona problems. Do you agree?",
+    hashtagStarter: ["#AZOffScript", "#RankIt", "#ArizonaTikTok", "#ArizonaCreators", "#ArizonaProblems"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== ROOM TEMPERATURE CHECK =====
+  {
+    id: "room_temperature_check",
+    name: "Room Temperature Check",
+    bucket: "Room Temperature Check",
+    description: "Not weather — vibe. A recurring branded segment.",
+    effort: "5-Min Drop",
+    timeEstimate: "2-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 15,
+    idea: "We ask a vibe question. You give the room temperature — your honest read.",
+    vibe: "Branded, recurring, quick. 'Room temperature check' is the signature.",
+    whatToDrop: "Your room temperature check answer. 10-15 seconds.",
+    easyWay: "Just answer the vibe question honestly.",
+    examples: [
+      "Room temperature check: Would you still go if the plans changed last minute?",
+      "Room temperature check: Is this rude or honest?",
+      "Room temperature check: Are we forgiving this or not?",
+    ],
+    makeItYours: "Your read, your energy. This can become a recurring branded segment.",
+    seoPhrase: "room temperature check",
+    captionStarter: "Room temperature check: what's the read?",
+    hashtagStarter: ["#AZOffScript", "#RoomTemperatureCheck", "#ArizonaCreators", "#ReactionVideo", "#GroupReaction"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== DON'T OVERTHINK IT =====
+  {
+    id: "dont_overthink_it",
+    name: "Don't Overthink It",
+    bucket: "Don't Overthink It",
+    description: "One prompt, answer fast. First answer wins.",
+    effort: "2-Min Drop",
+    timeEstimate: "1-2 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: false,
+    maxSeconds: 10,
+    idea: "We give you one prompt. Answer fast — first answer wins.",
+    vibe: "Quick, instinctive, real. No thinking, just answering.",
+    whatToDrop: "Your first answer. 5-10 seconds.",
+    easyWay: "Just say the first thing that comes to mind.",
+    examples: [
+      "One word for Arizona summer.",
+      "One thing you refuse to argue about.",
+      "One thing that instantly changes your mood.",
+      "One thing every group chat needs.",
+      "One thing you are too grown to explain.",
+    ],
+    makeItYours: "Your first answer. Don't edit yourself. The card says: Don't overthink it. First answer wins.",
+    seoPhrase: "don't overthink it quick answer",
+    captionStarter: "Don't overthink it. First answer wins. What's yours?",
+    hashtagStarter: ["#AZOffScript", "#DontOverthinkIt", "#ArizonaCreators", "#QuickAnswer", "#FirstAnswerWins"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+
+  // ===== TWO-SECOND OPINION =====
+  {
+    id: "two_second_opinion",
+    name: "Two-Second Opinion",
+    bucket: "Two-Second Opinion",
+    description: "Yes or no. That's it. Super easy weekly format.",
+    effort: "2-Min Drop",
+    timeEstimate: "1-2 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 5,
+    idea: "We give you a question. You say yes or no. That's it.",
+    vibe: "Fast, final, easy. One of the easiest weekly formats.",
+    whatToDrop: "Your yes or no. 2-5 seconds.",
+    easyWay: "Just say yes or no. Don't explain.",
+    examples: [
+      "Would you go? Yes or no.",
+      "Would you forgive it? Yes or no.",
+      "Worth the drive? Yes or no.",
+      "Would you tell her? Yes or no.",
+      "Would you post it? Yes or no.",
+    ],
+    makeItYours: "Your answer. One word. The brevity is the content.",
+    seoPhrase: "yes or no opinion video",
+    captionStarter: "Yes or no. That's it. What's your answer?",
+    hashtagStarter: ["#AZOffScript", "#YesOrNo", "#ArizonaCreators", "#QuickOpinion", "#TwoSecondOpinion"],
+    platforms: ["TikTok", "Reels", "Shorts"],
+  },
+
+  // ===== DIFFERENT WOMEN DIFFERENT ANSWER =====
+  {
+    id: "different_women_different_answer",
+    name: "Different Women, Different Answer",
+    bucket: "Different Women Different Answer",
+    description: "Same prompt, totally different responses. Shows the range of the room.",
+    effort: "10-Min Drop",
+    timeEstimate: "5-10 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: true,
+    adminStitches: true,
+    maxSeconds: 20,
+    idea: "Same prompt, but everyone answers differently. That's the point.",
+    vibe: "Diverse, real, shows range. The differences are the content.",
+    whatToDrop: "Your answer to the prompt. 15-20 seconds.",
+    easyWay: "Just answer the prompt your way. Don't match anyone else.",
+    examples: [
+      "Prompt: What makes you leave the group chat? (One says drama, one says notifications, one says voice notes.)",
+      "Prompt: What's your Arizona dealbreaker? (Everyone has a different one.)",
+      "Prompt: What makes you trust someone? (Different answers show different personalities.)",
+    ],
+    makeItYours: "Your answer, your personality. The point is NOT to match. Different women, different answers.",
+    seoPhrase: "different women different answers",
+    captionStarter: "Same prompt, totally different answers. Which one is yours?",
+    hashtagStarter: ["#AZOffScript", "#DifferentWomen", "#ArizonaCreators", "#GroupReaction", "#SamePrompt"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== FIRST WAVE / FUTURE WAVE =====
+  {
+    id: "first_wave_vs_future",
+    name: "First Wave vs Future Wave",
+    bucket: "First Wave / Future Wave",
+    description: "First Wave reacts to future member questions. Helps attract new women.",
+    effort: "10-Min Drop",
+    timeEstimate: "5-10 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: true,
+    adminStitches: true,
+    maxSeconds: 20,
+    idea: "Answer questions about what kind of woman fits AZ Off Script and what the room needs next.",
+    vibe: "Welcoming, honest, forward-looking. Helps with recruitment.",
+    whatToDrop: "Your answer to the future wave question. 15-20 seconds.",
+    easyWay: "Just answer honestly about what the room needs.",
+    examples: [
+      "What kind of woman fits AZ Off Script?",
+      "What should someone know before joining the room?",
+      "What energy does the room still need?",
+    ],
+    makeItYours: "Your honest answer. This helps attract more women without sounding desperate.",
+    seoPhrase: "join Arizona creator crew",
+    captionStarter: "The room is growing. What kind of energy should walk in next?",
+    hashtagStarter: ["#AZOffScript", "#FirstWave", "#FutureWave", "#ArizonaCreators", "#JoinTheCrew", "#CreatorCrew"],
+    platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+  },
+
+  // ===== BLACK + LATINA LENS (optional, natural) =====
+  {
+    id: "black_latina_lens",
+    name: "Black + Latina Lens",
+    bucket: "Black + Latina Lens",
+    description: "Cultural takes — natural, not performed. Optional category, not the whole brand.",
+    effort: "5-Min Drop",
+    timeEstimate: "3-5 min",
+    homeFriendly: true,
+    needsTalking: true,
+    needsEditing: false,
+    adminStitches: true,
+    maxSeconds: 20,
+    idea: "Answer a cultural prompt as yourself — not performing, just being.",
+    vibe: "Real, warm, honest. No stereotypes. No performing culture.",
+    whatToDrop: "Your take on the prompt. 15-20 seconds.",
+    easyWay: "Just answer like you're talking to your family or your group chat.",
+    examples: [
+      "What would your auntie/tía say?",
+      "Family group chat translation.",
+      "The look your mom gives before she says something wild.",
+    ],
+    makeItYours: "Answer as yourself. Do not force accents, stereotypes, or 'performing culture.' Your real voice is the point. This is an optional category — use when it fits naturally.",
+    seoPhrase: "Black Latina women creators Arizona",
+    captionStarter: "The auntie would say... What would yours say?",
+    hashtagStarter: ["#AZOffScript", "#BlackWomenCreators", "#LatinaCreators", "#ArizonaWomen", "#ArizonaCreators"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
 ];
 
-/**
- * Get a template by ID.
- */
 export function getTemplate(id: string): QuickDropTemplate | undefined {
   return QUICK_DROP_TEMPLATES.find((t) => t.id === id);
 }
 
-/**
- * Get all templates in a specific bucket.
- */
 export function getTemplatesByBucket(bucket: string): QuickDropTemplate[] {
   return QUICK_DROP_TEMPLATES.filter((t) => t.bucket === bucket);
 }
 
-/**
- * Get a personalized example for a crew member.
- */
 export function getExampleFor(template: QuickDropTemplate, memberName?: string): string | null {
   if (!template.examples || template.examples.length === 0) return null;
   if (!memberName) return template.examples[0];
-
   const firstName = memberName.split(" ")[0];
   const match = template.examples.find((line) =>
     line.toLowerCase().includes(firstName.toLowerCase())
