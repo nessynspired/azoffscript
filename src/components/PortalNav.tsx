@@ -55,7 +55,6 @@ export function PortalTopBar({
   const router = useRouter();
   const { signOut } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
-  const [showSignOut, setShowSignOut] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   async function handleSignOut() {
@@ -154,6 +153,13 @@ export function PortalTopBar({
               {memberRole === "admin" ? "Admin" : "Crew"}
             </span>
           </Link>
+          <button
+            onClick={handleSignOut}
+            className="px-3 py-1.5 rounded-full text-sm font-extrabold uppercase tracking-wide text-sandstone-cream/70 hover:text-heat-orange hover:bg-white/5 transition-colors"
+            aria-label="Sign out"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
     </header>
@@ -162,8 +168,15 @@ export function PortalTopBar({
 
 export function PortalBottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+  }
 
   return (
     <>
@@ -262,6 +275,12 @@ export function PortalBottomNav() {
                 </Link>
               ))}
             </div>
+            <button
+              onClick={handleSignOut}
+              className="mt-5 w-full py-3 rounded-2xl bg-heat-orange/15 border border-heat-orange/40 text-heat-orange font-extrabold uppercase tracking-wide text-sm active:scale-[0.98] transition-transform"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       )}
