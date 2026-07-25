@@ -48,15 +48,15 @@ export function AnimatedIntro() {
         exiting ? "-translate-y-full" : "translate-y-0"
       }`}
       style={{
-        background: "linear-gradient(135deg, #0a1f3d 0%, #143a6b 40%, #1e5ba8 100%)",
+        background: "linear-gradient(135deg, #07111c 0%, #0d1b2a 50%, #2a6b5b 100%)",
       }}
     >
-      {/* Subtle starfield / grain overlay */}
+      {/* Subtle desert grain overlay */}
       <div
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0 opacity-15"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 2%), radial-gradient(circle at 70% 60%, rgba(255,255,255,0.3) 0%, transparent 2%), radial-gradient(circle at 40% 80%, rgba(255,255,255,0.3) 0%, transparent 2%), radial-gradient(circle at 85% 25%, rgba(255,255,255,0.4) 0%, transparent 2%)",
+            "radial-gradient(circle at 20% 30%, rgba(255,210,63,0.3) 0%, transparent 3%), radial-gradient(circle at 70% 60%, rgba(201,106,58,0.25) 0%, transparent 3%), radial-gradient(circle at 40% 80%, rgba(59,145,125,0.3) 0%, transparent 3%), radial-gradient(circle at 85% 25%, rgba(255,210,63,0.3) 0%, transparent 3%)",
           backgroundSize: "300px 300px, 250px 250px, 200px 200px, 350px 350px",
         }}
       />

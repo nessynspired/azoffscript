@@ -16,7 +16,7 @@ if (!existsSync(src)) {
 }
 mkdirSync(dest, { recursive: true });
 
-const BG = "#0a1f3d"; // deep blue (matches the animated intro background)
+const BG = "#0d1b2a"; // desert-night (brand color)
 
 async function makeIcon(size, name, maskable = false) {
   const padding = maskable ? Math.round(size * 0.1) : 0;
