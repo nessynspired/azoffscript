@@ -105,6 +105,37 @@ function groupByExhibit(
   }));
 }
 
+// ---------------------------------------------------------------------------
+// linkifyExhibits — turns "Exhibit A", "Exhibit B", etc. in the HTML into
+// clickable links that scroll to that exhibit's first section.
+// ---------------------------------------------------------------------------
+function linkifyExhibits(
+  html: string,
+  exhibits: { id: string; label: string; sectionPrefix?: string; sections: number[] }[]
+): string {
+  // Build a map of "Exhibit A" → anchor of its first section
+  // e.g. Exhibit A → section-A.1
+  const linkMap: Record<string, string> = {};
+  for (const ex of exhibits) {
+    if (ex.id === "main" || ex.sections.length === 0) continue;
+    const letter = ex.label.replace("Exhibit ", "").trim();
+    const prefix = ex.sectionPrefix ?? `${letter}.`;
+    const firstSection = ex.sections[0];
+    linkMap[`Exhibit ${letter}`] = `section-${prefix}${firstSection}`;
+  }
+
+  let result = html;
+  for (const [exhibitName, anchor] of Object.entries(linkMap)) {
+    // Replace both plain "Exhibit A" and bold "**Exhibit A" variants
+    // Use a regex that matches the exhibit name but not inside an existing href
+    const escaped = exhibitName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Match "Exhibit A" possibly wrapped in <strong> or bold markdown remnants
+    const regex = new RegExp(`(${escaped})`, "g");
+    result = result.replace(regex, `<a href="#${anchor}" class="exhibit-link" data-anchor="${anchor}">$1</a>`);
+  }
+  return result;
+}
+
 // ===========================================================================
 // SCROLLABLE AGREEMENT VIEWER with Table of Contents
 // ===========================================================================
@@ -245,6 +276,15 @@ function AgreementScrollViewer({
         {/* Scrollable content */}
         <div
           ref={scrollRef}
+          onClick={(e) => {
+            // Intercept clicks on exhibit links — scroll to that exhibit instead of navigating
+            const target = e.target as HTMLElement;
+            const link = target.closest(".exhibit-link") as HTMLElement | null;
+            if (link?.dataset.anchor) {
+              e.preventDefault();
+              scrollToAnchor(link.dataset.anchor);
+            }
+          }}
           className="flex-1 card p-6 md:p-8 max-h-[70vh] overflow-y-auto scroll-smooth agreement-prose"
         >
           {grouped.map((ex, exIdx) => (
@@ -261,7 +301,7 @@ function AgreementScrollViewer({
                   <h3 className="font-display text-base text-desert-night border-b border-desert-night/10 pb-1 mb-2">
                     <span className="text-copper-deep">{sec.prefix}{sec.number}.</span> {sec.title}
                   </h3>
-                  <div dangerouslySetInnerHTML={{ __html: sec.html }} />
+                  <div dangerouslySetInnerHTML={{ __html: linkifyExhibits(sec.html, exhibits) }} />
                 </div>
               ))}
             </div>
@@ -591,21 +631,21 @@ function AgreementPopup({
             </div>
           ) : null}
 
-          {/* Individual links to read each part — opens the full scroll viewer */}
+          {/* Link to read the Main Agreement — opens the full scroll viewer */}
           {onOpenExhibit && (
-            <div className="space-y-1.5 pt-2 border-t border-copper-clay/20">
-              <p className="text-[10px] font-black text-desert-night/60 uppercase tracking-wide">Read the full document</p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {exhibits.map((ex) => (
-                  <button
-                    key={ex.id}
-                    onClick={() => onOpenExhibit(ex.id)}
-                    className="btn btn-ghost btn-sm !text-xs justify-start"
-                  >
-                    {ex.label} →
-                  </button>
-                ))}
-              </div>
+            <div className="pt-2 border-t border-copper-clay/20">
+              <button
+                onClick={() => onOpenExhibit("main")}
+                className="w-full text-left flex items-center gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-copper-clay/10 transition group"
+              >
+                <span className="font-display text-sm font-bold text-desert-night group-hover:text-copper-deep transition">
+                  Main Agreement
+                </span>
+                <span className="text-copper-deep/0 group-hover:text-copper-deep transition text-sm">→</span>
+              </button>
+              <p className="text-[10px] text-smoked-charcoal/40 px-2 -mx-2">
+                The exhibits are linked inside the Main Agreement.
+              </p>
             </div>
           )}
         </div>
