@@ -73,7 +73,7 @@ export function PWAInstallPrompt() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   return (
-    <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
+    <div className="fixed left-1/2 -translate-x-1/2 z-50 animate-slide-up" style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}>
       <div className="card-dark p-4 flex items-center gap-3 max-w-sm shadow-[var(--shadow-lift)]">
         <div className="shrink-0 w-10 h-10 rounded-lg bg-sunburst-yellow/20 flex items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4C430" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

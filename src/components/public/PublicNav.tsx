@@ -10,7 +10,7 @@ const NAV_LINKS = [
 
 export function PublicNav() {
   return (
-    <header className="fixed top-0 inset-x-0 z-40 bg-desert-night/95 backdrop-blur border-b border-copper-clay/30">
+    <header className="fixed top-0 inset-x-0 z-40 bg-desert-night/95 backdrop-blur border-b border-copper-clay/30" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}

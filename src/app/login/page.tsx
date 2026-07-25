@@ -64,7 +64,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))", paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
       {/* sunburst accent behind mascot */}
       <div className="absolute left-[8%] top-[12%] w-72 h-72 tex-sunburst opacity-20 animate-spin-slow rounded-full" aria-hidden />
       <div className="absolute right-[6%] bottom-[8%] w-48 h-48 tex-sunburst opacity-10 animate-spin-slow rounded-full" aria-hidden />

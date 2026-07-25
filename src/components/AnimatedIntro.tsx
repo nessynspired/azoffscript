@@ -120,8 +120,8 @@ export function AnimatedIntro() {
 
       {/* Logo at bottom */}
       <div
-        className="absolute bottom-8 left-0 right-0 flex justify-center"
-        style={{ animation: "introFadeIn 0.6s ease-out 1.2s both" }}
+        className="absolute left-0 right-0 flex justify-center"
+        style={{ bottom: "calc(2rem + env(safe-area-inset-bottom, 0px))", animation: "introFadeIn 0.6s ease-out 1.2s both" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={logoSrc} alt="AZ Off Script" className="h-7 w-auto opacity-60" />
@@ -134,8 +134,9 @@ export function AnimatedIntro() {
           sessionStorage.setItem("azos-intro-played", "1");
           setTimeout(() => setVisible(false), 700);
         }}
-        className="absolute top-6 right-6 text-xs font-bold uppercase tracking-wide transition z-20"
+        className="absolute right-6 text-xs font-bold uppercase tracking-wide transition z-20"
         style={{
+          top: "calc(1.5rem + env(safe-area-inset-top, 0px))",
           color: isLight ? "rgba(13,27,42,0.4)" : "rgba(250,247,240,0.4)",
           animation: "introFadeIn 0.4s ease-out 0.6s both",
         }}

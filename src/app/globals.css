@@ -63,6 +63,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Prevent horizontal scroll on mobile (especially PWA standalone mode) */
+  overflow-x: hidden;
 }
 
 body {
@@ -71,6 +73,7 @@ body {
   font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: 1.55;
+  overflow-x: hidden;
   /* subtle sandstone grain */
   background-image:
     radial-gradient(circle at 20% 10%, rgba(201, 106, 58, 0.04) 0, transparent 40%),
@@ -515,12 +518,24 @@ a.chip {
 
 .portal-shell {
   min-height: 100vh;
-  padding-bottom: 88px; /* room for mobile bottom nav */
+  min-height: 100dvh; /* dynamic viewport height — fixes mobile browser chrome shifting */
+  /* room for mobile bottom nav + safe area (home indicator on iOS) */
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  /* room for status bar / notch on iOS PWA */
+  padding-top: env(safe-area-inset-top, 0px);
+  /* avoid horizontal scroll from notch insets */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
 }
 @media (min-width: 769px) {
   .portal-shell {
     padding-bottom: 0;
     padding-top: 72px; /* room for desktop top nav */
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 

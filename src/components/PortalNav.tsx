@@ -246,7 +246,7 @@ export function PortalBottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-desert-night border-t-2 border-copper-clay/40">
+      <nav className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-desert-night border-t-2 border-copper-clay/40" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="flex items-end justify-around h-[72px] px-2">
           {/* Left 2 items */}
           {mobileNav.slice(0, 2).map((item) => {
