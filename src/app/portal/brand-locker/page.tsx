@@ -47,26 +47,7 @@ const GEAR_TEMPLATES = [
   { name: "Blank Invite Template", desc: "Welcome to the room invite" },
 ];
 
-const RULES = [
-  "No kids posted unless Vanessa separately approves and gets clear permission.",
-  "No posting anyone without their approval on the specific clip.",
-  "Money comes later. No payment promises in captions or comments.",
-  "If someone says 'Do Not Post' — it doesn't get posted. No exceptions.",
-  "Tag the crew's socials only if they've said yes in their Kit settings.",
-  "Keep it Arizona-wide. No specific neighborhoods or addresses.",
-];
-
-const COMFORT_RULES = [
-  "Funny does not mean humiliating. We laugh at the moment, not the person — unless they clearly approve that specific clip.",
-  "No one is required to be silly, loud, goofy, dramatic, or the center of attention.",
-  "No one is required to share, repost, comment on, or promote a clip.",
-  "If someone doesn't like how they come across, they can say Do Not Post.",
-  "If a clip causes tension or hurt feelings, it goes on hold for comfort review.",
-  "Each member chooses their comfort level in My Kit. Default is \"Ask Every Time.\"",
-  "Some members are on-camera, some are low-key, some are behind the scenes. All roles are valid.",
-];
-
-type Tab = "logos" | "mascot" | "colors" | "captions" | "hashtags" | "formats" | "templates" | "rules";
+type Tab = "logos" | "mascot" | "colors" | "captions" | "hashtags" | "formats" | "templates";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "logos", label: "Logos" },
@@ -76,7 +57,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "hashtags", label: "Hashtags" },
   { key: "formats", label: "Formats" },
   { key: "templates", label: "Gear Templates" },
-  { key: "rules", label: "How It Works" },
 ];
 
 export default function BrandLockerPage() {
@@ -242,56 +222,6 @@ export default function BrandLockerPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* RULES */}
-      {tab === "rules" && (
-        <div className="space-y-4">
-          <div className="card p-6">
-            <h2 className="font-display text-2xl text-desert-night mb-4">Posting Guidelines</h2>
-            <div className="space-y-3">
-              {RULES.map((r, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <span className="chip chip-copper !text-[10px] shrink-0 mt-0.5">{i + 1}</span>
-                  <p className="text-desert-night">{r}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card-dark p-6">
-            <h2 className="font-display text-2xl text-sunburst-yellow mb-2">Comfort + Respect</h2>
-            <p className="text-sandstone-cream font-bold mb-4">
-              If someone is not comfortable with how they are shown, the clip is not ready.
-            </p>
-            <div className="space-y-3">
-              {COMFORT_RULES.map((r, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <span className="chip chip-yellow !text-[10px] shrink-0 mt-0.5">{i + 1}</span>
-                  <p className="text-sandstone-cream">{r}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="p-4 bg-copper-deep/10 rounded-xl">
-              <p className="text-sm font-bold text-copper-deep">Approval Language</p>
-              <p className="text-sm text-desert-night/70 mt-1">
-                When asking for approval: &ldquo;Can I post this?&rdquo; — wait for a yes.
-                Options: Approved, Approved but don&apos;t tag me, I don&apos;t like how I come across, Do Not Post.
-                If they say &ldquo;Do Not Post&rdquo; or don&apos;t respond, it doesn&apos;t get posted.
-              </p>
-            </div>
-            <div className="mt-3 p-4 bg-cactus-teal/10 rounded-xl">
-              <p className="text-sm font-bold text-cactus-teal">Money-Later Language</p>
-              <p className="text-sm text-desert-night/70 mt-1">
-                We don&apos;t promise payment in captions, comments, or DMs.
-                Money conversations happen privately with Vanessa.
-              </p>
-            </div>
           </div>
         </div>
       )}
