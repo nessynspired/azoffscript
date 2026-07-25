@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage } from "@/components/MascotImage";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -185,6 +186,7 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+      <PWAInstallPrompt />
     </main>
   );
 }

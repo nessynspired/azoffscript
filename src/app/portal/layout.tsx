@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { PortalTopBar, PortalBottomNav } from "@/components/PortalNav";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MascotImage } from "@/components/MascotImage";
 
 function PortalShell({ children }: { children: React.ReactNode }) {
@@ -38,6 +39,7 @@ function PortalShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <PortalBottomNav />
+      <PWAInstallPrompt />
     </div>
   );
 }
