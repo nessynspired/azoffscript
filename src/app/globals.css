@@ -872,3 +872,8 @@ body {
   border-radius: 4px;
   font-size: 12px;
 }
+
+/* Scroll margin for anchor jumps inside scrollable containers */
+.scroll-mt-4 {
+  scroll-margin-top: 1rem;
+}

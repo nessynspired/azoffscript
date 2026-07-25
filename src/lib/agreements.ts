@@ -16,6 +16,16 @@ export interface AgreementDoc {
   title: string;
   summary: string;
   bodyMarkdown: string;
+  /** Exhibit groupings for the Table of Contents. Each exhibit covers a range of sections. */
+  exhibits?: ExhibitGroup[];
+}
+
+export interface ExhibitGroup {
+  id: string;          // e.g. "main", "exhibit-a"
+  label: string;       // e.g. "Main Agreement", "Exhibit A"
+  title: string;       // e.g. "Posting Rules"
+  /** Section numbers (from # N. Title headings) included in this exhibit */
+  sections: number[];
 }
 
 // ---------------------------------------------------------------------------
@@ -1279,6 +1289,44 @@ Phone: (collected at signing)
 Social Handles: (collected at signing)
 Electronic signature accepted: Yes
 `,
+  exhibits: [
+    {
+      id: "main",
+      label: "Main Agreement",
+      title: "First Wave Participation Rules + Media Release",
+      sections: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 47, 48, 49, 50, 51],
+    },
+    {
+      id: "exhibit-a",
+      label: "Exhibit A",
+      title: "Posting Rules",
+      sections: [17, 18, 19, 20, 21],
+    },
+    {
+      id: "exhibit-b",
+      label: "Exhibit B",
+      title: "Content, Media, Likeness & Ownership",
+      sections: [22, 23, 24, 25, 26, 27, 28, 29, 30],
+    },
+    {
+      id: "exhibit-c",
+      label: "Exhibit C",
+      title: "Money / Future Revenue",
+      sections: [31, 32, 33, 34, 35, 36, 37],
+    },
+    {
+      id: "exhibit-d",
+      label: "Exhibit D",
+      title: "Leaving, Removal & Disputes",
+      sections: [38, 39, 40, 41, 42, 43, 44, 45, 46],
+    },
+    {
+      id: "exhibit-e",
+      label: "Exhibit E",
+      title: "Brand Architecture & Future Waves",
+      sections: [5, 6, 16, 22],
+    },
+  ],
 };
 
 export const ALL_AGREEMENTS: AgreementDoc[] = [AGREEMENT_V1];

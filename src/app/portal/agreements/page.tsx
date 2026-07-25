@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage } from "@/components/MascotImage";
@@ -8,6 +8,7 @@ import {
   ALL_AGREEMENTS,
   getAgreementByVersion,
   type AgreementDoc,
+  type ExhibitGroup,
 } from "@/lib/agreements";
 import type { Database } from "@/lib/types/db";
 
@@ -20,6 +21,226 @@ const STATUS_CHIP: Record<string, string> = {
   Active: "chip-approved",
   Retired: "chip-hold",
 };
+
+// ===========================================================================
+// Parsed section type — extracted from markdown headings like "# 5. Title"
+// ===========================================================================
+interface ParsedSection {
+  number: number;
+  title: string;
+  anchor: string;
+  html: string;
+}
+
+interface ParsedExhibit {
+  group: { id: string; label: string; title: string; sections: number[] };
+  sections: ParsedSection[];
+}
+
+function parseAgreementSections(markdown: string): ParsedSection[] {
+  const lines = markdown.split("\n");
+  const sections: ParsedSection[] = [];
+  let currentSection: ParsedSection | null = null;
+  let buffer: string[] = [];
+
+  function flush() {
+    if (currentSection) {
+      currentSection.html = markdownToHtml(buffer.join("\n"));
+      sections.push(currentSection);
+    }
+  }
+
+  for (const line of lines) {
+    // Match "# N. Title" or "# N. Title" at any heading level
+    const match = line.match(/^#+\s+(\d+)\.\s+(.+)$/);
+    if (match) {
+      flush();
+      const num = parseInt(match[1], 10);
+      const title = match[2].trim();
+      currentSection = {
+        number: num,
+        title,
+        anchor: `section-${num}`,
+        html: "",
+      };
+      buffer = [];
+    } else if (currentSection) {
+      // Skip the top-level "# AZ OFF SCRIPT LLC" and other non-numbered headings
+      buffer.push(line);
+    }
+  }
+  flush();
+  return sections;
+}
+
+function groupByExhibit(sections: ParsedSection[], exhibits: { id: string; label: string; title: string; sections: number[] }[]): ParsedExhibit[] {
+  return exhibits.map((group) => ({
+    group,
+    sections: sections.filter((s) => group.sections.includes(s.number)),
+  }));
+}
+
+// ===========================================================================
+// SCROLLABLE AGREEMENT VIEWER with Table of Contents
+// ===========================================================================
+function AgreementScrollViewer({
+  title,
+  version,
+  bodyMarkdown,
+  exhibits,
+  onBack,
+  onDownload,
+}: {
+  title: string;
+  version: string;
+  bodyMarkdown: string;
+  exhibits: { id: string; label: string; title: string; sections: number[] }[];
+  onBack: () => void;
+  onDownload: () => void;
+}) {
+  const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+  const [mobileTocOpen, setMobileTocOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const allSections = parseAgreementSections(bodyMarkdown);
+  const grouped = groupByExhibit(allSections, exhibits.length > 0 ? exhibits : [{ id: "main", label: "Main", title, sections: allSections.map((s) => s.number) }]);
+
+  // Track which section is active based on scroll position
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function onScroll() {
+      const el = scrollRef.current;
+      if (!el) return;
+      const scrollTop = el.scrollTop;
+      // Find the section closest to the top
+      let closest: string | null = null;
+      let closestDist = Infinity;
+      for (const sec of allSections) {
+        const target = el.querySelector(`[data-anchor="${sec.anchor}"]`);
+        if (target) {
+          const dist = Math.abs((target as HTMLElement).offsetTop - scrollTop - 80);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closest = sec.anchor;
+          }
+        }
+      }
+      if (closest) setActiveAnchor(closest);
+    }
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [allSections]);
+
+  function scrollToAnchor(anchor: string) {
+    const el = scrollRef.current;
+    if (!el) return;
+    const target = el.querySelector(`[data-anchor="${anchor}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      setMobileTocOpen(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Top bar */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <button onClick={onBack} className="btn btn-ghost btn-sm">← Back to agreements</button>
+        <div className="flex gap-2">
+          <button onClick={() => setMobileTocOpen(!mobileTocOpen)} className="btn btn-secondary btn-sm lg:hidden">
+            {mobileTocOpen ? "Hide Contents" : "Contents"}
+          </button>
+          <button onClick={onDownload} className="btn btn-secondary btn-sm">⬇ .md</button>
+        </div>
+      </div>
+
+      {/* Title banner */}
+      <div className="card-dark p-5 relative overflow-hidden">
+        <div className="absolute -right-2 -bottom-2 opacity-10">
+          <MascotImage pose="shades" size={120} />
+        </div>
+        <div className="relative z-10">
+          <span className="chip chip-yellow mb-2">{version}</span>
+          <h1 className="font-display text-2xl md:text-3xl text-sandstone-cream leading-tight">{title}</h1>
+          <p className="text-sandstone-cream/60 text-sm mt-1">
+            {allSections.length} sections · {grouped.length} {grouped.length === 1 ? "part" : "parts"} · scroll to read · one signature signs all
+          </p>
+        </div>
+      </div>
+
+      {/* Main layout: TOC sidebar + scrollable content */}
+      <div className="flex gap-4 items-start">
+        {/* TOC sidebar — sticky on desktop */}
+        <div className={`lg:sticky lg:top-4 lg:w-64 shrink-0 ${mobileTocOpen ? "block" : "hidden lg:block"}`}>
+          <div className="card p-3 space-y-3 max-h-[70vh] overflow-y-auto">
+            <p className="font-display text-sm text-desert-night uppercase tracking-wide">Table of Contents</p>
+            {grouped.map((ex) => (
+              <div key={ex.group.id}>
+                <p className="text-xs font-black text-copper-deep uppercase tracking-wide mb-1">
+                  {ex.group.label}
+                </p>
+                <p className="text-[10px] text-smoked-charcoal/50 mb-1.5">{ex.group.title}</p>
+                <div className="space-y-0.5">
+                  {ex.sections.map((sec) => (
+                    <button
+                      key={sec.anchor}
+                      onClick={() => scrollToAnchor(sec.anchor)}
+                      className={`block w-full text-left text-xs leading-tight py-1 px-2 rounded transition-colors ${
+                        activeAnchor === sec.anchor
+                          ? "bg-copper-clay/20 text-copper-deep font-bold"
+                          : "text-smoked-charcoal/70 hover:bg-sandstone-cream/50"
+                      }`}
+                    >
+                      <span className="text-smoked-charcoal/40 mr-1">{sec.number}.</span>
+                      {sec.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div
+          ref={scrollRef}
+          className="flex-1 card p-6 md:p-8 max-h-[70vh] overflow-y-auto scroll-smooth agreement-prose"
+        >
+          {grouped.map((ex, exIdx) => (
+            <div key={ex.group.id} className={exIdx > 0 ? "mt-10 pt-8 border-t-2 border-copper-clay/20" : ""}>
+              {/* Exhibit header */}
+              <div className="mb-4">
+                <p className="text-xs font-black text-copper-deep uppercase tracking-wider">{ex.group.label}</p>
+                <h2 className="font-display text-xl text-desert-night">{ex.group.title}</h2>
+              </div>
+
+              {/* Sections */}
+              {ex.sections.map((sec) => (
+                <div key={sec.anchor} data-anchor={sec.anchor} className="mb-6 scroll-mt-4">
+                  <h3 className="font-display text-base text-desert-night border-b border-desert-night/10 pb-1 mb-2">
+                    <span className="text-copper-deep">{sec.number}.</span> {sec.title}
+                  </h3>
+                  <div dangerouslySetInnerHTML={{ __html: sec.html }} />
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {/* Signature notice */}
+          <div className="mt-10 pt-8 border-t-2 border-copper-clay/20">
+            <div className="bg-cactus-teal/10 rounded-xl p-4">
+              <p className="font-display text-lg text-desert-night">One Signature Signs All</p>
+              <p className="text-sm text-smoked-charcoal/70 mt-1">
+                When a participant signs this agreement, they are signing the Main Agreement and all Exhibits (A through E) together. One electronic signature covers everything.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AgreementsPage() {
   const { member } = useAuth();
@@ -137,24 +358,16 @@ export default function AgreementsPage() {
     const agreement = agreements.find((a) => a.version === viewVersion);
     const doc = getAgreementByVersion(viewVersion);
     const body = doc?.bodyMarkdown ?? agreement?.body_markdown ?? "";
+    const exhibits = doc?.exhibits ?? [];
     return (
-      <div className="space-y-4">
-        <button onClick={() => setViewVersion(null)} className="btn btn-ghost btn-sm">← Back to agreements</button>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="font-display text-3xl text-desert-night">{agreement?.title ?? doc?.title}</h1>
-            <p className="text-sm text-smoked-charcoal/60 mt-1">Version {viewVersion}</p>
-          </div>
-          {agreement && (
-            <button onClick={() => downloadAgreementDoc(agreement)} className="btn btn-secondary btn-sm">
-              ⬇ Download .md
-            </button>
-          )}
-        </div>
-        <div className="card p-6 max-w-3xl prose prose-smoked-charcoal max-w-none">
-          <AgreementMarkdownRenderer markdown={body} />
-        </div>
-      </div>
+      <AgreementScrollViewer
+        title={agreement?.title ?? doc?.title ?? "Agreement"}
+        version={viewVersion}
+        bodyMarkdown={body}
+        exhibits={exhibits}
+        onBack={() => setViewVersion(null)}
+        onDownload={() => agreement && downloadAgreementDoc(agreement)}
+      />
     );
   }
 
