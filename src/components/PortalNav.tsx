@@ -28,8 +28,8 @@ const CREW_PRIMARY: NavItem[] = [
 ];
 
 const CREW_MORE: NavItem[] = [
+  { href: "/portal/drop", label: "Drop a Clip" },
   { href: "/portal/crew", label: "Crew" },
-  { href: "/portal/sparks", label: "Spark Board" },
   { href: "/portal/ready", label: "Greenlights" },
   { href: "/portal/brand-locker", label: "Brand Locker" },
   { href: "/portal/ground-rules", label: "Ground Rules" },
@@ -46,7 +46,8 @@ const PLANNER_PRIMARY: NavItem[] = [
 ];
 
 const PLANNER_MORE: NavItem[] = [
-  { href: "/portal/my-kit", label: "My Kit" },
+  { href: "/portal/drop", label: "Drop a Clip" },
+  { href: "/portal/ready-bank", label: "Ready Bank" },
   { href: "/portal/sparks", label: "Spark Board" },
   { href: "/portal/ready", label: "Greenlights" },
   { href: "/portal/gear-board", label: "Gear Board" },
@@ -60,19 +61,20 @@ const PLANNER_MORE: NavItem[] = [
 ];
 
 // ---- Mobile bottom nav ----
+// Layout: 2 left + FAB(popout) center + 2 right = 5 slots (never 6)
+// FAB opens a popout with Drop + all "More" items
 const CREW_MOBILE: NavItem[] = [
   { href: "/portal/lobby", label: "Lobby" },
   { href: "/portal/run-sheet", label: "Run Sheet" },
-  { href: "/portal/drop", label: "Drop", center: true },
   { href: "/portal/my-kit", label: "My Kit" },
+  { href: "/portal/sparks", label: "Sparks" },
 ];
 
 const PLANNER_MOBILE: NavItem[] = [
   { href: "/portal/lobby", label: "Lobby" },
   { href: "/portal/run-sheet", label: "Run Sheet" },
-  { href: "/portal/drop", label: "Drop", center: true },
-  { href: "/portal/ready-bank", label: "Ready Bank" },
   { href: "/portal/crew", label: "Crew" },
+  { href: "/portal/my-kit", label: "My Kit" },
 ];
 
 interface PortalNavProps {
@@ -246,31 +248,9 @@ export function PortalBottomNav() {
     <>
       <nav className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-desert-night border-t-2 border-copper-clay/40">
         <div className="flex items-end justify-around h-[72px] px-2">
-          {mobileNav.map((item) => {
+          {/* Left 2 items */}
+          {mobileNav.slice(0, 2).map((item) => {
             const active = isActive(item.href);
-            if ("center" in item && item.center) {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="relative -mt-6 flex flex-col items-center"
-                  aria-label={item.label}
-                >
-                  <span
-                    className={`flex items-center justify-center w-16 h-16 rounded-full border-4 border-desert-night shadow-[var(--shadow-lift)] transition-transform active:scale-95 ${
-                      active ? "bg-copper-clay" : "bg-heat-orange"
-                    }`}
-                  >
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FAF7F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </span>
-                  <span className="mt-1 text-[11px] font-black uppercase tracking-wide text-sandstone-cream">
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            }
             return (
               <Link
                 key={item.href}
@@ -286,26 +266,49 @@ export function PortalBottomNav() {
             );
           })}
 
-          {/* More button */}
+          {/* Center FAB — popout button */}
           <button
             onClick={() => setMoreOpen(true)}
-            className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${
-              moreOpen || moreNav.some((i) => isActive(i.href))
-                ? "text-sunburst-yellow"
-                : "text-sandstone-cream/70"
-            }`}
+            className="relative -mt-6 flex flex-col items-center"
+            aria-label="Open menu"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="5" cy="12" r="2" />
-              <circle cx="12" cy="12" r="2" />
-              <circle cx="19" cy="12" r="2" />
-            </svg>
-            <span className="text-[11px] font-black uppercase tracking-wide">More</span>
+            <span
+              className={`flex items-center justify-center w-16 h-16 rounded-full border-4 border-desert-night shadow-[var(--shadow-lift)] transition-transform active:scale-95 ${
+                moreOpen || moreNav.some((i) => isActive(i.href))
+                  ? "bg-copper-clay"
+                  : "bg-heat-orange"
+              }`}
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FAF7F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </span>
+            <span className="mt-1 text-[11px] font-black uppercase tracking-wide text-sandstone-cream">
+              Menu
+            </span>
           </button>
+
+          {/* Right 2 items */}
+          {mobileNav.slice(2, 4).map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${
+                  active ? "text-sunburst-yellow" : "text-sandstone-cream/70"
+                }`}
+              >
+                <span className="text-[11px] font-black uppercase tracking-wide">
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 
-      {/* Mobile More sheet */}
+      {/* Mobile More sheet (opened by FAB popout) */}
       {moreOpen && (
         <div
           className="fixed inset-0 z-50 md:hidden bg-desert-night/80 backdrop-blur-sm"
@@ -316,7 +319,7 @@ export function PortalBottomNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-2xl text-sunburst-yellow">More</h2>
+              <h2 className="font-display text-2xl text-sunburst-yellow">Menu</h2>
               <button
                 onClick={() => setMoreOpen(false)}
                 className="text-sandstone-cream/60 text-2xl"
