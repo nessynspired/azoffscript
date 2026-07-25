@@ -601,7 +601,7 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
   onRefresh: () => Promise<void>;
 }) {
   const supabase = createClient();
-  const [showAll, setShowAll] = useState(false);
+  const [search, setSearch] = useState("");
   const [effortFilter, setEffortFilter] = useState<string | null>(null);
   const [actionTemplate, setActionTemplate] = useState<QuickDropTemplate | null>(null);
   const [liveDate, setLiveDate] = useState<string>(() => nextSunday().toISOString().slice(0, 10));
@@ -610,9 +610,12 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
 
   const filtered = QUICK_DROP_TEMPLATES.filter((t) => {
     if (effortFilter && t.effort !== effortFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      if (!t.name.toLowerCase().includes(q) && !t.bucket.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
-  const display = showAll ? filtered : filtered.slice(0, 5);
 
   async function createClip(template: QuickDropTemplate) {
     if (!liveDate) return;
@@ -649,48 +652,54 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
   }
 
   return (
-    <div className="lg:w-72 shrink-0">
-      <div className="card p-4 space-y-3 lg:sticky lg:top-4">
-        <div>
-          <p className="font-display text-lg text-desert-night">Ready to Schedule</p>
-          <p className="text-xs text-smoked-charcoal/50">Pull from the Ready Bank</p>
+    <div className="lg:w-80 shrink-0">
+      <div className="card p-3 space-y-2.5 lg:sticky lg:top-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-display text-base text-desert-night">Ready to Schedule</p>
+            <p className="text-[10px] text-smoked-charcoal/50">{filtered.length} ready · click + to add</p>
+          </div>
+          <Link href="/portal/ready-bank" className="text-[10px] text-copper-deep font-bold hover:underline shrink-0">
+            Full Bank →
+          </Link>
         </div>
 
-        {/* Effort filter */}
+        {/* Search box */}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search formats..."
+          className="field !text-xs !py-1.5 !px-2"
+        />
+
+        {/* Effort filter — compact row */}
         <div className="flex flex-wrap gap-1">
-          <button onClick={() => setEffortFilter(null)} className={`chip !text-[9px] ${!effortFilter ? "chip-copper" : "chip-cream"}`}>All</button>
+          <button onClick={() => setEffortFilter(null)} className={`chip !text-[9px] !py-0.5 ${!effortFilter ? "chip-copper" : "chip-cream"}`}>All</button>
           {(["2-Min Drop", "5-Min Drop", "10-Min Drop", "Group Day"] as EffortLabel[]).map((e) => (
-            <button key={e} onClick={() => setEffortFilter(e === effortFilter ? null : e)} className={`chip !text-[9px] ${effortFilter === e ? "chip-copper" : "chip-cream"}`}>{e}</button>
+            <button key={e} onClick={() => setEffortFilter(e === effortFilter ? null : e)} className={`chip !text-[9px] !py-0.5 ${effortFilter === e ? "chip-copper" : "chip-cream"}`}>{e.replace(" Drop", "")}</button>
           ))}
         </div>
 
-        {/* Cards */}
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {display.map((t) => (
-            <div key={t.id} className="bg-sandstone-cream/50 rounded-lg p-2.5 space-y-1.5">
-              <p className="font-bold text-sm text-desert-night leading-tight">{t.name}</p>
-              <div className="flex flex-wrap gap-1">
-                <span className="chip chip-cream !text-[8px]">{t.effort}</span>
-                {t.homeFriendly && <span className="chip chip-cream !text-[8px]">🏠</span>}
-                {!t.needsTalking && <span className="chip chip-cream !text-[8px]">🤫</span>}
-              </div>
+        {/* Compact list — single-line rows, click anywhere to add */}
+        <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-smoked-charcoal/40 text-center py-4">No formats match.</p>
+          ) : (
+            filtered.map((t) => (
               <button
+                key={t.id}
                 onClick={() => { setActionTemplate(t); setLiveDate(nextSunday().toISOString().slice(0, 10)); setSelectedCrew([]); }}
-                className="btn btn-primary btn-sm !text-[10px] w-full !py-1"
-              >+ Add</button>
-            </div>
-          ))}
+                className="w-full flex items-center gap-2 bg-sandstone-cream/40 hover:bg-copper-clay/15 rounded-lg px-2.5 py-1.5 text-left transition-colors group"
+              >
+                <span className="text-copper-deep font-black text-sm shrink-0 group-hover:scale-110 transition-transform">+</span>
+                <span className="font-bold text-xs text-desert-night leading-tight flex-1 min-w-0 truncate">{t.name}</span>
+                <span className="text-[8px] text-smoked-charcoal/50 shrink-0">{t.effort.replace(" Drop", "")}</span>
+                {!t.needsTalking && <span className="text-[10px] shrink-0" title="No talking">🤫</span>}
+              </button>
+            ))
+          )}
         </div>
-
-        {filtered.length > 5 && (
-          <button onClick={() => setShowAll(!showAll)} className="btn btn-ghost btn-sm !text-xs w-full">
-            {showAll ? "Show less" : `Show all ${filtered.length}`}
-          </button>
-        )}
-
-        <Link href="/portal/ready-bank" className="btn btn-secondary btn-sm !text-xs w-full block text-center">
-          Open Ready Bank →
-        </Link>
       </div>
 
       {/* Action modal */}
@@ -698,9 +707,13 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setActionTemplate(null)}>
           <div className="bg-sandstone-cream rounded-2xl p-6 max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-lg text-desert-night">{actionTemplate.name}</h3>
+              <div>
+                <h3 className="font-display text-lg text-desert-night">{actionTemplate.name}</h3>
+                <p className="text-xs text-smoked-charcoal/50">{actionTemplate.bucket} · {actionTemplate.effort}</p>
+              </div>
               <button onClick={() => setActionTemplate(null)} className="text-desert-night/40 text-2xl">×</button>
             </div>
+            <p className="text-xs text-smoked-charcoal/60 bg-cactus-teal/10 rounded p-2">{actionTemplate.description}</p>
             <div>
               <p className="label">Goes live</p>
               <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field !w-auto" />

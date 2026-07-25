@@ -5,8 +5,12 @@
 alter table public.clips
   add column if not exists template_id text;
 
--- Recreate the clips_with_meta view to include the new column
-create or replace view public.clips_with_meta as
+-- Recreate the clips_with_meta view to include the new column.
+-- Must DROP first because CREATE OR REPLACE VIEW cannot change the column
+-- list (adding template_id via c.* shifts the existing columns).
+drop view if exists public.clips_with_meta cascade;
+
+create view public.clips_with_meta as
 select
   c.*,
   coalesce(cp.people_count, 0) as people_count,
@@ -27,3 +31,6 @@ left join (
     count(*) filter (where status in ('Do Not Post','No Tag')) as approvals_blocked
   from public.approvals group by clip_id
 ) a on a.clip_id = c.id;
+
+-- Restore default permissions on the recreated view
+grant select on public.clips_with_meta to authenticated;

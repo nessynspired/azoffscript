@@ -37,6 +37,7 @@ export default function ReadyBankPage() {
   const [loading, setLoading] = useState(true);
 
   // Filters
+  const [search, setSearch] = useState("");
   const [effortFilter, setEffortFilter] = useState<string | null>(null);
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [bucketFilter, setBucketFilter] = useState<string | null>(null);
@@ -156,6 +157,10 @@ export default function ReadyBankPage() {
     if (tagFilters.includes("arizona") && !t.bucket.includes("Arizona") && t.bucket !== "Arizona Moments") return false;
     if (tagFilters.includes("groupDay") && t.effort !== "Group Day") return false;
     if (tagFilters.includes("editHeavy") && !t.needsEditing) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      if (!t.name.toLowerCase().includes(q) && !t.bucket.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -196,6 +201,15 @@ export default function ReadyBankPage() {
 
       {/* Filters */}
       <div className="space-y-3">
+        {/* Search */}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, category, or description..."
+          className="field"
+        />
+
         {/* Effort filters */}
         <div>
           <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Effort</p>
@@ -276,7 +290,7 @@ export default function ReadyBankPage() {
         <div className="card p-10 text-center">
           <p className="font-display text-2xl text-desert-night">No formats match those filters.</p>
           <button
-            onClick={() => { setEffortFilter(null); setTagFilters([]); setBucketFilter(null); }}
+            onClick={() => { setEffortFilter(null); setTagFilters([]); setBucketFilter(null); setSearch(""); }}
             className="btn btn-secondary btn-sm mt-4"
           >Clear filters</button>
         </div>
