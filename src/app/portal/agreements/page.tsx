@@ -497,11 +497,6 @@ function MainAgreementPopup({
               </div>
             ))
           )}
-
-          {/* Note about Section 5 */}
-          <div className="bg-copper-clay/5 rounded-xl p-3 mt-4 text-xs text-smoked-charcoal/60">
-            <p>Section 5 (Core Participation Rules) is covered in detail in <a href="#" className="exhibit-link" data-exhibit-id="exhibit-a" onClick={(e) => { e.preventDefault(); onOpenExhibit("exhibit-a"); }}>Exhibit A — Posting Rules</a>.</p>
-          </div>
         </div>
 
         {/* Signing area — at the bottom of the popup */}
