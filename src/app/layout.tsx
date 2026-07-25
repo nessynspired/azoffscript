@@ -65,7 +65,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
-  themeColor: "#0d1b2a",
+  themeColor: "#07111c",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -92,7 +92,7 @@ export default function RootLayout({
         <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
-      <body className="min-h-full flex flex-col" style={{ backgroundColor: "#f2e8d8" }}>
+      <body className="min-h-full flex flex-col" style={{ backgroundColor: "#07111c" }}>
         {children}
         {/* Service worker registration — enables offline + install-to-home-screen */}
         <script

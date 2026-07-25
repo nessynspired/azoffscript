@@ -19,10 +19,12 @@ if (!existsSync(mascotSrc)) {
 }
 mkdirSync(dest, { recursive: true });
 
-const BG = "#0d1b2a"; // desert-night (brand color)
+const BG = "#07111c"; // night-deep (matches PWA splash + body background)
 
 // Crop a square close-up from the top-center of the mascot.
-// Mascot is 1024x1536 — we take the top 1024x1024 to focus on the character.
+// Mascot is 1024x1536 — we crop the top square (1024x1024) to focus on the
+// character's face/body, then flatten onto the brand background color so
+// there are no transparent artifacts or "weird squares" at small sizes.
 async function mascotCloseUp(size) {
   const meta = await sharp(mascotSrc).metadata();
   const w = meta.width;
@@ -33,7 +35,9 @@ async function mascotCloseUp(size) {
   const top = 0; // start from top to get the head/face
   return sharp(mascotSrc)
     .extract({ left, top, width: cropSize, height: cropSize })
-    .resize(size, size, { fit: "contain", background: { r: 0x0d, g: 0x1b, b: 0x2a, alpha: 1 } });
+    .flatten({ background: { r: 0x07, g: 0x11, b: 0x1c, alpha: 1 } }) // night-deep, no transparency
+    .resize(size, size, { fit: "cover", position: "top" }) // fill the square, crop excess
+    .flatten({ background: { r: 0x07, g: 0x11, b: 0x1c, alpha: 1 } });
 }
 
 async function makeIcon(size, name, maskable = false) {
@@ -44,7 +48,7 @@ async function makeIcon(size, name, maskable = false) {
   await pipeline
     .extend({
       top: padding, bottom: padding, left: padding, right: padding,
-      background: { r: 0x0d, g: 0x1b, b: 0x2a, alpha: 1 },
+      background: { r: 0x07, g: 0x11, b: 0x1c, alpha: 1 },
     })
     .png()
     .toFile(resolve(dest, name));

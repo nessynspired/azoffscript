@@ -16,29 +16,32 @@ import { MascotImage } from "@/components/MascotImage";
  * Plays once per session (sessionStorage).
  */
 export function AnimatedIntro() {
-  const [visible, setVisible] = useState(false);
+  // Start visible immediately (lazy initializer) — avoids the flash where the
+  // body background shows before the intro mounts. On SSR, returns false so the
+  // server doesn't render the overlay; on client first paint, it's already true.
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !sessionStorage.getItem("azos-intro-played");
+  });
   const [exiting, setExiting] = useState(false);
-  const [theme, setTheme] = useState<"morning" | "afternoon" | "evening" | "night">("night");
+  const [theme, setTheme] = useState<"morning" | "afternoon" | "evening" | "night">(() => {
+    if (typeof window === "undefined") return "night";
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "morning";
+    if (hour >= 12 && hour < 17) return "afternoon";
+    if (hour >= 17 && hour < 21) return "evening";
+    return "night";
+  });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (sessionStorage.getItem("azos-intro-played")) return;
-
-    const hour = new Date().getHours();
-    let t: typeof theme = "night";
-    if (hour >= 5 && hour < 12) t = "morning";
-    else if (hour >= 12 && hour < 17) t = "afternoon";
-    else if (hour >= 17 && hour < 21) t = "evening";
-    setTheme(t);
-
-    setVisible(true);
+    if (!visible) return;
     const dismissTimer = setTimeout(() => {
       setExiting(true);
       sessionStorage.setItem("azos-intro-played", "1");
       setTimeout(() => setVisible(false), 700);
     }, 3000);
     return () => clearTimeout(dismissTimer);
-  }, []);
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -72,6 +75,7 @@ export function AnimatedIntro() {
 
   return (
     <div
+      suppressHydrationWarning
       className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-transform duration-700 ease-in-out ${
         exiting ? "-translate-y-full" : "translate-y-0"
       }`}
