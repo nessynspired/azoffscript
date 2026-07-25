@@ -12,6 +12,8 @@ type ClipPerson = Database["public"]["Tables"]["clip_people"]["Row"];
 type Approval = Database["public"]["Tables"]["approvals"]["Row"];
 type Theme = Database["public"]["Tables"]["content_themes"]["Row"];
 type TrendRef = Database["public"]["Tables"]["trend_references"]["Row"];
+type Assignment = Database["public"]["Tables"]["content_assignments"]["Row"];
+type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content">;
 
 const STUDIO_FLOW: ClipStatus[] = [
   "Dropped", "Planned", "Shot", "Cutting", "Review", "Ready", "Scheduled", "Live", "Vault",
@@ -42,6 +44,28 @@ const APPROVAL_CHIP: Record<string, string> = {
   "Don't Like How I Come Across": "chip-hold",
 };
 
+const ASSIGNMENT_STATUS_CHIP: Record<string, string> = {
+  "Not Started": "chip-cream",
+  "In Progress": "chip-yellow",
+  "Dropped": "chip-approved",
+  "Waiting on Vanessa": "chip-review",
+  "Needs Tweak": "chip-edits",
+  "Greenlit": "chip-approved",
+  "Done": "chip-dark",
+  "Skipped": "chip-cream",
+  "Hold": "chip-hold",
+};
+
+const ASSIGNMENT_ROLES = [
+  "Lead", "On-Camera", "Reaction", "Clip Dropper", "Caption Help",
+  "Trend Finder", "Editor", "Reviewer", "Planner", "Behind the Scenes",
+];
+
+const ASSIGNMENT_TASK_TYPES = [
+  "Drop a Clip", "Drop a Link", "Answer Prompt", "Suggest Caption",
+  "Greenlight Clip", "Edit/Stitch", "Schedule Post", "Bring Prop/Gear", "Show Up",
+];
+
 export default function RunSheetPage() {
   const { member } = useAuth();
   const supabase = createClient();
@@ -50,16 +74,20 @@ export default function RunSheetPage() {
   const [approvals, setApprovals] = useState<Record<string, Approval[]>>({});
   const [themes, setThemes] = useState<Theme[]>([]);
   const [trends, setTrends] = useState<TrendRef[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "trends" | "heat">("week");
+  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "trends" | "heat" | "board">("week");
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [clipRes, themeRes, trendRes] = await Promise.all([
+    const [clipRes, themeRes, trendRes, asgnRes, memRes] = await Promise.all([
       supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }),
       supabase.from("content_themes").select("*").order("start_date", { ascending: false }),
       supabase.from("trend_references").select("*").order("created_at", { ascending: false }),
+      supabase.from("content_assignments").select("*").order("drop_by_date", { ascending: true }),
+      supabase.from("members").select("id, name, nickname, role, can_plan_content").order("name"),
     ]);
 
     if (clipRes.error) {
@@ -74,6 +102,8 @@ export default function RunSheetPage() {
     setClips(clipData);
     setThemes(themeRes.data ?? []);
     setTrends(trendRes.data ?? []);
+    setAssignments(asgnRes.data ?? []);
+    setMembers(memRes.data ?? []);
 
     if (clipData.length > 0) {
       const clipIds = clipData.map((c) => c.id);
@@ -106,6 +136,7 @@ export default function RunSheetPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "clip_people" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "content_themes" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "trend_references" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "content_assignments" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [load, supabase]);
@@ -171,6 +202,7 @@ export default function RunSheetPage() {
     { key: "week", label: "This Week" },
     { key: "calendar", label: "Calendar" },
     { key: "flow", label: "Studio Flow", count: productionClips.length },
+    { key: "board", label: "Assignment Board", count: assignments.length },
     { key: "trends", label: "Trend Drops", count: trends.length },
     { key: "heat", label: "Weekly Heat", count: themes.length },
   ];
@@ -206,6 +238,7 @@ export default function RunSheetPage() {
           themes={themes}
           trends={trends}
           themeMap={themeMap}
+          assignments={assignments}
           currentMemberId={member?.id}
           onSelectClip={(id) => setSelectedClip(id)}
         />
@@ -282,6 +315,22 @@ export default function RunSheetPage() {
           trends={trends}
           canPlanContent={canPlanContent}
           currentMemberId={member?.id}
+          onRefresh={load}
+        />
+      )}
+
+      {/* ASSIGNMENT BOARD — admin/planner view of who's doing what */}
+      {tab === "board" && (
+        <AssignmentBoardTab
+          clips={clips}
+          assignments={assignments}
+          members={members}
+          themes={themes}
+          themeMap={themeMap}
+          canPlanContent={canPlanContent}
+          currentMemberId={member?.id}
+          currentMemberName={member?.name}
+          onSelectClip={(id) => setSelectedClip(id)}
           onRefresh={load}
         />
       )}
@@ -830,7 +879,7 @@ function DeadlineRow({
 // THIS WEEK — everybody's quick overview
 // ===========================================================================
 function ThisWeekTab({
-  clips, people, approvals, themes, trends, themeMap, currentMemberId, onSelectClip,
+  clips, people, approvals, themes, trends, themeMap, assignments, currentMemberId, onSelectClip,
 }: {
   clips: ClipMeta[];
   people: Record<string, ClipPerson[]>;
@@ -838,6 +887,7 @@ function ThisWeekTab({
   themes: Theme[];
   trends: TrendRef[];
   themeMap: Map<string, Theme>;
+  assignments: Assignment[];
   currentMemberId?: string;
   onSelectClip: (id: string) => void;
 }) {
@@ -859,6 +909,15 @@ function ThisWeekTab({
   const myApprovals = myClips
     .map((c) => ({ clip: c, approval: approvals[c.id]?.find((a) => a.member_id === currentMemberId) }))
     .filter((x) => x.approval && x.approval.status === "Waiting");
+
+  // My assignments — "Your Part"
+  const myAssignments = assignments
+    .filter((a) => a.member_id === currentMemberId && a.status !== "Done" && a.status !== "Skipped" && a.status !== "Greenlit")
+    .sort((a, b) => {
+      const ad = a.drop_by_date ? new Date(a.drop_by_date).getTime() : Infinity;
+      const bd = b.drop_by_date ? new Date(b.drop_by_date).getTime() : Infinity;
+      return ad - bd;
+    });
 
   // Upcoming deadlines this week
   const upcomingDeadlines = clips
@@ -905,6 +964,39 @@ function ThisWeekTab({
                     )}
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Your Part — assigned tasks */}
+      {myAssignments.length > 0 && (
+        <div className="card p-5 border-2 border-copper-clay/30">
+          <h2 className="font-display text-2xl text-desert-night mb-1">Your Part</h2>
+          <p className="text-sm text-smoked-charcoal/60 mb-3">{myAssignments.length} thing{myAssignments.length > 1 ? "s" : ""} you&apos;re on</p>
+          <div className="space-y-3">
+            {myAssignments.map((a) => {
+              const clip = clips.find((c) => c.id === a.clip_id);
+              const isOverdue = a.drop_by_date && new Date(a.drop_by_date) < now && a.status !== "Done" && a.status !== "Greenlit" && a.status !== "Dropped";
+              return (
+                <button key={a.id} onClick={() => onSelectClip(a.clip_id)} className="card p-4 w-full text-left hover:-translate-y-0.5 transition-transform">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-desert-night truncate">{clip?.title ?? "Content item"}</p>
+                      <p className="text-xs text-smoked-charcoal/60 mt-0.5">Role: {a.role}</p>
+                    </div>
+                    <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[10px] shrink-0`}>{a.status}</span>
+                  </div>
+                  {a.task_title && <p className="text-sm text-desert-night mt-2">{a.task_title}</p>}
+                  {a.task_notes && <p className="text-xs text-smoked-charcoal/60 mt-1">{a.task_notes}</p>}
+                  {a.drop_by_date && (
+                    <p className={`text-xs font-bold mt-2 ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
+                      {isOverdue ? "⚠ Late — " : ""}Drop-by: {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                    </p>
+                  )}
+                  {!a.is_required && <span className="chip chip-cream !text-[9px] mt-2">Optional</span>}
+                </button>
               );
             })}
           </div>
@@ -1319,6 +1411,233 @@ function WeeklyHeatTab({
 
                 {canPlanContent && (
                   <button onClick={() => deleteTheme(t.id)} className="btn btn-danger btn-sm mt-4">Delete</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// ASSIGNMENT BOARD — admin/planner view of who's doing what
+// ===========================================================================
+function AssignmentBoardTab({
+  clips, assignments, members, themes, themeMap, canPlanContent, currentMemberId, currentMemberName, onSelectClip, onRefresh,
+}: {
+  clips: ClipMeta[];
+  assignments: Assignment[];
+  members: Member[];
+  themes: Theme[];
+  themeMap: Map<string, Theme>;
+  canPlanContent: boolean;
+  currentMemberId?: string;
+  currentMemberName?: string;
+  onSelectClip: (id: string) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const supabase = createClient();
+  const [showAssign, setShowAssign] = useState<string | null>(null);
+  const [assignForm, setAssignForm] = useState({
+    member_id: "",
+    role: "On-Camera",
+    task_type: "Drop a Clip",
+    task_title: "",
+    task_notes: "",
+    drop_by_date: "",
+    is_required: true,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const clipsWithAssignments = clips.filter((c) => c.type === "video" || c.type === "final_cut");
+  const assignmentsByClip = new Map<string, Assignment[]>();
+  assignments.forEach((a) => {
+    const arr = assignmentsByClip.get(a.clip_id) ?? [];
+    arr.push(a);
+    assignmentsByClip.set(a.clip_id, arr);
+  });
+
+  async function createAssignment(clipId: string) {
+    if (!assignForm.member_id || !currentMemberId) return;
+    const m = members.find((mem) => mem.id === assignForm.member_id);
+    if (!m) return;
+    setSaving(true);
+    const { error } = await supabase.from("content_assignments").insert({
+      clip_id: clipId,
+      member_id: assignForm.member_id,
+      member_name: m.name,
+      role: assignForm.role,
+      task_type: assignForm.task_type,
+      task_title: assignForm.task_title || null,
+      task_notes: assignForm.task_notes || null,
+      drop_by_date: assignForm.drop_by_date || null,
+      is_required: assignForm.is_required,
+      created_by: currentMemberId,
+    });
+    if (error) {
+      if (error.code === "23505") {
+        alert("This person already has this task type on this clip.");
+      } else {
+        alert(error.message);
+      }
+    }
+    setAssignForm({ member_id: "", role: "On-Camera", task_type: "Drop a Clip", task_title: "", task_notes: "", drop_by_date: "", is_required: true });
+    setShowAssign(null);
+    await onRefresh();
+    setSaving(false);
+  }
+
+  async function updateAssignmentStatus(id: string, status: string) {
+    const completed_at = status === "Done" || status === "Greenlit" || status === "Dropped" ? new Date().toISOString() : null;
+    const { error } = await supabase.from("content_assignments").update({ status, completed_at }).eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
+
+  async function deleteAssignment(id: string) {
+    if (!confirm("Remove this assignment?")) return;
+    const { error } = await supabase.from("content_assignments").delete().eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
+
+  const now = new Date();
+  const isLate = (a: Assignment) => a.drop_by_date && new Date(a.drop_by_date) < now &&
+    a.status !== "Done" && a.status !== "Greenlit" && a.status !== "Dropped" && a.status !== "Skipped";
+
+  return (
+    <div className="space-y-4">
+      <p className="text-smoked-charcoal/70">
+        Who&apos;s on what. Assign roles and tasks to crew members for each content item.
+      </p>
+
+      {clipsWithAssignments.length === 0 ? (
+        <div className="card p-10 text-center">
+          <span className="text-5xl">📋</span>
+          <p className="font-display text-2xl text-desert-night mt-4">No content items yet.</p>
+          <p className="text-smoked-charcoal/70 mt-2">Drop a video first, then assign people to it.</p>
+          <Link href="/portal/drop" className="btn btn-primary mt-6">Drop a Clip</Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {clipsWithAssignments.map((clip) => {
+            const clipAssignments = assignmentsByClip.get(clip.id) ?? [];
+            const lead = clipAssignments.find((a) => a.role === "Lead");
+            const lateCount = clipAssignments.filter(isLate).length;
+            const doneCount = clipAssignments.filter((a) => a.status === "Done" || a.status === "Greenlit" || a.status === "Dropped").length;
+            const theme = clip.theme_id ? themeMap.get(clip.theme_id) : null;
+
+            return (
+              <div key={clip.id} className="card p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <button onClick={() => onSelectClip(clip.id)} className="text-left">
+                      <h3 className="font-display text-xl text-desert-night hover:text-copper-deep transition-colors">{clip.title}</h3>
+                    </button>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <span className={`chip ${STATUS_CHIP[clip.status]} !text-[10px]`}>{clip.status}</span>
+                      {theme && <span className="chip chip-copper !text-[10px]">🔥 {theme.name}</span>}
+                      {lead && <span className="chip chip-yellow !text-[10px]">Lead: {lead.member_name}</span>}
+                      {clipAssignments.length > 0 && (
+                        <span className="chip chip-cream !text-[10px]">{doneCount}/{clipAssignments.length} done</span>
+                      )}
+                      {lateCount > 0 && <span className="chip chip-danger !text-[10px]">{lateCount} late</span>}
+                    </div>
+                  </div>
+                  {canPlanContent && (
+                    <button
+                      onClick={() => {
+                        setShowAssign(showAssign === clip.id ? null : clip.id);
+                        setAssignForm({ member_id: "", role: "On-Camera", task_type: "Drop a Clip", task_title: "", task_notes: "", drop_by_date: "", is_required: true });
+                      }}
+                      className="btn btn-primary btn-sm shrink-0"
+                    >
+                      {showAssign === clip.id ? "Cancel" : "+ Assign"}
+                    </button>
+                  )}
+                </div>
+
+                {showAssign === clip.id && canPlanContent && (
+                  <div className="mt-4 bg-sandstone-cream/50 rounded-xl p-4 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <select className="field" value={assignForm.member_id} onChange={(e) => setAssignForm({ ...assignForm, member_id: e.target.value })}>
+                        <option value="">Choose crew member…</option>
+                        {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                      </select>
+                      <select className="field" value={assignForm.role} onChange={(e) => setAssignForm({ ...assignForm, role: e.target.value })}>
+                        {ASSIGNMENT_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                      <select className="field" value={assignForm.task_type} onChange={(e) => setAssignForm({ ...assignForm, task_type: e.target.value })}>
+                        {ASSIGNMENT_TASK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <input type="date" className="field" value={assignForm.drop_by_date} onChange={(e) => setAssignForm({ ...assignForm, drop_by_date: e.target.value })} title="Drop-by date" />
+                    </div>
+                    <input className="field" placeholder="Task title (e.g. 'Record your answer to the prompt')" value={assignForm.task_title} onChange={(e) => setAssignForm({ ...assignForm, task_title: e.target.value })} />
+                    <textarea className="field min-h-[50px]" placeholder="Notes — what exactly do they need to do?" value={assignForm.task_notes} onChange={(e) => setAssignForm({ ...assignForm, task_notes: e.target.value })} />
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 text-sm font-bold text-desert-night">
+                        <input type="checkbox" checked={assignForm.is_required} onChange={(e) => setAssignForm({ ...assignForm, is_required: e.target.checked })} />
+                        Required
+                      </label>
+                      <button onClick={() => createAssignment(clip.id)} className="btn btn-primary btn-sm ml-auto" disabled={saving || !assignForm.member_id}>
+                        {saving ? "Assigning…" : "Assign"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {clipAssignments.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {clipAssignments.map((a) => {
+                      const late = isLate(a);
+                      return (
+                        <div key={a.id} className={`bg-sandstone-cream/50 rounded-xl p-3 ${late ? "border-l-4 border-heat-orange" : ""}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-desert-night">{a.member_name}</span>
+                                <span className="chip chip-dark !text-[9px]">{a.role}</span>
+                                <span className="chip chip-cream !text-[9px]">{a.task_type}</span>
+                                {!a.is_required && <span className="chip chip-cream !text-[9px]">Optional</span>}
+                              </div>
+                              {a.task_title && <p className="text-sm text-desert-night mt-1">{a.task_title}</p>}
+                              {a.task_notes && <p className="text-xs text-smoked-charcoal/60 mt-1">{a.task_notes}</p>}
+                              {a.drop_by_date && (
+                                <p className={`text-xs font-bold mt-1 ${late ? "text-heat-orange" : "text-copper-deep"}`}>
+                                  {late ? "⚠ Late — " : ""}Drop-by: {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[9px]`}>{a.status}</span>
+                              {canPlanContent && (
+                                <select
+                                  className="field !py-1 !text-xs !w-auto"
+                                  value={a.status}
+                                  onChange={(e) => updateAssignmentStatus(a.id, e.target.value)}
+                                >
+                                  {["Not Started", "In Progress", "Dropped", "Waiting on Vanessa", "Needs Tweak", "Greenlit", "Done", "Skipped", "Hold"].map((s) => (
+                                    <option key={s} value={s}>{s}</option>
+                                  ))}
+                                </select>
+                              )}
+                              {canPlanContent && (
+                                <button onClick={() => deleteAssignment(a.id)} className="text-xs text-heat-orange hover:underline">Remove</button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {clipAssignments.length === 0 && !showAssign && (
+                  <p className="text-sm text-smoked-charcoal/50 mt-3 italic">
+                    {canPlanContent ? "No one assigned yet. Click + Assign to add people." : "No one assigned yet."}
+                  </p>
                 )}
               </div>
             );

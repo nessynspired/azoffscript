@@ -29,6 +29,18 @@ export type IdeaCategory =
   | "Hot Takes" | "Funny Questions" | "AZ Moments" | "Group Games"
   | "Trends" | "Skits" | "BTS Chaos" | "Merch Quotes";
 
+export type AssignmentRole =
+  | "Lead" | "On-Camera" | "Reaction" | "Clip Dropper" | "Caption Help"
+  | "Trend Finder" | "Editor" | "Reviewer" | "Planner" | "Behind the Scenes";
+
+export type AssignmentTaskType =
+  | "Drop a Clip" | "Drop a Link" | "Answer Prompt" | "Suggest Caption"
+  | "Greenlight Clip" | "Edit/Stitch" | "Schedule Post" | "Bring Prop/Gear" | "Show Up";
+
+export type AssignmentStatus =
+  | "Not Started" | "In Progress" | "Dropped" | "Waiting on Vanessa"
+  | "Needs Tweak" | "Greenlit" | "Done" | "Skipped" | "Hold";
+
 export interface Database {
   public: {
     Tables: {
@@ -383,6 +395,89 @@ export interface Database {
           clip_id?: string;
           member_id?: string;
           member_name?: string;
+          created_at?: string;
+        };
+      };
+
+      content_assignments: {
+        Relationships: [];
+        Row: {
+          id: string;
+          clip_id: string;
+          member_id: string;
+          member_name: string;
+          role: string;
+          task_type: string;
+          task_title: string | null;
+          task_notes: string | null;
+          drop_by_date: string | null;
+          is_required: boolean;
+          status: string;
+          completed_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          clip_id: string;
+          member_id: string;
+          member_name: string;
+          role?: string;
+          task_type?: string;
+          task_title?: string | null;
+          task_notes?: string | null;
+          drop_by_date?: string | null;
+          is_required?: boolean;
+          status?: string;
+          completed_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          clip_id?: string;
+          member_id?: string;
+          member_name?: string;
+          role?: string;
+          task_type?: string;
+          task_title?: string | null;
+          task_notes?: string | null;
+          drop_by_date?: string | null;
+          is_required?: boolean;
+          status?: string;
+          completed_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      assignment_comments: {
+        Relationships: [];
+        Row: {
+          id: string;
+          assignment_id: string;
+          member_id: string;
+          member_name: string;
+          comment: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          assignment_id: string;
+          member_id: string;
+          member_name: string;
+          comment: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          assignment_id?: string;
+          member_id?: string;
+          member_name?: string;
+          comment?: string;
           created_at?: string;
         };
       };

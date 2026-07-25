@@ -10,6 +10,7 @@ import type { Database } from "@/lib/types/db";
 type Activity = Database["public"]["Tables"]["activity"]["Row"];
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
 type Theme = Database["public"]["Tables"]["content_themes"]["Row"];
+type Assignment = Database["public"]["Tables"]["content_assignments"]["Row"];
 
 interface Heat {
   needsReview: number;
@@ -24,17 +25,21 @@ export default function LobbyPage() {
   const [heat, setHeat] = useState<Heat>({ needsReview: 0, readyToFilm: 0, scheduledToday: 0 });
   const [dueThisWeek, setDueThisWeek] = useState<ClipMeta[]>([]);
   const [activeThemes, setActiveThemes] = useState<Theme[]>([]);
+  const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
+  const [assignmentClips, setAssignmentClips] = useState<Record<string, ClipMeta>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [actRes, reviewRes, readyRes, schedRes, clipsRes, themesRes] = await Promise.all([
+      if (!member) { setLoading(false); return; }
+      const [actRes, reviewRes, readyRes, schedRes, clipsRes, themesRes, asgnRes] = await Promise.all([
         supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(8),
         supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Review"),
         supabase.from("ideas").select("id", { count: "exact", head: true }).eq("status", "Planned"),
         supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Scheduled"),
         supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }).limit(20),
         supabase.from("content_themes").select("*").order("start_date", { ascending: false }).limit(5),
+        supabase.from("content_assignments").select("*").eq("member_id", member.id).order("drop_by_date", { ascending: true }),
       ]);
       setActivity(actRes.data ?? []);
       setHeat({
@@ -53,10 +58,19 @@ export default function LobbyPage() {
         return dates.some((d) => d && new Date(d) >= now && new Date(d) <= weekEnd);
       }).slice(0, 5);
       setDueThisWeek(due);
+
+      // My assignments ("Your Part")
+      const activeAssignments = (asgnRes.data ?? []).filter((a) => a.status !== "Done" && a.status !== "Skipped" && a.status !== "Greenlit");
+      setMyAssignments(activeAssignments);
+      // Build clip lookup for assignments
+      const clipMap: Record<string, ClipMeta> = {};
+      (clipsRes.data ?? []).forEach((c) => { clipMap[c.id] = c; });
+      setAssignmentClips(clipMap);
+
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, member]);
 
   const firstName = member?.name?.split(" ")[0] ?? "Crew";
 
@@ -80,6 +94,39 @@ export default function LobbyPage() {
           </p>
         </div>
       </section>
+
+      {/* Your Part — assignments */}
+      {myAssignments.length > 0 && (
+        <section>
+          <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-4">Your Part</h2>
+          <div className="space-y-2">
+            {myAssignments.slice(0, 4).map((a) => {
+              const clip = assignmentClips[a.clip_id];
+              const now = new Date();
+              const isLate = a.drop_by_date && new Date(a.drop_by_date) < now;
+              return (
+                <Link key={a.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-desert-night truncate">{clip?.title ?? "Content item"}</p>
+                      <p className="text-xs text-smoked-charcoal/60 mt-0.5">{a.role} · {a.task_type}</p>
+                      {a.task_title && <p className="text-sm text-desert-night mt-1">{a.task_title}</p>}
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      {a.drop_by_date && (
+                        <span className={`text-xs font-bold ${isLate ? "text-heat-orange" : "text-copper-deep"}`}>
+                          {isLate ? "⚠ Late — " : ""}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                      <span className="chip chip-cream !text-[9px]">{a.status}</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Quick actions */}
       <section>

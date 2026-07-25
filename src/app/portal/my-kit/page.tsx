@@ -11,6 +11,7 @@ type Member = Database["public"]["Tables"]["members"]["Row"];
 type Gear = Database["public"]["Tables"]["gear"]["Row"];
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
 type Approval = Database["public"]["Tables"]["approvals"]["Row"];
+type Assignment = Database["public"]["Tables"]["content_assignments"]["Row"];
 
 const GEAR_STATUS_LABELS: Record<GearStatus, string> = {
   not_started: "Not started",
@@ -70,6 +71,8 @@ export default function MyWaveKitPage() {
   const [myClips, setMyClips] = useState<ClipMeta[]>([]);
   const [myApprovals, setMyApprovals] = useState<Approval[]>([]);
   const [assignedClips, setAssignedClips] = useState<ClipMeta[]>([]);
+  const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
+  const [assignmentClips, setAssignmentClips] = useState<Record<string, ClipMeta>>({});
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -89,19 +92,20 @@ export default function MyWaveKitPage() {
 
   const load = useCallback(async () => {
     if (!member) return;
-    const [profileRes, gearRes, clipsRes, approvalsRes, assignedRes] = await Promise.all([
+    const [profileRes, gearRes, clipsRes, approvalsRes, assignedRes, asgnRes] = await Promise.all([
       supabase.from("members").select("*").eq("id", member.id).single(),
       supabase.from("gear").select("*").eq("member_id", member.id).order("item_type"),
       supabase.from("clips_with_meta").select("*").eq("submitted_by", member.id).order("created_at", { ascending: false }).limit(10),
       supabase.from("approvals").select("*").eq("member_id", member.id).order("created_at", { ascending: false }),
       supabase.from("clips_with_meta").select("*").order("created_at", { ascending: false }),
+      supabase.from("content_assignments").select("*").eq("member_id", member.id).order("drop_by_date", { ascending: true }),
     ]);
 
     setProfile(profileRes.data);
     setGear(gearRes.data ?? []);
     setMyClips(clipsRes.data ?? []);
     setMyApprovals((approvalsRes.data ?? []).filter((a) => a.status === "Waiting" || a.status === "Needs Review"));
-    
+
     // Assigned clips = clips where this member is in clip_people
     const allClips = assignedRes.data ?? [];
     if (allClips.length > 0) {
@@ -110,6 +114,13 @@ export default function MyWaveKitPage() {
       const myClipIds = new Set((myPeople ?? []).map((p) => p.clip_id));
       setAssignedClips(allClips.filter((c) => myClipIds.has(c.id)));
     }
+
+    // My assignments ("Your Part")
+    const activeAssignments = (asgnRes.data ?? []).filter((a) => a.status !== "Done" && a.status !== "Skipped" && a.status !== "Greenlit");
+    setMyAssignments(activeAssignments);
+    const clipMap: Record<string, ClipMeta> = {};
+    allClips.forEach((c) => { clipMap[c.id] = c; });
+    setAssignmentClips(clipMap);
 
     if (profileRes.data) {
       const d = profileRes.data;
@@ -258,6 +269,48 @@ export default function MyWaveKitPage() {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* ===== YOUR PART ===== */}
+      <section>
+        <h2 className="font-display text-2xl text-desert-night mb-3">Your Part</h2>
+        {myAssignments.length === 0 ? (
+          <div className="card p-5 text-center">
+            <p className="text-smoked-charcoal/70">Nothing on your plate right now. You&apos;re clear.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {myAssignments.map((a) => {
+              const clip = assignmentClips[a.clip_id];
+              const now = new Date();
+              const isLate = a.drop_by_date && new Date(a.drop_by_date) < now;
+              return (
+                <Link key={a.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-desert-night truncate">{clip?.title ?? "Content item"}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        <span className="chip chip-dark !text-[9px]">{a.role}</span>
+                        <span className="chip chip-cream !text-[9px]">{a.task_type}</span>
+                        {!a.is_required && <span className="chip chip-cream !text-[9px]">Optional</span>}
+                      </div>
+                      {a.task_title && <p className="text-sm text-desert-night mt-2">{a.task_title}</p>}
+                      {a.task_notes && <p className="text-xs text-smoked-charcoal/60 mt-1">{a.task_notes}</p>}
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      {a.drop_by_date && (
+                        <span className={`text-xs font-bold ${isLate ? "text-heat-orange" : "text-copper-deep"}`}>
+                          {isLate ? "⚠ Late — " : ""}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                      <span className="chip chip-cream !text-[9px]">{a.status}</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

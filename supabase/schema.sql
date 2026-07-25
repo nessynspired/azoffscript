@@ -202,6 +202,47 @@ create table if not exists public.clip_people (
 create index if not exists idx_clip_people_clip on public.clip_people(clip_id);
 create index if not exists idx_clip_people_member on public.clip_people(member_id);
 
+-- ==========================================================================
+-- content_assignments: "Your Part" — roles + tasks per content item
+-- ==========================================================================
+create table if not exists public.content_assignments (
+  id              uuid primary key default gen_random_uuid(),
+  clip_id         uuid not null references public.clips(id) on delete cascade,
+  member_id       uuid not null references public.members(id) on delete cascade,
+  member_name     text not null,
+  role            text not null default 'On-Camera',
+  task_type       text not null default 'Drop a Clip',
+  task_title      text,
+  task_notes      text,
+  drop_by_date    timestamptz,
+  is_required     boolean not null default true,
+  status          text not null default 'Not Started',
+  completed_at    timestamptz,
+  created_by      uuid references public.members(id) on delete set null,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now(),
+  unique (clip_id, member_id, task_type)
+);
+
+create index if not exists idx_assignments_clip on public.content_assignments(clip_id);
+create index if not exists idx_assignments_member on public.content_assignments(member_id);
+create index if not exists idx_assignments_status on public.content_assignments(status);
+create index if not exists idx_assignments_drop_by on public.content_assignments(drop_by_date);
+
+-- ==========================================================================
+-- assignment_comments: notes on a specific assignment
+-- ==========================================================================
+create table if not exists public.assignment_comments (
+  id              uuid primary key default gen_random_uuid(),
+  assignment_id   uuid not null references public.content_assignments(id) on delete cascade,
+  member_id       uuid not null references public.members(id) on delete cascade,
+  member_name     text not null,
+  comment         text not null,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists idx_assignment_comments_assignment on public.assignment_comments(assignment_id);
+
 create table if not exists public.approvals (
   id          uuid primary key default gen_random_uuid(),
   clip_id     uuid not null references public.clips(id) on delete cascade,
