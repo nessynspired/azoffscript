@@ -837,6 +837,40 @@ export interface Database {
           signed_date?: string | null;
         };
       };
+      agreement_audit_log: {
+        Relationships: [];
+        Row: {
+          id: string;
+          created_at: string;
+          action: string;
+          agreement_id: string | null;
+          signature_id: string | null;
+          member_id: string | null;
+          auth_user_id: string | null;
+          member_email: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          metadata: Record<string, unknown> | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          action: string;
+          agreement_id?: string | null;
+          signature_id?: string | null;
+          member_id?: string | null;
+          auth_user_id?: string | null;
+          member_email?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          metadata?: Record<string, unknown> | null;
+        };
+        Update: {
+          id?: string;
+          action?: string;
+          metadata?: Record<string, unknown> | null;
+        };
+      };
     };
 
     Views: {

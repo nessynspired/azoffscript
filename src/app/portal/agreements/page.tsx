@@ -303,6 +303,38 @@ function AgreementPopup({
   const [signed, setSigned] = useState(alreadySigned ?? false);
   const [error, setError] = useState<string | null>(null);
 
+  // Pre-sign disclosure (fetched from server so IP is real)
+  const [whoami, setWhoami] = useState<{
+    name: string;
+    email: string;
+    emailVerified: boolean;
+    ip: string | null;
+    deviceSummary: string;
+  } | null>(null);
+  const [whoamiLoading, setWhoamiLoading] = useState(false);
+  const [acknowledgedDevice, setAcknowledgedDevice] = useState(false);
+
+  // Fetch whoami when the signature section becomes available (not in preview)
+  useEffect(() => {
+    if (previewMode || !activeAgreementId || !member || signed || whoami || whoamiLoading) return;
+    setWhoamiLoading(true);
+    fetch("/api/agreements/whoami")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setWhoami({
+            name: data.name,
+            email: data.email,
+            emailVerified: !!data.emailVerified,
+            ip: data.ip,
+            deviceSummary: data.deviceSummary,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setWhoamiLoading(false));
+  }, [previewMode, activeAgreementId, member, signed, whoami, whoamiLoading]);
+
   // Friendly one-liners for each exhibit
   const exhibitBlurbs: Record<string, string> = {
     "exhibit-a": "How clips get approved, what not to post, and the Do Not Post rule.",
@@ -312,27 +344,29 @@ function AgreementPopup({
     "exhibit-e": "AZ Off Script can grow into other waves, cities, and casts later.",
   };
 
-  const canSign = signatureData && printedName.trim() && signedDate && !signing && !signed && !previewMode && activeAgreementId && member;
+  const emailBlocked = whoami && !whoami.emailVerified;
+  const canSign = signatureData && printedName.trim() && signedDate && !signing && !signed && !previewMode && activeAgreementId && member && whoami && whoami.emailVerified && acknowledgedDevice;
 
   async function handleSign() {
     if (!canSign || !activeAgreementId || !member) return;
     setError(null);
     setSigning(true);
-    const { error: insertError } = await supabase.from("agreement_signatures").insert({
-      agreement_id: activeAgreementId,
-      member_id: member.id,
-      member_name: member.name,
-      member_email: member.email ?? null,
-      member_phone: member.phone ?? null,
-      printed_name: printedName.trim(),
-      signature_data: signatureData,
-      signed_date: signedDate,
-      acknowledged_checklist: true,
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    // Call the server-side API (captures real IP, writes audit log)
+    const res = await fetch("/api/agreements/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agreementId: activeAgreementId,
+        printedName: printedName.trim(),
+        signatureData,
+        signedDate,
+        memberPhone: member.phone ?? null,
+      }),
     });
+    const data = await res.json();
     setSigning(false);
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      setError(data.error ?? "Failed to sign");
       return;
     }
     setSigned(true);
@@ -448,6 +482,51 @@ function AgreementPopup({
             <div className="space-y-3 pt-2 border-t border-copper-clay/20">
               <p className="font-display text-base text-desert-night">Sign here:</p>
 
+              {/* Email verification warning */}
+              {emailBlocked && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                  <p className="text-sm font-bold text-red-800">Email not verified</p>
+                  <p className="text-xs text-red-700 mt-1">
+                    You must confirm your email address before you can sign. Check your inbox
+                    (including spam) for a verification link from AZ Off Script, then come back.
+                  </p>
+                </div>
+              )}
+
+              {/* Pre-sign disclosure — legal protection */}
+              {whoami && (
+                <div className="bg-desert-night/5 rounded-xl p-3 space-y-1.5">
+                  <p className="text-[10px] font-black text-desert-night/60 uppercase tracking-wide">
+                    For your legal protection
+                  </p>
+                  <div className="text-xs text-smoked-charcoal space-y-0.5">
+                    <p><span className="text-smoked-charcoal/50">Signed in as:</span> <strong>{whoami.name}</strong> ({whoami.email})</p>
+                    <p><span className="text-smoked-charcoal/50">IP address:</span> {whoami.ip ?? "recorded server-side"}</p>
+                    <p><span className="text-smoked-charcoal/50">Device:</span> {whoami.deviceSummary}</p>
+                  </div>
+                  <p className="text-[10px] text-smoked-charcoal/50 pt-1">
+                    This info is recorded in a tamper-evident audit log when you sign. It proves
+                    <em> you</em> signed — not an admin logging in for you.
+                  </p>
+                  <label className="flex items-start gap-2 pt-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acknowledgedDevice}
+                      onChange={(e) => setAcknowledgedDevice(e.target.checked)}
+                      disabled={!!emailBlocked}
+                      className="mt-0.5"
+                    />
+                    <span className="text-xs text-smoked-charcoal">
+                      I confirm this is my account and my device. I understand this information
+                      is recorded permanently.
+                    </span>
+                  </label>
+                </div>
+              )}
+              {whoamiLoading && (
+                <p className="text-xs text-smoked-charcoal/40 text-center">Loading your session info…</p>
+              )}
+
               {/* Printed name */}
               <div>
                 <p className="label">Printed name</p>
@@ -457,6 +536,7 @@ function AgreementPopup({
                   onChange={(e) => setPrintedName(e.target.value)}
                   placeholder="Your full legal name"
                   className="field"
+                  disabled={!!emailBlocked}
                 />
               </div>
 
@@ -468,6 +548,7 @@ function AgreementPopup({
                   value={signedDate}
                   onChange={(e) => setSignedDate(e.target.value)}
                   className="field !w-auto"
+                  disabled={!!emailBlocked}
                 />
               </div>
 
@@ -492,12 +573,38 @@ function AgreementPopup({
                   Draw your signature above to continue
                 </p>
               )}
+              {!acknowledgedDevice && whoami && signatureData && (
+                <p className="text-[10px] text-smoked-charcoal/40 text-center">
+                  Check the box above to confirm this is your device
+                </p>
+              )}
             </div>
           ) : previewMode ? (
-            <div className="bg-sandstone-cream/60 rounded-2xl p-4 text-center">
-              <p className="text-xs text-smoked-charcoal/50">
-                Signature pad appears here for crew once this version is activated.
-              </p>
+            <div className="space-y-3 pt-2 border-t border-copper-clay/20">
+              <div className="bg-desert-night/5 rounded-xl p-3 space-y-1.5">
+                <p className="text-[10px] font-black text-desert-night/60 uppercase tracking-wide">
+                  Pre-sign disclosure (crew see this)
+                </p>
+                <div className="text-xs text-smoked-charcoal space-y-0.5">
+                  <p><span className="text-smoked-charcoal/50">Signed in as:</span> <strong>[member name]</strong> ([email])</p>
+                  <p><span className="text-smoked-charcoal/50">IP address:</span> [their real IP]</p>
+                  <p><span className="text-smoked-charcoal/50">Device:</span> [browser on device]</p>
+                </div>
+                <p className="text-[10px] text-smoked-charcoal/50 pt-1">
+                  Recorded in a tamper-evident audit log. Proves the crew member signed — not an admin.
+                </p>
+                <label className="flex items-start gap-2 pt-1.5">
+                  <input type="checkbox" disabled className="mt-0.5" />
+                  <span className="text-xs text-smoked-charcoal/50">
+                    I confirm this is my account and my device. (disabled in preview)
+                  </span>
+                </label>
+              </div>
+              <div className="bg-sandstone-cream/60 rounded-xl p-3 text-center">
+                <p className="text-xs text-smoked-charcoal/50">
+                  Signature pad + sign button appear here once this version is activated.
+                </p>
+              </div>
             </div>
           ) : !activeAgreementId ? (
             <div className="bg-sandstone-cream/60 rounded-2xl p-4 text-center">
