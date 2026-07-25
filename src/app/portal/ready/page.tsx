@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
+import { VideoPlayer } from "@/components/VideoPlayer";
 import type { Database } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
@@ -210,6 +211,13 @@ function ClipReviewCard({
         <a href={clip.link} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm mt-3">
           Open link →
         </a>
+      )}
+
+      {/* Video player — watch before you greenlight */}
+      {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+        <div className="mt-3">
+          <VideoPlayer filePath={clip.file_path} title={clip.title} className="aspect-video" />
+        </div>
       )}
 
       {/* Approval states */}

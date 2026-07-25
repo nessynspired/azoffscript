@@ -701,7 +701,7 @@ insert into storage.buckets (id, name, public)
 values ('clips', 'clips', false)
 on conflict (id) do nothing;
 
--- members can upload to their own folder; admin can read all; members read their own
+-- members can upload to their own folder; all authenticated crew can read; owner/admin can delete
 drop policy if exists "clips upload own" on storage.objects;
 create policy "clips upload own" on storage.objects
   for insert to authenticated with check (
@@ -710,11 +710,9 @@ create policy "clips upload own" on storage.objects
   );
 
 drop policy if exists "clips read own or admin" on storage.objects;
-create policy "clips read own or admin" on storage.objects
-  for select to authenticated using (
-    bucket_id = 'clips'
-    and (auth.uid() = (storage.foldername(name))[1]::uuid or public.is_admin())
-  );
+drop policy if exists "clips read all crew" on storage.objects;
+create policy "clips read all crew" on storage.objects
+  for select to authenticated using (bucket_id = 'clips');
 
 drop policy if exists "clips delete own or admin" on storage.objects;
 create policy "clips delete own or admin" on storage.objects

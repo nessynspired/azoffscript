@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage } from "@/components/MascotImage";
+import { VideoPlayer } from "@/components/VideoPlayer";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
@@ -66,6 +67,16 @@ const ASSIGNMENT_TASK_TYPES = [
   "Drop a Clip", "Drop a Link", "Answer Prompt", "Suggest Caption",
   "Greenlight Clip", "Edit/Stitch", "Schedule Post", "Bring Prop/Gear", "Show Up",
 ];
+
+// YouTube helpers — used in modal + watch tab
+function isYouTubeLink(url: string): boolean {
+  return /youtube\.com|youtu\.be/i.test(url);
+}
+
+function getYouTubeEmbed(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
+  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+}
 
 export default function RunSheetPage() {
   const { member } = useAuth();
@@ -715,6 +726,27 @@ function ClipDetailModal({
             Open link →
           </a>
         )}
+
+        {/* Video player — plays uploaded videos right in the modal */}
+        {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+          <div className="mt-4">
+            <VideoPlayer filePath={clip.file_path} title={clip.title} className="aspect-video" />
+          </div>
+        )}
+
+        {/* YouTube embed for link clips */}
+        {clip.link && isYouTubeLink(clip.link) && getYouTubeEmbed(clip.link) && (
+          <div className="mt-4 aspect-video rounded-xl overflow-hidden">
+            <iframe
+              src={getYouTubeEmbed(clip.link)!}
+              title={clip.title}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        )}
+
         {clip.idea_text && <p className="mt-4 text-smoked-charcoal bg-sandstone-cream/50 rounded-xl p-4">{clip.idea_text}</p>}
         {clip.caption && <p className="mt-4 font-script text-xl text-desert-night">{clip.caption}</p>}
         {clip.do_not_post_notes && (
@@ -1696,14 +1728,14 @@ function WatchTab({
 
   // Get a friendly embeddable/share URL — for TikTok/Instagram we link out, for YouTube we can embed
   function getWatchUrl(clip: ClipMeta): string | null {
-    return clip.link ?? clip.file_path ?? null;
+    return clip.link ?? null;
   }
 
   function isYouTube(url: string): boolean {
     return /youtube\.com|youtu\.be/i.test(url);
   }
 
-  function getYouTubeEmbed(url: string): string | null {
+  function getYouTubeEmbedLocal(url: string): string | null {
     const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
     return m ? `https://www.youtube.com/embed/${m[1]}` : null;
   }
@@ -1750,22 +1782,27 @@ function WatchTab({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((clip) => {
           const watchUrl = getWatchUrl(clip);
-          const ytEmbed = watchUrl && isYouTube(watchUrl) ? getYouTubeEmbed(watchUrl) : null;
+          const ytEmbed = watchUrl && isYouTube(watchUrl) ? getYouTubeEmbedLocal(watchUrl) : null;
+          const hasUploadedVideo = !!clip.file_path && (clip.type === "video" || clip.type === "final_cut");
           const theme = clip.theme_id ? themeMap.get(clip.theme_id) : null;
           return (
             <div key={clip.id} className="card overflow-hidden flex flex-col">
               {/* Video / thumbnail area */}
-              <div className="aspect-[9/16] bg-desert-night/10 relative">
-                {ytEmbed ? (
-                  <iframe
-                    src={ytEmbed}
-                    title={clip.title}
-                    className="absolute inset-0 w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+              <div className="bg-desert-night/10 relative">
+                {hasUploadedVideo ? (
+                  <VideoPlayer filePath={clip.file_path!} title={clip.title} className="aspect-[9/16]" />
+                ) : ytEmbed ? (
+                  <div className="aspect-[9/16]">
+                    <iframe
+                      src={ytEmbed}
+                      title={clip.title}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
                 ) : watchUrl ? (
-                  <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 flex items-center justify-center group">
+                  <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="aspect-[9/16] flex items-center justify-center group block">
                     <div className="w-16 h-16 rounded-full bg-desert-night/60 group-hover:bg-heat-orange/80 flex items-center justify-center backdrop-blur transition-colors">
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="#F5E6D3">
                         <path d="M8 5v14l11-7z" />
@@ -1773,13 +1810,13 @@ function WatchTab({
                     </div>
                   </a>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="aspect-[9/16] flex items-center justify-center">
                     <MascotImage pose="shades" size={80} />
                   </div>
                 )}
                 {/* Platform badge */}
                 {clip.destination && (
-                  <span className="absolute top-3 left-3 chip chip-dark !text-[10px]">
+                  <span className="absolute top-3 left-3 chip chip-dark !text-[10px] z-10">
                     {PLATFORM_LABEL[(clip.destination ?? "").toLowerCase()] ?? clip.destination}
                   </span>
                 )}
@@ -1802,7 +1839,7 @@ function WatchTab({
                   </p>
                 )}
 
-                {watchUrl && !ytEmbed && (
+                {watchUrl && !ytEmbed && !hasUploadedVideo && (
                   <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm mt-3 w-full">
                     Watch on {PLATFORM_LABEL[(clip.destination ?? "").toLowerCase()] ?? "platform"} →
                   </a>
