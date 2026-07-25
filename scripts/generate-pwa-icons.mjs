@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { mkdirSync, existsSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = resolve(__dirname, "..", "public", "assets", "logos", "logo-stacked-white-on-black.png");
+const src = resolve(__dirname, "..", "public", "assets", "logos", "logo-stacked-desert-night.png");
 const dest = resolve(__dirname, "..", "public", "icons");
 
 if (!existsSync(src)) {
@@ -16,7 +16,7 @@ if (!existsSync(src)) {
 }
 mkdirSync(dest, { recursive: true });
 
-const BG = "#0d1b2a"; // desert-night (brand color)
+const BG = "#0d1b2a"; // desert-night (brand color) — matches the logo background
 
 async function makeIcon(size, name, maskable = false) {
   const padding = maskable ? Math.round(size * 0.1) : 0;

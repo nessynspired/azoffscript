@@ -137,7 +137,7 @@ export default function BrandLockerPage() {
                 </div>
                 <div className="p-3 flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-desert-night text-sm">White on Black</p>
+                    <p className="font-bold text-desert-night text-sm">Cream on Desert Night</p>
                     <p className="text-xs text-smoked-charcoal/60">Poster / gear style</p>
                   </div>
                   <a href="/assets/logos/logo-white-on-black.png" download className="btn btn-ghost btn-sm !text-xs">Download</a>
@@ -152,7 +152,7 @@ export default function BrandLockerPage() {
                 </div>
                 <div className="p-3 flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-desert-night text-sm">Black on White</p>
+                    <p className="font-bold text-desert-night text-sm">Night on Sandstone</p>
                     <p className="text-xs text-smoked-charcoal/60">Print friendly</p>
                   </div>
                   <a href="/assets/logos/logo-black-on-white.png" download className="btn btn-ghost btn-sm !text-xs">Download</a>
@@ -169,10 +169,11 @@ export default function BrandLockerPage() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {[
+                { file: "logo-stacked-desert-night.png", label: "Desert Night", bg: "bg-desert-night" },
+                { file: "logo-stacked-white-on-black.png", label: "Cream on Desert Night", bg: "bg-desert-night border border-white/10" },
+                { file: "logo-stacked-black-on-white.png", label: "Night on Sandstone", bg: "bg-sandstone-cream border-b" },
                 { file: "logo-stacked-white.png", label: "White · Transparent", bg: "bg-desert-night" },
                 { file: "logo-stacked-black.png", label: "Black · Transparent", bg: "bg-sandstone-cream border-b" },
-                { file: "logo-stacked-white-on-black.png", label: "White on Black", bg: "bg-black" },
-                { file: "logo-stacked-black-on-white.png", label: "Black on White", bg: "bg-white border-b" },
               ].map((l) => (
                 <div key={l.file} className="card overflow-hidden">
                   <div className={`aspect-square ${l.bg} flex items-center justify-center p-3`}>
