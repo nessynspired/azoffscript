@@ -24,13 +24,14 @@ const PRIMARY_NAV: NavItem[] = [
 ];
 
 const MORE_NAV: NavItem[] = [
-  { href: "/portal/ready", label: "Ready" },
-  { href: "/portal/sparks", label: "Sparks" },
+  { href: "/portal/sparks", label: "Spark Board" },
+  { href: "/portal/ready-bank", label: "Ready Bank" },
+  { href: "/portal/ready", label: "Greenlights" },
   { href: "/portal/gear-board", label: "Gear", adminOnly: true },
   { href: "/portal/invites", label: "Invites", adminOnly: true },
-  { href: "/portal/brand-locker", label: "Locker" },
-  { href: "/portal/ground-rules", label: "How It Works" },
-  { href: "/portal/money-side", label: "Money" },
+  { href: "/portal/brand-locker", label: "Brand Locker" },
+  { href: "/portal/ground-rules", label: "Ground Rules" },
+  { href: "/portal/money-side", label: "Money Side" },
   { href: "/portal/notifications", label: "Notifications" },
 ];
 
