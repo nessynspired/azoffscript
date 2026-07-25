@@ -95,38 +95,72 @@ export default function LobbyPage() {
         </div>
       </section>
 
-      {/* Your Part — assignments */}
-      {myAssignments.length > 0 && (
-        <section>
-          <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-4">Your Part</h2>
-          <div className="space-y-2">
-            {myAssignments.slice(0, 4).map((a) => {
-              const clip = assignmentClips[a.clip_id];
-              const now = new Date();
-              const isLate = a.drop_by_date && new Date(a.drop_by_date) < now;
-              return (
-                <Link key={a.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-bold text-desert-night truncate">{clip?.title ?? "Content item"}</p>
-                      <p className="text-xs text-smoked-charcoal/60 mt-0.5">{a.role} · {a.task_type}</p>
-                      {a.task_title && <p className="text-sm text-desert-night mt-1">{a.task_title}</p>}
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      {a.drop_by_date && (
-                        <span className={`text-xs font-bold ${isLate ? "text-heat-orange" : "text-copper-deep"}`}>
-                          {isLate ? "⚠ Late — " : ""}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                        </span>
-                      )}
-                      <span className="chip chip-cream !text-[9px]">{a.status}</span>
-                    </div>
+      {/* YOUR WEEK — one clean card with quick drop buttons */}
+      <section>
+        <div className="card-dark p-6">
+          <p className="text-sunburst-yellow text-sm font-black uppercase tracking-wide">{firstName}&apos;s Week</p>
+          {myAssignments.length > 0 ? (
+            <>
+              {/* Next deadline */}
+              {(() => {
+                const next = myAssignments[0];
+                const clip = assignmentClips[next.clip_id];
+                const now = new Date();
+                const isLate = next.drop_by_date && new Date(next.drop_by_date) < now;
+                return (
+                  <div className="mt-3">
+                    <p className={`text-2xl font-display ${isLate ? "text-heat-orange" : "text-sandstone-cream"}`}>
+                      {isLate ? "⚠ Late — " : ""}Drop-by {next.drop_by_date ? new Date(next.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "TBD"}
+                    </p>
+                    <p className="text-sandstone-cream/70 mt-1">{clip?.title ?? "Content item"}</p>
+                    <p className="text-sandstone-cream/50 text-sm">{next.role} · {next.task_type}</p>
                   </div>
+                );
+              })()}
+
+              {/* More assignments count */}
+              {myAssignments.length > 1 && (
+                <p className="text-sandstone-cream/50 text-sm mt-2">
+                  + {myAssignments.length - 1} more on your plate
+                </p>
+              )}
+
+              {/* Quick drop buttons */}
+              <div className="grid grid-cols-2 gap-2 mt-5">
+                <Link href="/portal/drop" className="bg-heat-orange text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
+                  🔗 Drop a Link
                 </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
+                <Link href="/portal/drop" className="bg-cactus-teal text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
+                  🎬 Drop a Clip
+                </Link>
+                <Link href="/portal/drop" className="bg-copper-clay text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
+                  💬 Answer Prompt
+                </Link>
+                <Link href="/portal/drop" className="bg-sunburst-yellow text-desert-night rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
+                  ✍️ Caption Idea
+                </Link>
+              </div>
+
+              <p className="text-sandstone-cream/40 text-xs mt-3 text-center">
+                One take is fine. No pressure to be perfect.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-display text-sandstone-cream mt-3">You&apos;re clear this week.</p>
+              <p className="text-sandstone-cream/60 mt-1">Nothing due. Drop something when you feel it.</p>
+              <div className="grid grid-cols-2 gap-2 mt-5">
+                <Link href="/portal/drop" className="bg-heat-orange text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
+                  🔗 Drop a Link
+                </Link>
+                <Link href="/portal/drop" className="bg-cactus-teal text-bone-white rounded-xl p-3 text-center font-bold text-sm hover:-translate-y-0.5 transition-transform">
+                  🎬 Drop a Clip
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
       {/* Quick actions */}
       <section>

@@ -228,31 +228,106 @@ export default function DropPage() {
     );
   }
 
-  // ===== DROP FORM — one screen, no steps =====
+  // ===== DROP FORM — quick actions first, details after =====
+  const [dropMode, setDropMode] = useState<"link" | "clip" | "prompt" | "caption" | null>(null);
+
   return (
     <main className="portal-shell px-4 pt-6">
       <div className="max-w-lg mx-auto pt-6">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="font-display text-4xl text-desert-night">Send your clip.</h1>
+          <h1 className="font-display text-4xl text-desert-night">Drop something.</h1>
           <p className="text-smoked-charcoal/60 mt-2">
-            Paste a link, type a thought, or upload your final. Vanessa stitches it together.
+            One take is fine. No pressure to be perfect.
           </p>
         </div>
 
-        {/* The big text box — this is the whole thing */}
-        <div className="card p-4">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Paste a link or type an idea…"
-            className="field min-h-[140px] text-lg resize-none border-0 focus:ring-0"
-            style={{ border: "none", boxShadow: "none" }}
-            autoFocus
-          />
+        {/* Quick action buttons — pick what you're dropping */}
+        {!dropMode && (
+          <div className="space-y-3">
+            <button
+              onClick={() => setDropMode("link")}
+              className="card p-5 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center gap-4"
+            >
+              <span className="text-3xl">🔗</span>
+              <div>
+                <p className="font-display text-xl text-desert-night">Drop a TikTok Link</p>
+                <p className="text-sm text-smoked-charcoal/60">Saw a trend? Paste the link.</p>
+              </div>
+            </button>
 
-          {/* File upload — small, optional */}
-          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-desert-night/10">
+            <button
+              onClick={() => setDropMode("clip")}
+              className="card p-5 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center gap-4"
+            >
+              <span className="text-3xl">🎬</span>
+              <div>
+                <p className="font-display text-xl text-desert-night">Drop a Quick Clip</p>
+                <p className="text-sm text-smoked-charcoal/60">Record a video and send it.</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setDropMode("prompt")}
+              className="card p-5 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center gap-4"
+            >
+              <span className="text-3xl">💬</span>
+              <div>
+                <p className="font-display text-xl text-desert-night">Answer the Prompt</p>
+                <p className="text-sm text-smoked-charcoal/60">Type your answer to this week&apos;s question.</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setDropMode("caption")}
+              className="card p-5 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center gap-4"
+            >
+              <span className="text-3xl">✍️</span>
+              <div>
+                <p className="font-display text-xl text-desert-night">Send a Caption Idea</p>
+                <p className="text-sm text-smoked-charcoal/60">Got a funny caption? Drop it.</p>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* ===== LINK DROP ===== */}
+        {dropMode === "link" && (
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-xl text-desert-night">🔗 Paste the link</h2>
+              <button onClick={() => { setDropMode(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
+            </div>
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste TikTok / Reel link…"
+              className="field text-lg"
+              autoFocus
+            />
+            {text.trim() && isLink(text.trim()) && (
+              <span className="chip chip-dark !text-[10px] mt-2 inline-block">
+                {detectPlatform(text.trim()) ?? "Link"} detected
+              </span>
+            )}
+            {error && <p className="mt-3 text-sm text-copper-deep font-bold">{error}</p>}
+            <button
+              onClick={submit}
+              disabled={submitting || !text.trim()}
+              className="btn btn-primary btn-lg w-full mt-4"
+            >
+              {submitting ? "Dropping…" : "Drop It"}
+            </button>
+          </div>
+        )}
+
+        {/* ===== CLIP DROP ===== */}
+        {dropMode === "clip" && (
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-xl text-desert-night">🎬 Send your clip</h2>
+              <button onClick={() => { setDropMode(null); setFile(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -260,106 +335,147 @@ export default function DropPage() {
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="btn btn-ghost btn-sm"
-            >
-              📎 Video
-            </button>
+            {!file ? (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-desert-night/20 rounded-2xl py-12 flex flex-col items-center gap-3 hover:border-cactus-teal hover:bg-cactus-teal/5 transition-colors"
+              >
+                <span className="text-5xl">�</span>
+                <p className="font-bold text-desert-night">Tap to pick a video</p>
+                <p className="text-sm text-smoked-charcoal/60">No edits needed. Just send it.</p>
+              </button>
+            ) : (
+              <div className="bg-cactus-teal/10 rounded-xl p-4 flex items-center gap-3">
+                <span className="text-2xl">✅</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-desert-night truncate">{file.name}</p>
+                  <p className="text-xs text-smoked-charcoal/60">{Math.round(file.size / 1024 / 1024)}MB</p>
+                </div>
+                <button onClick={() => setFile(null)} className="text-copper-deep text-sm font-bold">remove</button>
+              </div>
+            )}
             {file && (
-              <span className="text-sm text-cactus-teal font-bold flex-1 truncate">
-                {file.name} ({Math.round(file.size / 1024 / 1024)}MB)
-                <button onClick={() => setFile(null)} className="ml-2 text-copper-deep underline">remove</button>
-              </span>
+              <>
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="What should we call this? (optional)"
+                  className="field mt-3"
+                />
+                {error && <p className="mt-3 text-sm text-copper-deep font-bold">{error}</p>}
+                <button
+                  onClick={submit}
+                  disabled={submitting || !file}
+                  className="btn btn-primary btn-lg w-full mt-4"
+                >
+                  {submitting ? "Uploading…" : "Drop It"}
+                </button>
+              </>
             )}
-
-            {/* Auto-detected type indicator */}
-            {text.trim() && (
-              <span className="chip chip-dark !text-[10px] ml-auto">
-                {isLink(text.trim()) ? `🔗 ${detectPlatform(text.trim()) ?? "Link"}` : "💡 Idea"}
-              </span>
-            )}
           </div>
-        </div>
+        )}
 
-        {/* Content lane picker — which show format does this belong to? */}
-        <div className="mt-4">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-desert-night/50 mb-2">
-            Which lane? {lane && <span className="text-cactus-teal">✓ {lane}</span>}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {DROP_LANES.map((l) => (
-              <button
-                key={l}
-                onClick={() => setLane(lane === l ? "" : l)}
-                className={`chip ${lane === l ? "chip-copper" : "chip-cream"}`}
-                title={LANE_META[l]?.tagline}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Destination picker — where is this video going? */}
-        <div className="mt-4">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-desert-night/50 mb-2">
-            Going to {destination && <span className="text-cactus-teal">✓ {destination}</span>}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {DESTINATIONS.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDestination(destination === d ? "" : d)}
-                className={`chip ${destination === d ? "chip-copper" : "chip-cream"}`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tag people — inline, optional, not a separate step */}
-        {members.length > 1 && (
-          <div className="mt-4">
-            <p className="text-xs font-extrabold uppercase tracking-wide text-desert-night/50 mb-2">
-              Tag the room {taggedMemberIds.length > 0 && `(${taggedMemberIds.length})`}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {members
-                .filter((m) => m.id !== member?.id)
-                .map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => toggleTag(m.id)}
-                    className={`chip ${taggedMemberIds.includes(m.id) ? "chip-copper" : "chip-cream"}`}
-                  >
-                    {m.name}
-                  </button>
-                ))}
+        {/* ===== PROMPT / IDEA DROP ===== */}
+        {dropMode === "prompt" && (
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-xl text-desert-night">💬 Your answer</h2>
+              <button onClick={() => { setDropMode(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
             </div>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Type your answer…"
+              className="field min-h-[120px] text-lg"
+              autoFocus
+            />
+            {error && <p className="mt-3 text-sm text-copper-deep font-bold">{error}</p>}
+            <button
+              onClick={submit}
+              disabled={submitting || !text.trim()}
+              className="btn btn-primary btn-lg w-full mt-4"
+            >
+              {submitting ? "Dropping…" : "Drop It"}
+            </button>
           </div>
         )}
 
-        {/* Error */}
-        {error && (
-          <div className="mt-4 p-3 rounded-xl bg-copper-deep/10 text-copper-deep text-sm font-bold">
-            {error}
+        {/* ===== CAPTION DROP ===== */}
+        {dropMode === "caption" && (
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-xl text-desert-night">✍️ Caption idea</h2>
+              <button onClick={() => { setDropMode(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
+            </div>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Drop your caption…"
+              className="field min-h-[80px] text-lg"
+              autoFocus
+            />
+            {error && <p className="mt-3 text-sm text-copper-deep font-bold">{error}</p>}
+            <button
+              onClick={submit}
+              disabled={submitting || !text.trim()}
+              className="btn btn-primary btn-lg w-full mt-4"
+            >
+              {submitting ? "Dropping…" : "Drop It"}
+            </button>
           </div>
         )}
 
-        {/* Drop button — big, obvious */}
-        <button
-          onClick={submit}
-          disabled={submitting || (!text.trim() && !file)}
-          className="btn btn-primary btn-lg w-full mt-5 text-xl glow-pulse"
-        >
-          {submitting ? "Dropping…" : "Drop It 🎬"}
-        </button>
+        {/* ===== OPTIONAL EXTRAS — only after they've picked a mode ===== */}
+        {dropMode && (text.trim() || file) && (
+          <div className="mt-4 space-y-4">
+            {/* Tag people — optional */}
+            {members.length > 1 && (
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-desert-night/50 mb-2">
+                  Who&apos;s in it? <button onClick={() => setTaggedMemberIds([])} className="text-desert-night/30 hover:text-desert-night/60 normal-case font-normal">skip</button>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {members
+                    .filter((m) => m.id !== member?.id)
+                    .map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => toggleTag(m.id)}
+                        className={`chip ${taggedMemberIds.includes(m.id) ? "chip-copper" : "chip-cream"}`}
+                      >
+                        {m.name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
 
-        <p className="text-center text-xs text-desert-night/40 mt-3">
-          No edits needed. Just send it.
-        </p>
+            {/* Lane + destination — optional, collapsed */}
+            <details className="card p-3">
+              <summary className="font-bold text-desert-night cursor-pointer text-sm">
+                More details (optional)
+              </summary>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <p className="text-xs font-bold text-desert-night/50 mb-1">Lane</p>
+                  <div className="flex flex-wrap gap-1">
+                    {DROP_LANES.map((l) => (
+                      <button key={l} onClick={() => setLane(lane === l ? "" : l)} className={`chip !text-xs ${lane === l ? "chip-copper" : "chip-cream"}`}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-desert-night/50 mb-1">Going to</p>
+                  <div className="flex flex-wrap gap-1">
+                    {DESTINATIONS.map((d) => (
+                      <button key={d} onClick={() => setDestination(destination === d ? "" : d)} className={`chip !text-xs ${destination === d ? "chip-copper" : "chip-cream"}`}>{d}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+        )}
       </div>
     </main>
   );

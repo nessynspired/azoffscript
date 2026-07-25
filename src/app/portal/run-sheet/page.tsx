@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
+import { HEAT_VIBES, POST_COUNTS, EFFORT_LEVELS, generateWeekPlan, calcDeadlinesFromLive, nextSunday, type PlannedItem } from "@/lib/plan-defaults";
 import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
@@ -334,8 +335,10 @@ export default function RunSheetPage() {
           themes={themes}
           clips={clips}
           trends={trends}
+          members={members}
           canPlanContent={canPlanContent}
           currentMemberId={member?.id}
+          currentMemberName={member?.name}
           onRefresh={load}
         />
       )}
@@ -1205,6 +1208,36 @@ function TrendDropsTab({
     await onRefresh();
   }
 
+  // Turn a trend into a quick drop clip — auto-fills everything with defaults
+  async function turnIntoQuickDrop(trend: TrendRef) {
+    if (!currentMemberId || !currentMemberName) return;
+    const sunday = nextSunday();
+    const deadlines = calcDeadlinesFromLive(sunday);
+
+    const { data: clip, error } = await supabase.from("clips").insert({
+      title: `Quick Drop: ${trend.title}`,
+      type: "tiktok_link",
+      status: "Planned",
+      link: trend.url,
+      category: "Trends",
+      submitted_by: currentMemberId,
+      submitted_by_name: currentMemberName,
+      theme_id: trend.theme_id ?? null,
+      idea_due_date: deadlines.idea_due_date,
+      clip_due_date: deadlines.clip_due_date,
+      final_cut_due: deadlines.final_cut_due,
+      approval_due: deadlines.approval_due,
+      scheduled_date: deadlines.scheduled_date,
+    }).select().single();
+
+    if (error) { alert(error.message); return; }
+
+    // Mark trend as Assigned
+    await supabase.from("trend_references").update({ status: "Assigned" }).eq("id", trend.id);
+
+    await onRefresh();
+  }
+
   const TREND_CHIP: Record<string, string> = {
     New: "chip-cream",
     Watching: "chip-yellow",
@@ -1276,9 +1309,22 @@ function TrendDropsTab({
                   <span className="text-xs text-smoked-charcoal/50">by {t.submitted_by_name}</span>
                   {theme && <span className="chip chip-copper !text-[10px]">🔥 {theme.name}</span>}
                 </div>
-                {/* Status changer — planner+ or owner */}
+
+                {/* Quick action buttons for planners */}
+                {canPlanContent && (
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-desert-night/10">
+                    <button onClick={() => updateTrendStatus(t.id, "Watching")} className="btn btn-secondary btn-sm !text-xs">Save Later</button>
+                    <button onClick={() => turnIntoQuickDrop(t)} className="btn btn-primary btn-sm !text-xs">Turn Into Quick Drop</button>
+                    {t.status !== "Used" && (
+                      <button onClick={() => updateTrendStatus(t.id, "Used")} className="btn btn-secondary btn-sm !text-xs">Use This Week</button>
+                    )}
+                    <button onClick={() => updateTrendStatus(t.id, "Passed")} className="btn btn-ghost btn-sm !text-xs">Archive</button>
+                  </div>
+                )}
+
+                {/* Status chips — planner+ or owner */}
                 {(canPlanContent || isMine) && (
-                  <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-desert-night/10">
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {["New", "Watching", "Assigned", "Used", "Passed"].map((s) => (
                       <button
                         key={s}
@@ -1304,22 +1350,33 @@ function TrendDropsTab({
 // WEEKLY HEAT — theme management
 // ===========================================================================
 function WeeklyHeatTab({
-  themes, clips, trends, canPlanContent, currentMemberId, onRefresh,
+  themes, clips, trends, members, canPlanContent, currentMemberId, currentMemberName, onRefresh,
 }: {
   themes: Theme[];
   clips: ClipMeta[];
   trends: TrendRef[];
+  members: Member[];
   canPlanContent: boolean;
   currentMemberId?: string;
+  currentMemberName?: string;
   onRefresh: () => Promise<void>;
 }) {
   const supabase = createClient();
   const [showForm, setShowForm] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Heat Builder state
+  const [postCount, setPostCount] = useState(3);
+  const [vibe, setVibe] = useState("easy_week");
+  const [effort, setEffort] = useState("10min");
+  const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
+  const [generatedPlan, setGeneratedPlan] = useState<PlannedItem[] | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   async function createTheme() {
     if (!name.trim() || !currentMemberId) return;
@@ -1357,18 +1414,193 @@ function WeeklyHeatTab({
     Wrapped: "chip-cream",
   };
 
+  // Generate week plan and create clips + theme in the database
+  async function generateAndCreateWeek() {
+    if (!currentMemberId || !currentMemberName) return;
+    setGenerating(true);
+
+    const crewNames = selectedCrew.map((id) => members.find((m) => m.id === id)?.name ?? "").filter(Boolean);
+    const plan = generateWeekPlan(postCount, vibe, effort, crewNames);
+    setGeneratedPlan(plan);
+
+    // Create the Weekly Heat theme
+    const vibeLabel = HEAT_VIBES.find((v) => v.id === vibe)?.label ?? vibe;
+    const sunday = nextSunday();
+    const weekEnd = new Date(sunday);
+    weekEnd.setDate(sunday.getDate() + 6);
+
+    const { data: theme, error: themeErr } = await supabase.from("content_themes").insert({
+      name: `${vibeLabel} Week`,
+      description: `${EFFORT_LEVELS.find((e) => e.id === effort)?.label ?? "10-Min Drop"} · ${postCount} posts`,
+      start_date: sunday.toISOString(),
+      end_date: weekEnd.toISOString(),
+      status: "Planning",
+      created_by: currentMemberId,
+    }).select().single();
+
+    if (themeErr) { alert(themeErr.message); setGenerating(false); return; }
+
+    // Create clips for each planned item with auto-calculated deadlines
+    const clipInserts = plan.map((item) => ({
+      title: item.title,
+      type: "video" as const,
+      status: "Planned" as const,
+      category: vibeLabel,
+      submitted_by: currentMemberId,
+      submitted_by_name: currentMemberName,
+      theme_id: theme.id,
+      idea_due_date: item.deadlines.idea_due_date,
+      clip_due_date: item.deadlines.clip_due_date,
+      final_cut_due: item.deadlines.final_cut_due,
+      approval_due: item.deadlines.approval_due,
+      scheduled_date: item.deadlines.scheduled_date,
+    }));
+
+    const { data: createdClips, error: clipsErr } = await supabase.from("clips").insert(clipInserts).select();
+    if (clipsErr) { alert(clipsErr.message); setGenerating(false); return; }
+
+    // Assign selected crew to each clip
+    if (createdClips && selectedCrew.length > 0) {
+      const assignmentInserts: Database["public"]["Tables"]["content_assignments"]["Insert"][] = [];
+      for (const clip of createdClips) {
+        for (const crewId of selectedCrew) {
+          const crewMember = members.find((m) => m.id === crewId);
+          if (!crewMember) continue;
+          assignmentInserts.push({
+            clip_id: clip.id,
+            member_id: crewId,
+            member_name: crewMember.name,
+            role: "On-Camera",
+            task_type: "Drop a Clip",
+            drop_by_date: plan[0]?.deadlines.clip_due_date ?? null,
+            is_required: true,
+            created_by: currentMemberId,
+          });
+        }
+      }
+      if (assignmentInserts.length > 0) {
+        await supabase.from("content_assignments").insert(assignmentInserts);
+        // Notify assigned crew
+        await Promise.all(selectedCrew.map((id) =>
+          notifyMember(supabase, id, "assignment", `You're on this week's ${vibeLabel} Heat — Drop-by ${new Date(plan[0].deadlines.clip_due_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`, "/portal/drop")
+        ));
+      }
+    }
+
+    await onRefresh();
+    setGenerating(false);
+    setShowBuilder(false);
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <p className="text-smoked-charcoal/70">
-          Weekly Heat is the big focus for the week — a theme, a series, a vibe. Plan 2-4 weeks ahead, lock the next 7-10 days.
+          Weekly Heat is the big focus for the week. Build it in one tap, edit what you need.
         </p>
         {canPlanContent && (
-          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-sm">
-            {showForm ? "Cancel" : "+ New Weekly Heat"}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => { setShowBuilder(!showBuilder); setShowForm(false); }} className="btn btn-primary btn-sm">
+              {showBuilder ? "Cancel" : "🔥 Build the Heat"}
+            </button>
+            <button onClick={() => { setShowForm(!showForm); setShowBuilder(false); }} className="btn btn-secondary btn-sm">
+              {showForm ? "Cancel" : "+ Manual"}
+            </button>
+          </div>
         )}
       </div>
+
+      {/* ===== HEAT BUILDER — one-tap planning ===== */}
+      {showBuilder && canPlanContent && (
+        <div className="card p-5 space-y-5">
+          <h2 className="font-display text-2xl text-desert-night">Build the Heat</h2>
+
+          {/* Post count */}
+          <div>
+            <p className="label">How many posts this week?</p>
+            <div className="flex gap-2">
+              {POST_COUNTS.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setPostCount(n)}
+                  className={`w-12 h-12 rounded-xl font-display text-xl ${postCount === n ? "bg-desert-night text-sunburst-yellow" : "bg-sandstone-cream/50 text-desert-night"}`}
+                >{n}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Vibe */}
+          <div>
+            <p className="label">What vibe?</p>
+            <div className="flex flex-wrap gap-2">
+              {HEAT_VIBES.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setVibe(v.id)}
+                  className={`chip ${vibe === v.id ? "chip-copper" : "chip-cream"}`}
+                  title={v.desc}
+                >{v.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Effort */}
+          <div>
+            <p className="label">Effort level</p>
+            <div className="flex flex-wrap gap-2">
+              {EFFORT_LEVELS.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => setEffort(e.id)}
+                  className={`chip ${effort === e.id ? "chip-copper" : "chip-cream"}`}
+                  title={e.desc}
+                >{e.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Available crew */}
+          {members.length > 0 && (
+            <div>
+              <p className="label">Who&apos;s available?</p>
+              <div className="flex flex-wrap gap-2">
+                {members.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedCrew(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
+                    className={`chip ${selectedCrew.includes(m.id) ? "chip-copper" : "chip-cream"}`}
+                  >{m.name}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Generate button */}
+          <button
+            onClick={generateAndCreateWeek}
+            disabled={generating}
+            className="btn btn-primary btn-lg w-full"
+          >
+            {generating ? "Building…" : "Generate Week"}
+          </button>
+
+          {/* Preview of what will be created */}
+          {generatedPlan && (
+            <div className="bg-sandstone-cream/50 rounded-xl p-4 space-y-2">
+              <p className="font-bold text-desert-night text-sm">Here&apos;s what we&apos;re building:</p>
+              {generatedPlan.map((item, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="font-bold text-desert-night">{item.title}</span>
+                  <span className="text-cactus-teal font-bold">{item.dayLabel}</span>
+                </div>
+              ))}
+              <p className="text-xs text-smoked-charcoal/60 mt-2">
+                Deadlines auto-set: Drop-by 3 days before, Cut ready 2 days before, Greenlight 1 day before.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {showForm && canPlanContent && (
         <div className="card p-5 space-y-3">
