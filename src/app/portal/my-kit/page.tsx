@@ -344,12 +344,22 @@ export default function MyWaveKitPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {myApprovals.map((app) => (
-              <div key={app.id} className="card p-4 flex items-center justify-between">
-                <p className="font-bold text-desert-night">Approval needed</p>
-                <span className="chip chip-waiting !text-[10px]">{app.status}</span>
-              </div>
-            ))}
+            {myApprovals.map((app) => {
+              const clip = assignedClips.find((c) => c.id === app.clip_id) ?? myClips.find((c) => c.id === app.clip_id);
+              return (
+                <Link key={app.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-bold text-desert-night">{clip?.title ?? "A clip needs your greenlight"}</p>
+                    <span className="chip chip-waiting !text-[10px] shrink-0">{app.status}</span>
+                  </div>
+                  {clip?.approval_due && (
+                    <p className="text-xs text-heat-orange font-bold mt-1">
+                      Greenlight by: {new Date(clip.approval_due).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                    </p>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

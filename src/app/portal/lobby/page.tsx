@@ -9,6 +9,7 @@ import type { Database } from "@/lib/types/db";
 
 type Activity = Database["public"]["Tables"]["activity"]["Row"];
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
+type Theme = Database["public"]["Tables"]["content_themes"]["Row"];
 
 interface Heat {
   needsReview: number;
@@ -21,15 +22,19 @@ export default function LobbyPage() {
   const supabase = createClient();
   const [activity, setActivity] = useState<Activity[]>([]);
   const [heat, setHeat] = useState<Heat>({ needsReview: 0, readyToFilm: 0, scheduledToday: 0 });
+  const [dueThisWeek, setDueThisWeek] = useState<ClipMeta[]>([]);
+  const [activeThemes, setActiveThemes] = useState<Theme[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [actRes, reviewRes, readyRes, schedRes] = await Promise.all([
+      const [actRes, reviewRes, readyRes, schedRes, clipsRes, themesRes] = await Promise.all([
         supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(8),
         supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Review"),
         supabase.from("ideas").select("id", { count: "exact", head: true }).eq("status", "Planned"),
         supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Scheduled"),
+        supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }).limit(20),
+        supabase.from("content_themes").select("*").order("start_date", { ascending: false }).limit(5),
       ]);
       setActivity(actRes.data ?? []);
       setHeat({
@@ -37,6 +42,17 @@ export default function LobbyPage() {
         readyToFilm: readyRes.count ?? 0,
         scheduledToday: schedRes.count ?? 0,
       });
+      setActiveThemes((themesRes.data ?? []).filter((t) => t.status === "Active" || t.status === "Planning"));
+
+      // What's due this week
+      const now = new Date();
+      const weekEnd = new Date(now);
+      weekEnd.setDate(now.getDate() + 7);
+      const due = (clipsRes.data ?? []).filter((c) => {
+        const dates = [c.clip_due_date, c.final_cut_due, c.approval_due, c.scheduled_date, c.idea_due_date];
+        return dates.some((d) => d && new Date(d) >= now && new Date(d) <= weekEnd);
+      }).slice(0, 5);
+      setDueThisWeek(due);
       setLoading(false);
     }
     load();
@@ -100,6 +116,52 @@ export default function LobbyPage() {
           />
         </div>
       </section>
+
+      {/* Active Weekly Heat */}
+      {activeThemes.length > 0 && (
+        <section>
+          <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-4">🔥 Weekly Heat</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+            {activeThemes.map((t) => (
+              <Link key={t.id} href="/portal/run-sheet" className="card-dark p-5 min-w-[280px] shrink-0 hover:-translate-y-0.5 transition-transform">
+                <p className="font-display text-xl text-sunburst-yellow">{t.name}</p>
+                {t.description && <p className="text-sm text-sandstone-cream/60 mt-1">{t.description}</p>}
+                {t.start_date && t.end_date && (
+                  <p className="text-xs text-sandstone-cream/50 mt-2">
+                    {new Date(t.start_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — {new Date(t.end_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* What's Due This Week */}
+      {dueThisWeek.length > 0 && (
+        <section>
+          <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-4">Coming Up This Week</h2>
+          <div className="space-y-2">
+            {dueThisWeek.map((c) => {
+              const deadlines: { label: string; date: string }[] = [];
+              if (c.idea_due_date) deadlines.push({ label: "Spark-by", date: c.idea_due_date });
+              if (c.clip_due_date) deadlines.push({ label: "Drop-by", date: c.clip_due_date });
+              if (c.final_cut_due) deadlines.push({ label: "Cut ready", date: c.final_cut_due });
+              if (c.approval_due) deadlines.push({ label: "Greenlight", date: c.approval_due });
+              if (c.scheduled_date) deadlines.push({ label: "Goes Live", date: c.scheduled_date });
+              const next = deadlines.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+              return (
+                <Link key={c.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform flex items-center justify-between gap-4">
+                  <p className="font-bold text-desert-night truncate">{c.title}</p>
+                  <span className="chip chip-copper !text-[10px] shrink-0">
+                    {next.label}: {new Date(next.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* What's Moving */}
       <section>
