@@ -1337,8 +1337,10 @@ function TrendDropsTab({
   // Turn a trend into a quick drop clip — auto-fills everything with defaults
   async function turnIntoQuickDrop(trend: TrendRef) {
     if (!currentMemberId || !currentMemberName) return;
-    const sunday = nextSunday();
-    const deadlines = calcDeadlinesFromLive(sunday);
+    // Auto-suggest: use the active Weekly Heat's end date, or next Sunday if none
+    const activeTheme = themes.find((t) => t.status === "Active" || t.status === "Planning");
+    const liveDate = activeTheme?.end_date ? new Date(activeTheme.end_date) : nextSunday();
+    const deadlines = calcDeadlinesFromLive(liveDate);
 
     const { data: clip, error } = await supabase.from("clips").insert({
       title: `Quick Drop: ${trend.title}`,
@@ -1504,6 +1506,11 @@ function WeeklyHeatTab({
   const [generatedPlan, setGeneratedPlan] = useState<PlannedItem[] | null>(null);
   const [generating, setGenerating] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  // Week start date — auto-suggested to next Sunday, but user can change it
+  const [weekStartDate, setWeekStartDate] = useState<string>(() => {
+    const sun = nextSunday();
+    return sun.toISOString().slice(0, 10);
+  });
 
   async function createTheme() {
     if (!name.trim() || !currentMemberId) return;
@@ -1543,23 +1550,23 @@ function WeeklyHeatTab({
 
   // Generate week plan and create clips + theme in the database
   async function generateAndCreateWeek() {
-    if (!currentMemberId || !currentMemberName) return;
+    if (!currentMemberId || !currentMemberName || !weekStartDate) return;
     setGenerating(true);
 
+    const startDate = new Date(weekStartDate + "T12:00:00");
     const crewNames = selectedCrew.map((id) => members.find((m) => m.id === id)?.name ?? "").filter(Boolean);
-    const plan = generateWeekPlan(postCount, vibe, effort, crewNames);
+    const plan = generateWeekPlan(postCount, vibe, effort, crewNames, startDate);
     setGeneratedPlan(plan);
 
     // Create the Weekly Heat theme
     const vibeLabel = HEAT_VIBES.find((v) => v.id === vibe)?.label ?? vibe;
-    const sunday = nextSunday();
-    const weekEnd = new Date(sunday);
-    weekEnd.setDate(sunday.getDate() + 6);
+    const weekEnd = new Date(startDate);
+    weekEnd.setDate(startDate.getDate() + 6);
 
     const { data: theme, error: themeErr } = await supabase.from("content_themes").insert({
       name: `${vibeLabel} Week`,
       description: `${EFFORT_LEVELS.find((e) => e.id === effort)?.label ?? "10-Min Drop"} · ${postCount} posts`,
-      start_date: sunday.toISOString(),
+      start_date: startDate.toISOString(),
       end_date: weekEnd.toISOString(),
       status: "Planning",
       created_by: currentMemberId,
@@ -1642,6 +1649,17 @@ function WeeklyHeatTab({
       {showBuilder && canPlanContent && (
         <div className="card p-5 space-y-5">
           <h2 className="font-display text-2xl text-desert-night">Build the Heat</h2>
+
+          {/* Week start date — auto-suggested, user can change */}
+          <div>
+            <p className="label">Week starts <span className="font-normal text-desert-night/40">(auto-set to next Sunday — change if needed)</span></p>
+            <input
+              type="date"
+              value={weekStartDate}
+              onChange={(e) => setWeekStartDate(e.target.value)}
+              className="field !w-auto"
+            />
+          </div>
 
           {/* Post count */}
           <div>
@@ -2254,15 +2272,19 @@ function TemplatePicker({
   const [selectedId, setSelectedId] = useState<string>("");
   const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+  // Goes-live date — auto-suggested to next Sunday, but user can change it
+  const [liveDate, setLiveDate] = useState<string>(() => {
+    const sun = nextSunday();
+    return sun.toISOString().slice(0, 10); // YYYY-MM-DD for date input
+  });
 
   const template = selectedId ? getTemplate(selectedId) : null;
 
   async function create() {
-    if (!template || !member) return;
+    if (!template || !member || !liveDate) return;
     setCreating(true);
 
-    const sunday = nextSunday();
-    const deadlines = calcDeadlinesFromLive(sunday);
+    const deadlines = calcDeadlinesFromLive(new Date(liveDate + "T12:00:00"));
 
     const { data: clip, error } = await supabase.from("clips").insert({
       title: template.name,
@@ -2352,6 +2374,26 @@ function TemplatePicker({
                 {template.sampleLines.map((line, i) => <li key={i} className="font-script text-base">{line}</li>)}
               </ul>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Goes-live date — auto-suggested, user can change */}
+      {template && (
+        <div>
+          <p className="label">Goes live <span className="font-normal text-desert-night/40">(auto-set to next Sunday — change if needed)</span></p>
+          <input
+            type="date"
+            value={liveDate}
+            onChange={(e) => setLiveDate(e.target.value)}
+            className="field !w-auto"
+          />
+          {liveDate && (
+            <p className="text-xs text-smoked-charcoal/50 mt-1">
+              Drop-by {new Date(liveDate + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+              {" → "}Cut {new Date(new Date(liveDate + "T12:00:00").getTime() - 2 * 86400000).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+              {" → "}Greenlight {new Date(new Date(liveDate + "T12:00:00").getTime() - 1 * 86400000).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+            </p>
           )}
         </div>
       )}

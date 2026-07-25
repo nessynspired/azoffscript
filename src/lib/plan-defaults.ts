@@ -115,8 +115,10 @@ export function generateWeekPlan(
   vibe: string,
   effort: string,
   crewNames: string[],
+  startDate?: Date | string,
 ): PlannedItem[] {
-  const sunday = nextSunday();
+  const sunday = startDate ? new Date(startDate) : nextSunday();
+  sunday.setHours(12, 0, 0, 0);
   const vibeLabel = HEAT_VIBES.find((v) => v.id === vibe)?.label ?? vibe;
   const items: PlannedItem[] = [];
 
