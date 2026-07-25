@@ -135,8 +135,8 @@ export function PortalTopBar({
     <header className="fixed top-0 inset-x-0 z-40 bg-desert-night text-sandstone-cream border-b-2 border-copper-clay/40 hidden md:block">
       <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center gap-6">
         <Link href="/portal/lobby" className="flex items-center gap-2 shrink-0">
-          <span className="font-display text-2xl tracking-tight text-sunburst-yellow">AZ</span>
-          <span className="font-display text-2xl tracking-tight">Off Script</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/logos/logo-white.png" alt="AZ Off Script" className="h-8 w-auto" />
         </Link>
 
         <nav className="flex items-center gap-1 flex-1">

@@ -13,8 +13,8 @@ export function PublicNav() {
     <header className="fixed top-0 inset-x-0 z-40 bg-desert-night/95 backdrop-blur border-b border-copper-clay/30">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <span className="font-display text-2xl text-sunburst-yellow tracking-tight">AZ</span>
-          <span className="font-display text-2xl text-sandstone-cream tracking-tight">Off Script</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/logos/logo-white.png" alt="AZ Off Script" className="h-8 w-auto" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">

@@ -91,7 +91,104 @@ export default function BrandLockerPage() {
 
       {/* LOGOS */}
       {tab === "logos" && (
-        <div className="space-y-6">
+        <div className="space-y-8">
+          {/* Wordmark lockups */}
+          <div>
+            <h2 className="font-display text-2xl text-desert-night mb-1">Wordmark</h2>
+            <p className="text-sm text-smoked-charcoal/60 mb-4">
+              The official AZ Off Script logo. Use the transparent versions on colored backgrounds, or the boxed versions for posters and gear.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* White text on transparent — for dark backgrounds */}
+              <div className="card overflow-hidden">
+                <div className="aspect-[3/1] bg-desert-night flex items-center justify-center p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/assets/logos/logo-white.png" alt="AZ Off Script logo — white text, transparent" className="max-h-full max-w-full" />
+                </div>
+                <div className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-desert-night text-sm">White · Transparent</p>
+                    <p className="text-xs text-smoked-charcoal/60">For dark backgrounds</p>
+                  </div>
+                  <a href="/assets/logos/logo-white.png" download className="btn btn-ghost btn-sm !text-xs">Download</a>
+                </div>
+              </div>
+
+              {/* Black text on transparent — for light backgrounds */}
+              <div className="card overflow-hidden">
+                <div className="aspect-[3/1] bg-sandstone-cream flex items-center justify-center p-4 border-b">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/assets/logos/logo-black.png" alt="AZ Off Script logo — black text, transparent" className="max-h-full max-w-full" />
+                </div>
+                <div className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-desert-night text-sm">Black · Transparent</p>
+                    <p className="text-xs text-smoked-charcoal/60">For light backgrounds</p>
+                  </div>
+                  <a href="/assets/logos/logo-black.png" download className="btn btn-ghost btn-sm !text-xs">Download</a>
+                </div>
+              </div>
+
+              {/* White on black — poster style */}
+              <div className="card overflow-hidden">
+                <div className="aspect-[3/1] bg-black flex items-center justify-center p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/assets/logos/logo-white-on-black.png" alt="AZ Off Script logo — white on black" className="max-h-full max-w-full" />
+                </div>
+                <div className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-desert-night text-sm">White on Black</p>
+                    <p className="text-xs text-smoked-charcoal/60">Poster / gear style</p>
+                  </div>
+                  <a href="/assets/logos/logo-white-on-black.png" download className="btn btn-ghost btn-sm !text-xs">Download</a>
+                </div>
+              </div>
+
+              {/* Black on white — print friendly */}
+              <div className="card overflow-hidden">
+                <div className="aspect-[3/1] bg-white flex items-center justify-center p-2 border-b">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/assets/logos/logo-black-on-white.png" alt="AZ Off Script logo — black on white" className="max-h-full max-w-full" />
+                </div>
+                <div className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-desert-night text-sm">Black on White</p>
+                    <p className="text-xs text-smoked-charcoal/60">Print friendly</p>
+                  </div>
+                  <a href="/assets/logos/logo-black-on-white.png" download className="btn btn-ghost btn-sm !text-xs">Download</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stacked lockups (square — for avatars / profile pics) */}
+          <div>
+            <h2 className="font-display text-2xl text-desert-night mb-1">Stacked (Square)</h2>
+            <p className="text-sm text-smoked-charcoal/60 mb-4">
+              Square version for profile pictures, avatars, and stickers.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { file: "logo-stacked-white.png", label: "White · Transparent", bg: "bg-desert-night" },
+                { file: "logo-stacked-black.png", label: "Black · Transparent", bg: "bg-sandstone-cream border-b" },
+                { file: "logo-stacked-white-on-black.png", label: "White on Black", bg: "bg-black" },
+                { file: "logo-stacked-black-on-white.png", label: "Black on White", bg: "bg-white border-b" },
+              ].map((l) => (
+                <div key={l.file} className="card overflow-hidden">
+                  <div className={`aspect-square ${l.bg} flex items-center justify-center p-3`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/assets/logos/${l.file}`} alt={`AZ Off Script stacked logo — ${l.label}`} className="max-h-full max-w-full" />
+                  </div>
+                  <div className="p-2 text-center">
+                    <p className="font-bold text-desert-night text-xs">{l.label}</p>
+                    <a href={`/assets/logos/${l.file}`} download className="text-[10px] text-copper-deep hover:underline">Download</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Posters */}
           <div>
             <h2 className="font-display text-2xl text-desert-night mb-3">Posters</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

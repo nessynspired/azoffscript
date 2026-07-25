@@ -77,8 +77,8 @@ export default function LoginPage() {
 
         <div className="card-dark p-8 relative z-10 tex-grain">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-display text-3xl text-sunburst-yellow">AZ</span>
-            <span className="font-display text-3xl text-sandstone-cream">Off Script</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/logos/logo-white.png" alt="AZ Off Script" className="h-10 w-auto" />
           </div>
           <h1 className="font-display text-4xl text-sandstone-cream mt-4 leading-none">
             Enter the Off Script Room

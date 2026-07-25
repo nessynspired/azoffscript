@@ -15,8 +15,8 @@ export function PublicFooter() {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
           <div className="flex items-center gap-2">
-            <span className="font-display text-xl text-sunburst-yellow">AZ</span>
-            <span className="font-display text-xl text-sandstone-cream">Off Script</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/logos/logo-white.png" alt="AZ Off Script" className="h-7 w-auto" />
           </div>
 
           <nav className="flex flex-wrap items-center gap-4 text-sm">
