@@ -562,17 +562,15 @@ function ClipDetailModal({
           <div className="mt-6 card p-4 bg-sandstone-cream/50">
             <h3 className="font-display text-xl text-desert-night mb-3">Weekly Heat</h3>
             <div className="space-y-2">
-              <DeadlineRow label="Drop-by (ideas)" value={clip.idea_due_date} isAdmin={isAdmin} fieldName="idea_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Send your clip by" value={clip.clip_due_date} isAdmin={isAdmin} fieldName="clip_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Send your final by" value={clip.final_cut_due} isAdmin={isAdmin} fieldName="final_cut_due" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Greenlight by" value={clip.approval_due} isAdmin={isAdmin} fieldName="approval_due" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Goes live" value={clip.scheduled_date} isAdmin={isAdmin} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Drop-by (ideas)" value={clip.idea_due_date} canEdit={true} fieldName="idea_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Send your clip by" value={clip.clip_due_date} canEdit={true} fieldName="clip_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Send your final by" value={clip.final_cut_due} canEdit={true} fieldName="final_cut_due" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Greenlight by" value={clip.approval_due} canEdit={true} fieldName="approval_due" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Goes live" value={clip.scheduled_date} canEdit={true} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
             </div>
-            {isAdmin && (
-              <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
-                {savingDeadlines ? "Saving…" : "Save Deadlines"}
-              </button>
-            )}
+            <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
+              {savingDeadlines ? "Saving…" : "Save Deadlines"}
+            </button>
           </div>
         )}
 
@@ -672,11 +670,11 @@ function ClipDetailModal({
 }
 
 function DeadlineRow({
-  label, value, isAdmin, fieldName, deadlines, setDeadlines,
+  label, value, canEdit, fieldName, deadlines, setDeadlines,
 }: {
   label: string;
   value: string | null;
-  isAdmin: boolean;
+  canEdit: boolean;
   fieldName: string;
   deadlines: Record<string, string>;
   setDeadlines: React.Dispatch<React.SetStateAction<Record<string, string>>>;
@@ -688,7 +686,7 @@ function DeadlineRow({
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-sm font-bold text-desert-night/70">{label}</span>
-      {isAdmin ? (
+      {canEdit ? (
         <input
           type="date"
           className="field !py-1 !text-sm !w-auto"
