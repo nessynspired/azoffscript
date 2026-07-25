@@ -1,0 +1,811 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   AZ Off Script — Brand Design System
+   Per DESIGNSPEC.MD: "A private Arizona creator room with a retro media-club soul."
+   ========================================================================== */
+
+@theme {
+  /* --- Core palette (DESIGNSPEC.MD §4) --- */
+  --color-desert-night: #0d1b2a;
+  --color-sandstone-cream: #f2e8d8;
+  --color-copper-clay: #c96a3a;
+  --color-cactus-teal: #3b917d;
+  --color-smoked-charcoal: #2b2b2b;
+  --color-sunburst-yellow: #ffd23f;
+  --color-heat-orange: #ff6a3d;
+  --color-bone-white: #faf7f0;
+
+  /* Deep variants for hover/danger */
+  --color-copper-deep: #8f4226;
+  --color-teal-deep: #2a6b5b;
+  --color-night-deep: #07111c;
+
+  /* --- Fonts (bridged from next/font variables in layout.tsx) --- */
+  --font-display: var(--font-anton), "Arial Narrow", sans-serif;
+  --font-sans: var(--font-nunito), system-ui, sans-serif;
+  --font-script: var(--font-marker), cursive;
+
+  /* --- Type scale (desktop) --- */
+  --text-hero: 64px;
+  --text-page: 46px;
+  --text-section: 30px;
+  --text-card: 22px;
+  --text-body: 17px;
+  --text-small: 13px;
+  --text-badge: 12px;
+
+  /* --- Radii --- */
+  --radius-card: 20px;
+  --radius-pill: 999px;
+  --radius-stub: 14px;
+
+  /* --- Shadows (warm, layered) --- */
+  --shadow-card: 0 6px 18px -8px rgba(43, 27, 15, 0.35), 0 2px 6px -2px rgba(43, 27, 15, 0.18);
+  --shadow-lift: 0 14px 32px -10px rgba(43, 27, 15, 0.45), 0 4px 10px -3px rgba(43, 27, 15, 0.25);
+  --shadow-sticker: 0 3px 8px -2px rgba(13, 27, 42, 0.4);
+}
+
+/* --- Mobile type overrides --- */
+@media (max-width: 768px) {
+  :root {
+    --text-hero: 38px;
+    --text-page: 32px;
+    --text-section: 25px;
+    --text-card: 20px;
+    --text-body: 16px;
+  }
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-sandstone-cream);
+  color: var(--color-smoked-charcoal);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.55;
+  /* subtle sandstone grain */
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(201, 106, 58, 0.04) 0, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(59, 145, 125, 0.04) 0, transparent 45%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--color-sunburst-yellow);
+  color: var(--color-desert-night);
+}
+
+/* Display type usage */
+.font-display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+  font-weight: 400;
+}
+
+.font-script {
+  font-family: var(--font-script);
+  font-weight: 400;
+}
+
+/* ==========================================================================
+   Texture + depth utilities
+   ========================================================================== */
+
+/* Sandstone grain overlay (use sparingly on special pages) */
+.tex-grain {
+  position: relative;
+}
+.tex-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.4 0 0 0 0 0.25 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  border-radius: inherit;
+}
+
+/* Sunburst rays behind mascot/hero moments */
+.tex-sunburst {
+  background-image: conic-gradient(
+    from 0deg,
+    var(--color-sunburst-yellow) 0deg 8deg,
+    transparent 8deg 16deg,
+    var(--color-sunburst-yellow) 16deg 24deg,
+    transparent 24deg 32deg,
+    var(--color-sunburst-yellow) 32deg 40deg,
+    transparent 40deg 48deg,
+    var(--color-sunburst-yellow) 48deg 56deg,
+    transparent 56deg 64deg,
+    var(--color-sunburst-yellow) 64deg 72deg,
+    transparent 72deg 80deg,
+    var(--color-sunburst-yellow) 80deg 88deg,
+    transparent 88deg 96deg,
+    var(--color-sunburst-yellow) 96deg 104deg,
+    transparent 104deg 112deg,
+    var(--color-sunburst-yellow) 112deg 120deg,
+    transparent 120deg 128deg,
+    var(--color-sunburst-yellow) 128deg 136deg,
+    transparent 136deg 144deg,
+    var(--color-sunburst-yellow) 144deg 152deg,
+    transparent 152deg 160deg,
+    var(--color-sunburst-yellow) 160deg 168deg,
+    transparent 168deg 176deg,
+    var(--color-sunburst-yellow) 176deg 184deg,
+    transparent 184deg 192deg,
+    var(--color-sunburst-yellow) 192deg 200deg,
+    transparent 200deg 208deg,
+    var(--color-sunburst-yellow) 208deg 216deg,
+    transparent 216deg 224deg,
+    var(--color-sunburst-yellow) 224deg 232deg,
+    transparent 232deg 240deg,
+    var(--color-sunburst-yellow) 240deg 248deg,
+    transparent 248deg 256deg,
+    var(--color-sunburst-yellow) 256deg 264deg,
+    transparent 264deg 272deg,
+    var(--color-sunburst-yellow) 272deg 280deg,
+    transparent 280deg 288deg,
+    var(--color-sunburst-yellow) 288deg 296deg,
+    transparent 296deg 304deg,
+    var(--color-sunburst-yellow) 304deg 312deg,
+    transparent 312deg 320deg,
+    var(--color-sunburst-yellow) 320deg 328deg,
+    transparent 328deg 336deg,
+    var(--color-sunburst-yellow) 336deg 344deg,
+    transparent 344deg 352deg,
+    var(--color-sunburst-yellow) 352deg 360deg
+  );
+}
+
+/* Soft cut-corner panel (DESIGNSPEC §6) */
+.cut-corner {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+
+/* Ticket-stub notch (for calendar/run sheet items) */
+.ticket-stub {
+  position: relative;
+}
+.ticket-stub::before,
+.ticket-stub::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-sandstone-cream);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.ticket-stub::before {
+  left: -7px;
+}
+.ticket-stub::after {
+  right: -7px;
+}
+
+/* ==========================================================================
+   Component primitives
+   ========================================================================== */
+
+/* Buttons (DESIGNSPEC §27) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: var(--text-body);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-heat-orange);
+  color: var(--color-bone-white);
+  box-shadow: var(--shadow-sticker);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-copper-clay);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
+}
+
+.btn-positive {
+  background: var(--color-cactus-teal);
+  color: var(--color-bone-white);
+  box-shadow: var(--shadow-sticker);
+}
+.btn-positive:hover:not(:disabled) {
+  background: var(--color-teal-deep);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
+}
+
+.btn-warning {
+  background: var(--color-sunburst-yellow);
+  color: var(--color-desert-night);
+  box-shadow: var(--shadow-sticker);
+}
+.btn-warning:hover:not(:disabled) {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: var(--color-copper-deep);
+  color: var(--color-bone-white);
+  box-shadow: var(--shadow-sticker);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-night-deep);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--color-sandstone-cream);
+  color: var(--color-desert-night);
+  border-color: var(--color-desert-night);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-bone-white);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-desert-night);
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(13, 27, 42, 0.08);
+}
+
+.btn-lg {
+  font-size: 19px;
+  padding: 1rem 2rem;
+}
+.btn-sm {
+  font-size: var(--text-small);
+  padding: 0.5rem 1rem;
+}
+
+/* Cards */
+.card {
+  background: var(--color-bone-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(13, 27, 42, 0.08);
+}
+.card-dark {
+  background: var(--color-desert-night);
+  color: var(--color-sandstone-cream);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Sticker card (slight tilt) */
+.sticker {
+  transform: rotate(-1.5deg);
+  transition: transform 0.15s ease;
+}
+.sticker:hover {
+  transform: rotate(0deg) translateY(-2px);
+}
+.sticker-right {
+  transform: rotate(1.5deg);
+}
+.sticker-right:hover {
+  transform: rotate(0deg) translateY(-2px);
+}
+
+/* Chips / badges (DESIGNSPEC §27) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: var(--text-badge);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.chip-copper {
+  background: var(--color-copper-clay);
+  color: var(--color-bone-white);
+}
+.chip-teal {
+  background: var(--color-cactus-teal);
+  color: var(--color-bone-white);
+}
+.chip-yellow {
+  background: var(--color-sunburst-yellow);
+  color: var(--color-desert-night);
+}
+.chip-cream {
+  background: var(--color-sandstone-cream);
+  color: var(--color-desert-night);
+  border: 1.5px solid var(--color-desert-night);
+}
+.chip-dark {
+  background: var(--color-desert-night);
+  color: var(--color-sunburst-yellow);
+}
+.chip-danger {
+  background: var(--color-copper-deep);
+  color: var(--color-bone-white);
+}
+
+/* Status-specific chips (clip/approval statuses) */
+.chip-waiting {
+  background: var(--color-sunburst-yellow);
+  color: var(--color-desert-night);
+}
+.chip-approved {
+  background: var(--color-cactus-teal);
+  color: var(--color-bone-white);
+}
+.chip-edits {
+  background: var(--color-copper-clay);
+  color: var(--color-bone-white);
+}
+.chip-review {
+  background: var(--color-heat-orange);
+  color: var(--color-bone-white);
+}
+.chip-hold {
+  background: var(--color-copper-deep);
+  color: var(--color-bone-white);
+}
+.chip-notag {
+  background: var(--color-smoked-charcoal);
+  color: var(--color-sunburst-yellow);
+}
+
+/* Hero band (DESIGNSPEC §6.1) */
+.hero-band {
+  background: var(--color-desert-night);
+  color: var(--color-sandstone-cream);
+  border-radius: 0 0 32px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Input fields */
+.field {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 2px solid rgba(13, 27, 42, 0.15);
+  background: var(--color-bone-white);
+  color: var(--color-desert-night);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.field:focus {
+  outline: none;
+  border-color: var(--color-cactus-teal);
+  box-shadow: 0 0 0 3px rgba(59, 145, 125, 0.2);
+}
+.field::placeholder {
+  color: rgba(43, 43, 43, 0.45);
+}
+.field-error {
+  border-color: var(--color-copper-deep);
+}
+
+.label {
+  display: block;
+  font-weight: 800;
+  font-size: var(--text-small);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-desert-night);
+  margin-bottom: 0.4rem;
+}
+
+/* ==========================================================================
+   Motion (DESIGNSPEC §9 — light + alive, not distracting)
+   ========================================================================== */
+
+@keyframes azos-pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.animate-pop {
+  animation: azos-pop 0.3s ease-out;
+}
+
+@keyframes azos-slide-in {
+  0% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-in {
+  animation: azos-slide-in 0.25s ease-out;
+}
+
+@keyframes azos-slide-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: azos-slide-up 0.3s ease-out;
+}
+
+@keyframes azos-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+.animate-pulse-slow {
+  animation: azos-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes azos-spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: azos-spin 8s linear infinite;
+}
+
+/* ==========================================================================
+   Layout helpers
+   ========================================================================== */
+
+.portal-shell {
+  min-height: 100vh;
+  padding-bottom: 88px; /* room for mobile bottom nav */
+}
+@media (min-width: 769px) {
+  .portal-shell {
+    padding-bottom: 0;
+    padding-top: 72px; /* room for desktop top nav */
+  }
+}
+
+/* Scrollbar (subtle) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(13, 27, 42, 0.2);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(13, 27, 42, 0.35);
+}
+
+/* ==========================================================================
+   AWWWARDS-LEVEL MOTION + INTERACTION SYSTEM
+   Scroll reveals, kinetic type, parallax, custom cursor, magnetic buttons,
+   poster masks, marquee, staggered reveals. All respect reduced-motion.
+   ========================================================================== */
+
+/* --- Reduced motion: kill all animations for accessibility --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .parallax-layer { transform: none !important; }
+  .marquee-track { animation: none !important; }
+  .custom-cursor { display: none !important; }
+}
+
+/* --- Scroll-triggered reveals --- */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered children reveals */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-stagger.revealed > *:nth-child(1) { transition-delay: 0ms; opacity: 1; transform: translateY(0); }
+.reveal-stagger.revealed > *:nth-child(2) { transition-delay: 80ms; opacity: 1; transform: translateY(0); }
+.reveal-stagger.revealed > *:nth-child(3) { transition-delay: 160ms; opacity: 1; transform: translateY(0); }
+.reveal-stagger.revealed > *:nth-child(4) { transition-delay: 240ms; opacity: 1; transform: translateY(0); }
+.reveal-stagger.revealed > *:nth-child(5) { transition-delay: 320ms; opacity: 1; transform: translateY(0); }
+.reveal-stagger.revealed > *:nth-child(6) { transition-delay: 400ms; opacity: 1; transform: translateY(0); }
+.reveal-stagger.revealed > *:nth-child(7) { transition-delay: 480ms; opacity: 1; transform: translateY(0); }
+.reveal-stagger.revealed > *:nth-child(8) { transition-delay: 560ms; opacity: 1; transform: translateY(0); }
+
+/* Reveal from left/right */
+.reveal-left { transform: translateX(-60px); }
+.reveal-right { transform: translateX(60px); }
+.reveal-left.revealed, .reveal-right.revealed { transform: translateX(0); }
+
+/* Reveal with scale */
+.reveal-scale { transform: scale(0.9); }
+.reveal-scale.revealed { transform: scale(1); }
+
+/* --- Kinetic type: line-by-line headline reveal --- */
+.kinetic-line {
+  display: block;
+  overflow: hidden;
+}
+.kinetic-line-inner {
+  display: inline-block;
+  transform: translateY(110%);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.kinetic-ready .kinetic-line-inner {
+  transform: translateY(0);
+}
+.kinetic-ready .kinetic-line:nth-child(2) .kinetic-line-inner { transition-delay: 120ms; }
+.kinetic-ready .kinetic-line:nth-child(3) .kinetic-line-inner { transition-delay: 240ms; }
+.kinetic-ready .kinetic-line:nth-child(4) .kinetic-line-inner { transition-delay: 360ms; }
+
+/* --- Marquee (horizontal scrolling text) --- */
+.marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+.marquee-track {
+  display: inline-flex;
+  gap: 3rem;
+  animation: azos-marquee 20s linear infinite;
+  will-change: transform;
+}
+.marquee-reverse .marquee-track {
+  animation-direction: reverse;
+}
+@keyframes azos-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* --- Parallax layers --- */
+.parallax-layer {
+  will-change: transform;
+  transition: transform 0.1s linear;
+}
+
+/* --- Floating sticker animation --- */
+@keyframes azos-float {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-12px) rotate(var(--tilt, 0deg)); }
+}
+.float-sticker {
+  animation: azos-float 4s ease-in-out infinite;
+}
+.float-sticker-delay-1 { animation-delay: 0.5s; }
+.float-sticker-delay-2 { animation-delay: 1s; }
+.float-sticker-delay-3 { animation-delay: 1.5s; }
+
+/* --- Slow sun rotation for hero --- */
+@keyframes azos-sun-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.sun-rotate {
+  animation: azos-sun-rotate 60s linear infinite;
+}
+
+/* --- Hero zoom on load --- */
+@keyframes azos-hero-zoom {
+  from { transform: scale(1.1); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.hero-zoom-in {
+  animation: azos-hero-zoom 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* --- Custom cursor --- */
+.custom-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  margin-top: -20px;
+  border-radius: 50%;
+  background: var(--color-sunburst-yellow);
+  color: var(--color-desert-night);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: width 0.2s ease, height 0.2s ease, margin 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+  opacity: 0;
+  mix-blend-mode: difference;
+}
+.custom-cursor.active {
+  opacity: 1;
+}
+.custom-cursor.hovering {
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  margin-top: -32px;
+  background: var(--color-heat-orange);
+  color: var(--color-bone-white);
+}
+@media (max-width: 1024px) {
+  .custom-cursor { display: none; }
+}
+
+/* --- Magnetic button effect --- */
+.magnetic-btn {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Poster mask (rounded poster frame) --- */
+.poster-mask {
+  border-radius: 24px;
+  overflow: hidden;
+  position: relative;
+}
+.poster-mask::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px rgba(13, 27, 42, 0.15);
+  pointer-events: none;
+}
+
+/* --- Ticket-shaped mask --- */
+.ticket-mask {
+  clip-path: polygon(
+    0 0, calc(100% - 20px) 0, 100% 10px, 100% 100%, 20px 100%, 0 calc(100% - 10px)
+  );
+}
+
+/* --- Cast card (collectible crew card) --- */
+.cast-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.cast-card:hover {
+  transform: translateY(-8px) rotate(-1deg);
+  box-shadow: 0 20px 40px -15px rgba(13, 27, 42, 0.5);
+}
+.cast-card .cast-card-reveal {
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cast-card:hover .cast-card-reveal {
+  transform: translateY(0);
+}
+
+/* --- Content lane card (show format card) --- */
+.lane-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  cursor: grab;
+}
+.lane-card:active {
+  cursor: grabbing;
+}
+.lane-card:hover {
+  transform: translateY(-6px) rotate(0.5deg);
+  box-shadow: 0 16px 36px -12px rgba(13, 27, 42, 0.4);
+}
+
+/* --- Horizontal scroll snap for carousels --- */
+.h-scroll {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.h-scroll::-webkit-scrollbar { display: none; }
+.h-scroll-item {
+  scroll-snap-align: start;
+}
+
+/* --- Greenlight stamp animation --- */
+@keyframes azos-stamp {
+  0% { transform: scale(2) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(0.9) rotate(-12deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-8deg); opacity: 1; }
+}
+.stamp-in {
+  animation: azos-stamp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* --- Glow pulse for CTAs --- */
+@keyframes azos-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 106, 61, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(255, 106, 61, 0); }
+}
+.glow-pulse {
+  animation: azos-glow 2s ease-in-out infinite;
+}
+
+/* --- Text gradient for special headlines --- */
+.text-gradient-heat {
+  background: linear-gradient(135deg, var(--color-heat-orange), var(--color-sunburst-yellow));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* --- Scroll-driven background shift (applied to body via JS) --- */
+.bg-scene-dark { background-color: var(--color-desert-night) !important; }
+.bg-scene-cream { background-color: var(--color-sandstone-cream) !important; }
+.bg-scene-charcoal { background-color: var(--color-smoked-charcoal) !important; }
+
+/* --- Hide scrollbar on horizontal carousels but keep scrollable --- */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* --- Asymmetric grid utilities --- */
+.grid-asymmetric {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+@media (max-width: 768px) {
+  .grid-asymmetric {
+    grid-template-columns: 1fr;
+  }
+}
+.grid-asymmetric-left { grid-column: 1; }
+.grid-asymmetric-right { grid-column: 2; }
+@media (max-width: 768px) {
+  .grid-asymmetric-left, .grid-asymmetric-right { grid-column: 1; }
+}
+
+/* --- Oversized vertical text --- */
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 0.1em;
+}
