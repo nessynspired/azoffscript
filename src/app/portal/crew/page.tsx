@@ -15,6 +15,9 @@ export default function CrewPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Member | null>(null);
+  const [toggling, setToggling] = useState(false);
+
+  const isAdmin = me?.role === "admin";
 
   useEffect(() => {
     supabase.from("members").select("*").order("role", { ascending: false }).order("name").then(({ data }) => {
@@ -22,6 +25,18 @@ export default function CrewPage() {
       setLoading(false);
     });
   }, [supabase]);
+
+  async function togglePlanContent(memberId: string, current: boolean) {
+    setToggling(true);
+    const { error } = await supabase.from("members").update({ can_plan_content: !current }).eq("id", memberId);
+    if (error) {
+      alert(error.message);
+    } else {
+      setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, can_plan_content: !current } : m));
+      setSelected((prev) => prev && prev.id === memberId ? { ...prev, can_plan_content: !current } : prev);
+    }
+    setToggling(false);
+  }
 
   if (loading) {
     return (
@@ -75,6 +90,7 @@ export default function CrewPage() {
                   {m.nickname && <p className="text-sm text-cactus-teal font-bold">"{m.nickname}"</p>}
                   <div className="flex flex-wrap gap-1 mt-2">
                     {m.role === "admin" && <span className="chip chip-yellow !text-[10px]">Admin</span>}
+                    {m.can_plan_content && m.role !== "admin" && <span className="chip chip-teal !text-[10px]">Planner</span>}
                     {m.first_wave && <span className="chip chip-copper !text-[10px]">First Wave</span>}
                   </div>
                 </div>
@@ -115,9 +131,27 @@ export default function CrewPage() {
 
             <div className="flex flex-wrap gap-2 mt-4">
               {selected.role === "admin" && <span className="chip chip-yellow">Admin</span>}
+              {selected.can_plan_content && selected.role !== "admin" && <span className="chip chip-teal">Content Planner</span>}
               {selected.first_wave && <span className="chip chip-copper">First Wave</span>}
               {selected.design_edition && <span className="chip chip-teal">Edition {selected.design_edition}</span>}
             </div>
+
+            {/* Admin permission controls */}
+            {isAdmin && selected.role !== "admin" && (
+              <div className="mt-4 card-dark p-4">
+                <p className="text-sandstone-cream font-bold text-sm mb-1">Content Planning</p>
+                <p className="text-sandstone-cream/60 text-xs mb-3">
+                  Lets this crew member edit the calendar, set deadlines, and move clips through the studio flow. They cannot delete clips, invite people, or manage gear.
+                </p>
+                <button
+                  onClick={() => togglePlanContent(selected.id, selected.can_plan_content)}
+                  disabled={toggling}
+                  className={`btn btn-sm ${selected.can_plan_content ? "btn-positive" : "btn-primary"}`}
+                >
+                  {toggling ? "Saving…" : selected.can_plan_content ? "✓ Can Plan Content" : "Grant Planning Access"}
+                </button>
+              </div>
+            )}
 
             {selected.plot_twist && (
               <div className="mt-4 bg-sandstone-cream/50 rounded-xl p-4">

@@ -104,7 +104,7 @@ export default function RunSheetPage() {
   }, [load, supabase]);
 
   async function changeStatus(clipId: string, status: ClipStatus) {
-    if (member?.role !== "admin") return;
+    if (!canPlanContent) return;
     const clip = clips.find((c) => c.id === clipId);
     const { error } = await supabase.from("clips").update({ status }).eq("id", clipId);
     if (error) { alert(error.message); return; }
@@ -129,6 +129,7 @@ export default function RunSheetPage() {
   }
 
   const isAdmin = member?.role === "admin";
+  const canPlanContent = isAdmin || member?.can_plan_content === true;
 
   if (loading) {
     return (
@@ -266,6 +267,7 @@ export default function RunSheetPage() {
           people={people[selectedClip] ?? []}
           approvals={approvals[selectedClip] ?? []}
           isAdmin={isAdmin}
+          canPlanContent={canPlanContent}
           currentMemberId={member?.id}
           currentMemberName={member?.name}
           onClose={() => setSelectedClip(null)}
@@ -463,18 +465,19 @@ function CalendarView({ clips }: { clips: ClipMeta[] }) {
 }
 
 function ClipDetailModal({
-  clip, people, approvals, isAdmin, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
+  clip, people, approvals, isAdmin, canPlanContent, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
 }: {
   clip: ClipMeta;
   people: ClipPerson[];
   approvals: Approval[];
   isAdmin: boolean;
+  canPlanContent: boolean;
   currentMemberId?: string;
   currentMemberName?: string;
   onClose: () => void;
   onStatusChange: (id: string, s: ClipStatus) => void;
   onDelete: (id: string) => void;
-  onRefresh: () => void;
+  onRefresh: () => Promise<void>;
 }) {
   const supabase = createClient();
   const [editNote, setEditNote] = useState("");
@@ -558,19 +561,21 @@ function ClipDetailModal({
         )}
 
         {/* Weekly Heat — deadlines with branded language */}
-        {(clip.idea_due_date || clip.clip_due_date || clip.final_cut_due || clip.approval_due || clip.scheduled_date || isAdmin) && (
+        {(clip.idea_due_date || clip.clip_due_date || clip.final_cut_due || clip.approval_due || clip.scheduled_date || canPlanContent) && (
           <div className="mt-6 card p-4 bg-sandstone-cream/50">
             <h3 className="font-display text-xl text-desert-night mb-3">Weekly Heat</h3>
             <div className="space-y-2">
-              <DeadlineRow label="Drop-by (ideas)" value={clip.idea_due_date} canEdit={true} fieldName="idea_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Send your clip by" value={clip.clip_due_date} canEdit={true} fieldName="clip_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Send your final by" value={clip.final_cut_due} canEdit={true} fieldName="final_cut_due" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Greenlight by" value={clip.approval_due} canEdit={true} fieldName="approval_due" deadlines={deadlines} setDeadlines={setDeadlines} />
-              <DeadlineRow label="Goes live" value={clip.scheduled_date} canEdit={true} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Drop-by (ideas)" value={clip.idea_due_date} canEdit={canPlanContent} fieldName="idea_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Send your clip by" value={clip.clip_due_date} canEdit={canPlanContent} fieldName="clip_due_date" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Send your final by" value={clip.final_cut_due} canEdit={canPlanContent} fieldName="final_cut_due" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Greenlight by" value={clip.approval_due} canEdit={canPlanContent} fieldName="approval_due" deadlines={deadlines} setDeadlines={setDeadlines} />
+              <DeadlineRow label="Goes live" value={clip.scheduled_date} canEdit={canPlanContent} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
             </div>
-            <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
-              {savingDeadlines ? "Saving…" : "Save Deadlines"}
-            </button>
+            {canPlanContent && (
+              <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
+                {savingDeadlines ? "Saving…" : "Save Deadlines"}
+              </button>
+            )}
           </div>
         )}
 
@@ -633,11 +638,11 @@ function ClipDetailModal({
           </div>
         )}
 
-        {/* Admin status changer + delete */}
-        {isAdmin && (
+        {/* Status changer — admin or content planners */}
+        {canPlanContent && (
           <div className="mt-6 space-y-4">
             <div>
-              <p className="label">Move to status (admin)</p>
+              <p className="label">{isAdmin ? "Move to status (admin)" : "Move to status (planner)"}</p>
               <div className="flex flex-wrap gap-2">
                 {STUDIO_FLOW.filter((s) => s !== clip.status).map((s) => (
                   <button key={s} onClick={() => onStatusChange(clip.id, s)} className="chip chip-cream hover:chip-copper transition-colors">
@@ -654,14 +659,17 @@ function ClipDetailModal({
                 >Do Not Post</button>
               </div>
             </div>
-            <div className="pt-4 border-t border-desert-night/10">
-              <button
-                onClick={() => onDelete(clip.id)}
-                className="btn btn-danger btn-sm"
-              >
-                Delete Clip
-              </button>
-            </div>
+            {/* Delete is admin-only */}
+            {isAdmin && (
+              <div className="pt-4 border-t border-desert-night/10">
+                <button
+                  onClick={() => onDelete(clip.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  Delete Clip
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

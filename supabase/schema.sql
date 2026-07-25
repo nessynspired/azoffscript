@@ -86,6 +86,7 @@ create table if not exists public.members (
   first_wave   boolean not null default true,
   kit_acknowledged boolean not null default false,
   ground_rules_acknowledged_at timestamptz,
+  can_plan_content boolean not null default false,  -- admin can grant this to crew: edit calendar/deadlines + change clip status
   created_at   timestamptz not null default now()
 );
 

@@ -55,6 +55,7 @@ export interface Database {
           first_wave: boolean;
           kit_acknowledged: boolean;
           ground_rules_acknowledged_at: string | null;
+          can_plan_content: boolean;
           created_at: string;
         };
         Insert: {
@@ -78,6 +79,7 @@ export interface Database {
           first_wave?: boolean;
           kit_acknowledged?: boolean;
           ground_rules_acknowledged_at?: string | null;
+          can_plan_content?: boolean;
           created_at?: string;
         };
         Update: {
@@ -101,6 +103,7 @@ export interface Database {
           first_wave?: boolean;
           kit_acknowledged?: boolean;
           ground_rules_acknowledged_at?: string | null;
+          can_plan_content?: boolean;
           created_at?: string;
         };
       };

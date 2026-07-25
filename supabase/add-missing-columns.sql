@@ -151,3 +151,13 @@ begin
     alter table public.members add column ground_rules_acknowledged_at timestamptz;
   end if;
 end $$;
+
+-- can_plan_content: lets a crew member edit calendar/deadlines + change clip statuses
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'members'
+                   and column_name = 'can_plan_content') then
+    alter table public.members add column can_plan_content boolean not null default false;
+  end if;
+end $$;
