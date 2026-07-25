@@ -267,14 +267,133 @@ function AgreementScrollViewer({
 }
 
 // ===========================================================================
+// ===========================================================================
 // CUTE BRANDED POPUP — friendly summary + signature pad
 // Crew sign here with finger/stylus/mouse on phone, laptop, or iPad.
 // One signature signs the Main Agreement + all Exhibits A-E together.
 // ===========================================================================
+
+// ---------------------------------------------------------------------------
+// AgreementReaderPopup — same branded design as the summary popup, but the
+// body is the FULL agreement content with exhibit chips + scrollable area.
+// Opens on top of the summary popup when "Review Main Agreement" is clicked.
+// ---------------------------------------------------------------------------
+function AgreementReaderPopup({
+  doc,
+  onClose,
+}: {
+  doc: AgreementDoc;
+  onClose: () => void;
+}) {
+  const exhibits = doc.exhibits ?? [];
+  const [activeExhibitId, setActiveExhibitId] = useState<string>(exhibits[0]?.id ?? "main");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const allSections = parseAgreementSections(doc.bodyMarkdown);
+  const grouped = groupByExhibit(allSections, exhibits.length > 0 ? exhibits : [{ id: "main", label: "Main", title: doc.title, sections: allSections.map((s) => s.number) }]);
+  const activeExhibit = grouped.find((g) => g.group.id === activeExhibitId) ?? grouped[0];
+
+  function jumpToExhibit(id: string) {
+    setActiveExhibitId(id);
+    // Scroll the content area back to top when switching exhibits
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-sandstone-cream rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header — same cute branded design as the summary popup */}
+        <div className="card-dark p-5 relative overflow-hidden shrink-0">
+          <div className="absolute -right-4 -top-4 opacity-20">
+            <MascotImage pose="shades" size={120} />
+          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 text-sandstone-cream/50 hover:text-sandstone-cream text-2xl z-10"
+            aria-label="Close"
+          >×</button>
+          <div className="relative z-10">
+            <span className="chip chip-yellow mb-2">AZ Off Script</span>
+            <h2 className="font-display text-xl text-sandstone-cream leading-tight">
+              {doc.title}
+            </h2>
+            <p className="text-sandstone-cream/60 text-xs mt-1">
+              Read the full agreement · {allSections.length} sections
+            </p>
+          </div>
+        </div>
+
+        {/* Exhibit chips — clickable navigation */}
+        <div className="bg-sandstone-cream border-b border-copper-clay/20 px-4 py-2.5 shrink-0 overflow-x-auto">
+          <div className="flex gap-1.5 min-w-max">
+            {grouped.map((ex) => (
+              <button
+                key={ex.group.id}
+                onClick={() => jumpToExhibit(ex.group.id)}
+                className={`chip !text-[10px] !py-1 whitespace-nowrap ${
+                  activeExhibitId === ex.group.id ? "chip-copper" : "chip-cream"
+                }`}
+              >
+                {ex.group.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Exhibit title bar */}
+        <div className="bg-copper-clay/5 px-5 py-2 shrink-0 border-b border-copper-clay/10">
+          <p className="text-[10px] font-black text-copper-deep uppercase tracking-wider">
+            {activeExhibit.group.label}
+          </p>
+          <p className="font-display text-sm text-desert-night leading-tight">
+            {activeExhibit.group.title}
+          </p>
+        </div>
+
+        {/* Scrollable content area — the actual agreement text */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-5 agreement-prose bg-white/40"
+        >
+          {activeExhibit.sections.length === 0 ? (
+            <p className="text-sm text-smoked-charcoal/50 text-center py-8">
+              No sections found for this exhibit.
+            </p>
+          ) : (
+            activeExhibit.sections.map((sec) => (
+              <div key={sec.anchor} className="mb-5">
+                <h3 className="font-display text-sm text-desert-night border-b border-desert-night/10 pb-1 mb-2">
+                  <span className="text-copper-deep">{sec.prefix}{sec.number}.</span> {sec.title}
+                </h3>
+                <div dangerouslySetInnerHTML={{ __html: sec.html }} />
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer — back to summary */}
+        <div className="bg-sandstone-cream border-t border-copper-clay/20 px-4 py-2.5 shrink-0 text-center">
+          <button
+            onClick={onClose}
+            className="btn btn-ghost btn-sm !text-xs"
+          >
+            ← Back to sign
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AgreementPopup({
   doc,
   onClose,
-  onReadFull,
   activeAgreementId,
   member,
   alreadySigned,
@@ -283,7 +402,6 @@ function AgreementPopup({
 }: {
   doc: AgreementDoc;
   onClose: () => void;
-  onReadFull: () => void;
   activeAgreementId?: string | null;
   member?: { id: string; name: string; email?: string | null; phone?: string | null } | null;
   alreadySigned?: boolean;
@@ -301,6 +419,7 @@ function AgreementPopup({
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(alreadySigned ?? false);
   const [error, setError] = useState<string | null>(null);
+  const [showReader, setShowReader] = useState(false);
 
   // Pre-sign disclosure (fetched from server so IP is real)
   const [whoami, setWhoami] = useState<{
@@ -608,14 +727,22 @@ function AgreementPopup({
             </div>
           ) : null}
 
-          {/* Read full */}
+          {/* Review Main Agreement — opens the reader popup (same branded design) */}
           <button
-            onClick={onReadFull}
+            onClick={() => setShowReader(true)}
             className="btn btn-ghost btn-sm w-full"
           >
-            Read the full agreement →
+            Review Main Agreement →
           </button>
         </div>
+
+        {/* Reader popup — opens on top of this summary popup */}
+        {showReader && (
+          <AgreementReaderPopup
+            doc={doc}
+            onClose={() => setShowReader(false)}
+          />
+        )}
       </div>
     </div>
   );
@@ -948,10 +1075,6 @@ export default function AgreementsPage() {
         <AgreementPopup
           doc={popupPreview}
           onClose={() => setPopupPreview(null)}
-          onReadFull={() => {
-            setViewVersion(popupPreview.version);
-            setPopupPreview(null);
-          }}
           previewMode
         />
       )}
