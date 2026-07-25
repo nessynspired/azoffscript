@@ -360,7 +360,7 @@ function IntroMessagePopup({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — branded */}
-        <div className="card-dark rounded-t-3xl p-6 relative overflow-hidden">
+        <div className="card-dark rounded-t-3xl p-5 md:p-6 relative overflow-hidden">
           <div className="absolute -right-4 -top-4 opacity-20">
             <MascotImage pose="shades" size={140} />
           </div>
@@ -378,7 +378,7 @@ function IntroMessagePopup({
         </div>
 
         {/* Body — the message */}
-        <div className="p-6 space-y-4 text-sm text-desert-night leading-relaxed">
+        <div className="p-5 md:p-6 space-y-4 text-sm text-desert-night leading-relaxed">
           <p>Before we start recording or dropping real clips, I am putting the AZ Off Script participation rules in writing so everything is clear from the beginning.</p>
 
           <p>This is not to make it weird. It is to protect the brand and protect everybody in the room.</p>
@@ -632,7 +632,7 @@ function MainAgreementPopup({
               )}
 
               {/* Printed name + date */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <p className="label">Printed name</p>
                   <input type="text" value={printedName} onChange={(e) => setPrintedName(e.target.value)} placeholder="Legal name" className="field" disabled={!!emailBlocked} />
@@ -775,7 +775,7 @@ function AgreementPopup({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — cute and branded */}
-        <div className="card-dark rounded-t-3xl p-6 relative overflow-hidden">
+        <div className="card-dark rounded-t-3xl p-5 md:p-6 relative overflow-hidden">
           <div className="absolute -right-4 -top-4 opacity-20">
             <MascotImage pose="shades" size={140} />
           </div>
@@ -801,7 +801,7 @@ function AgreementPopup({
         </div>
 
         {/* Body — friendly summary */}
-        <div className="p-6 space-y-4">
+        <div className="p-5 md:p-6 space-y-4">
           {/* Friendly intro */}
           <div className="bg-cactus-teal/10 rounded-2xl p-4">
             <p className="text-sm text-desert-night leading-relaxed">
@@ -1160,7 +1160,7 @@ export default function AgreementsPage() {
       <div className="space-y-4">
         <button onClick={() => setViewSignaturesFor(null)} className="btn btn-ghost btn-sm">← Back to agreements</button>
         <div>
-          <h1 className="font-display text-3xl text-desert-night">Signatures — {agreement?.version}</h1>
+          <h1 className="font-display text-2xl md:text-3xl text-desert-night">Signatures — {agreement?.version}</h1>
           <p className="text-sm text-smoked-charcoal/60 mt-1">{agreement?.title}</p>
         </div>
         {sigs.length === 0 ? (
@@ -1209,7 +1209,7 @@ export default function AgreementsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">Agreements</h1>
+        <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Agreements</h1>
         <p className="text-smoked-charcoal/70 mt-2">
           Versioned participation agreements. Admin-only. Crew does not see this page yet.
         </p>

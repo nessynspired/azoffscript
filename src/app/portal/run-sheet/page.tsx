@@ -267,13 +267,13 @@ export default function RunSheetPage() {
         />
       )}
 
-      {/* Tab bar */}
-      <div className="flex gap-2 bg-desert-night/10 rounded-full p-1 w-fit overflow-x-auto">
+      {/* Tab bar — horizontal scroll on mobile, wrap on desktop */}
+      <div className="flex gap-2 bg-desert-night/10 rounded-full p-1 w-fit overflow-x-auto max-w-full -mx-4 px-4 md:mx-0 md:px-1 md:flex-wrap">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-full text-sm font-black uppercase whitespace-nowrap ${tab === t.key ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
+            className={`px-4 py-2 rounded-full text-sm font-black uppercase whitespace-nowrap shrink-0 ${tab === t.key ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
           >
             {t.label}{t.count !== undefined ? ` (${t.count})` : ""}
           </button>
@@ -926,15 +926,15 @@ function ClipDetailModal({
   void onStatusChange;
 
   return (
-    <div className="fixed inset-0 z-50 bg-desert-night/70 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-desert-night/70 flex items-center justify-center p-3 md:p-4" onClick={onClose}>
       <div
-        className="card p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-pop"
+        className="card p-4 md:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-pop"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             {canPlanContent && <span className={`chip ${STATUS_CHIP[clip.status]}`}>{clip.status}</span>}
-            <h2 className="font-display text-3xl text-desert-night mt-2 leading-none">{clip.title}</h2>
+            <h2 className="font-display text-2xl md:text-3xl text-desert-night mt-2 leading-none break-words">{clip.title}</h2>
             <p className="text-sm text-smoked-charcoal/60 mt-1">{droppedByLabel(clip)}</p>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">✕</button>
