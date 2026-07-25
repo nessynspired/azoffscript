@@ -682,6 +682,77 @@ export interface Database {
           created_at?: string;
         };
       };
+
+      revenue_events: {
+        Relationships: [];
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          title: string;
+          description: string | null;
+          revenue_type: "Paid Content" | "Platform Revenue" | "Merch Revenue" | "Events";
+          split_template: "Paid Content" | "Platform Revenue" | "Merch Revenue" | "Custom";
+          disclosure: "None" | "Sponsored" | "Gifted" | "Affiliate" | "Paid Partnership";
+          gross_cents: number;
+          expenses_cents: number;
+          net_cents: number;
+          planner_involved: boolean;
+          planner_id: string | null;
+          contributor_ids: string[];
+          promo_contributor_ids: string[];
+          status: "Draft" | "Pending Approval" | "Approved" | "Paid" | "On Hold";
+          agreement_signed: boolean;
+          paid_out: boolean;
+          paid_at: string | null;
+          clip_id: string | null;
+          created_by: string | null;
+          approved_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          title: string;
+          description?: string | null;
+          revenue_type?: "Paid Content" | "Platform Revenue" | "Merch Revenue" | "Events";
+          split_template?: "Paid Content" | "Platform Revenue" | "Merch Revenue" | "Custom";
+          disclosure?: "None" | "Sponsored" | "Gifted" | "Affiliate" | "Paid Partnership";
+          gross_cents: number;
+          expenses_cents?: number;
+          planner_involved?: boolean;
+          planner_id?: string | null;
+          contributor_ids?: string[];
+          promo_contributor_ids?: string[];
+          status?: "Draft" | "Pending Approval" | "Approved" | "Paid" | "On Hold";
+          agreement_signed?: boolean;
+          paid_out?: boolean;
+          paid_at?: string | null;
+          clip_id?: string | null;
+          created_by?: string | null;
+          approved_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          revenue_type?: "Paid Content" | "Platform Revenue" | "Merch Revenue" | "Events";
+          split_template?: "Paid Content" | "Platform Revenue" | "Merch Revenue" | "Custom";
+          disclosure?: "None" | "Sponsored" | "Gifted" | "Affiliate" | "Paid Partnership";
+          gross_cents?: number;
+          expenses_cents?: number;
+          planner_involved?: boolean;
+          planner_id?: string | null;
+          contributor_ids?: string[];
+          promo_contributor_ids?: string[];
+          status?: "Draft" | "Pending Approval" | "Approved" | "Paid" | "On Hold";
+          agreement_signed?: boolean;
+          paid_out?: boolean;
+          paid_at?: string | null;
+          clip_id?: string | null;
+          approved_by?: string | null;
+        };
+      };
     };
 
     Views: {
