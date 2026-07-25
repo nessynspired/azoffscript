@@ -78,7 +78,7 @@ export default function RunSheetPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "trends" | "heat" | "board">("week");
+  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "heat" | "watch">("week");
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -205,6 +205,7 @@ export default function RunSheetPage() {
     { key: "board", label: "Assignment Board", count: assignments.length },
     { key: "trends", label: "Trend Drops", count: trends.length },
     { key: "heat", label: "Weekly Heat", count: themes.length },
+    { key: "watch", label: "Watch", count: clips.filter((c) => c.status === "Live").length },
   ];
 
   return (
@@ -333,6 +334,11 @@ export default function RunSheetPage() {
           onSelectClip={(id) => setSelectedClip(id)}
           onRefresh={load}
         />
+      )}
+
+      {/* WATCH — posted/live videos */}
+      {tab === "watch" && (
+        <WatchTab clips={clips} themeMap={themeMap} onSelectClip={(id) => setSelectedClip(id)} />
       )}
 
       {selectedClip && (
@@ -1642,6 +1648,160 @@ function AssignmentBoardTab({
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================================
+// WATCH — posted/live videos the crew can watch
+// ===========================================================================
+function WatchTab({
+  clips, themeMap, onSelectClip,
+}: {
+  clips: ClipMeta[];
+  themeMap: Map<string, Theme>;
+  onSelectClip: (id: string) => void;
+}) {
+  const liveClips = clips
+    .filter((c) => c.status === "Live")
+    .sort((a, b) => new Date(b.scheduled_date ?? b.updated_at).getTime() - new Date(a.scheduled_date ?? a.updated_at).getTime());
+  const [filter, setFilter] = useState<"all" | "tiktok" | "instagram" | "youtube" | "facebook">("all");
+
+  const filtered = filter === "all"
+    ? liveClips
+    : liveClips.filter((c) => (c.destination ?? "").toLowerCase() === filter);
+
+  const PLATFORM_LABEL: Record<string, string> = {
+    tiktok: "TikTok",
+    instagram: "Instagram",
+    youtube: "YouTube",
+    facebook: "Facebook",
+  };
+
+  // Get a friendly embeddable/share URL — for TikTok/Instagram we link out, for YouTube we can embed
+  function getWatchUrl(clip: ClipMeta): string | null {
+    return clip.link ?? clip.file_path ?? null;
+  }
+
+  function isYouTube(url: string): boolean {
+    return /youtube\.com|youtu\.be/i.test(url);
+  }
+
+  function getYouTubeEmbed(url: string): string | null {
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
+    return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+  }
+
+  if (liveClips.length === 0) {
+    return (
+      <div className="card p-10 text-center">
+        <div className="inline-block"><MascotImage pose="shades" size={120} /></div>
+        <p className="font-display text-2xl text-desert-night mt-4">No clips posted yet.</p>
+        <p className="text-smoked-charcoal/70 mt-2">
+          When a clip goes Live, it&apos;ll show up here for the crew to watch.
+        </p>
+        <Link href="/portal/run-sheet" className="btn btn-secondary mt-6">Back to Run Sheet</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-smoked-charcoal/70">
+        Clips that have gone live. Click to watch, or open the original post.
+      </p>
+
+      {/* Platform filter */}
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={() => setFilter("all")}
+          className={`chip !text-xs ${filter === "all" ? "chip-dark" : "chip-cream opacity-60 hover:opacity-100"}`}
+        >All ({liveClips.length})</button>
+        {(["tiktok", "instagram", "youtube", "facebook"] as const).map((p) => {
+          const count = liveClips.filter((c) => (c.destination ?? "").toLowerCase() === p).length;
+          if (count === 0) return null;
+          return (
+            <button
+              key={p}
+              onClick={() => setFilter(p)}
+              className={`chip !text-xs ${filter === p ? "chip-dark" : "chip-cream opacity-60 hover:opacity-100"}`}
+            >{PLATFORM_LABEL[p]} ({count})</button>
+          );
+        })}
+      </div>
+
+      {/* Clips grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filtered.map((clip) => {
+          const watchUrl = getWatchUrl(clip);
+          const ytEmbed = watchUrl && isYouTube(watchUrl) ? getYouTubeEmbed(watchUrl) : null;
+          const theme = clip.theme_id ? themeMap.get(clip.theme_id) : null;
+          return (
+            <div key={clip.id} className="card overflow-hidden flex flex-col">
+              {/* Video / thumbnail area */}
+              <div className="aspect-[9/16] bg-desert-night/10 relative">
+                {ytEmbed ? (
+                  <iframe
+                    src={ytEmbed}
+                    title={clip.title}
+                    className="absolute inset-0 w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : watchUrl ? (
+                  <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 flex items-center justify-center group">
+                    <div className="w-16 h-16 rounded-full bg-desert-night/60 group-hover:bg-heat-orange/80 flex items-center justify-center backdrop-blur transition-colors">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="#F5E6D3">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </a>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <MascotImage pose="shades" size={80} />
+                  </div>
+                )}
+                {/* Platform badge */}
+                {clip.destination && (
+                  <span className="absolute top-3 left-3 chip chip-dark !text-[10px]">
+                    {PLATFORM_LABEL[(clip.destination ?? "").toLowerCase()] ?? clip.destination}
+                  </span>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="p-4 flex-1 flex flex-col">
+                <button onClick={() => onSelectClip(clip.id)} className="text-left">
+                  <h3 className="font-bold text-desert-night leading-tight hover:text-copper-deep transition-colors">{clip.title}</h3>
+                </button>
+                <p className="text-xs text-smoked-charcoal/60 mt-1">by {clip.submitted_by_name}</p>
+
+                {theme && (
+                  <span className="chip chip-copper !text-[9px] mt-2 w-fit">🔥 {theme.name}</span>
+                )}
+
+                {clip.scheduled_date && (
+                  <p className="text-xs text-cactus-teal font-bold mt-2">
+                    📅 {new Date(clip.scheduled_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                )}
+
+                {watchUrl && !ytEmbed && (
+                  <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm mt-3 w-full">
+                    Watch on {PLATFORM_LABEL[(clip.destination ?? "").toLowerCase()] ?? "platform"} →
+                  </a>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {filtered.length === 0 && liveClips.length > 0 && (
+        <div className="card p-6 text-center">
+          <p className="text-smoked-charcoal/70">No clips on {PLATFORM_LABEL[filter]} yet.</p>
         </div>
       )}
     </div>
