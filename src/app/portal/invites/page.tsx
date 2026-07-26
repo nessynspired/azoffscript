@@ -69,7 +69,7 @@ export default function AdminInvitesPage() {
     return (
       <div className="card p-10 text-center">
         <p className="font-display text-2xl text-desert-night">Admin only.</p>
-        <p className="text-smoked-charcoal/70 mt-2">Only Vanessa can manage invite codes.</p>
+        <p className="text-smoked-charcoal/70 mt-2">Only admins can manage invite codes.</p>
       </div>
     );
   }
