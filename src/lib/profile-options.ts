@@ -3,7 +3,7 @@
  *
  * Members pick from these lists instead of typing in blanks. Every list
  * includes an "Other" option so they can write their own if nothing fits.
- * Several lists also include "Vanessa pick for me" / "Not sure yet" /
+ * Several lists also include "Not sure yet" /
  * "I need help choosing" so members don't have to decide alone.
  *
  * Splits into two groups:
@@ -40,7 +40,6 @@ export const NICKNAME_TITLE_OPTIONS = [
   "The One Who Says It",
   "The One Who Knows Better",
   "The Arizona Energy",
-  "Vanessa pick for me",
   "Other",
 ] as const;
 
@@ -110,7 +109,6 @@ export const ROOM_VIBE_OPTIONS = [
   "Messy in a funny way",
   "Grounded",
   "Still figuring it out",
-  "Vanessa pick for me",
   "Other",
 ] as const;
 
@@ -129,7 +127,6 @@ export const ONE_LINER_OPTIONS = [
   "I bring real reactions.",
   "I bring the plot twist.",
   "I'm still figuring out my vibe.",
-  "Vanessa write mine",
   "Other",
 ] as const;
 
@@ -251,7 +248,6 @@ export const PUBLIC_TITLE_OPTIONS = [
   "The Soft Truth Teller",
   "The Chaos Translator",
   "The Calm But Correct One",
-  "Vanessa pick for me",
   "Other",
 ] as const;
 
@@ -278,7 +274,6 @@ export const SECONDARY_ROLE_OPTIONS = [
   "Editing Support",
   "Brand Support",
   "Not public",
-  "Vanessa pick for me",
   "Other",
 ] as const;
 
@@ -309,7 +304,6 @@ export const PERSONALITY_LINE_OPTIONS = [
   "Says the soft truth out loud.",
   "The calm one with the real answer.",
   "The one who makes everyone react.",
-  "Vanessa pick for me",
   "Other",
 ] as const;
 
@@ -324,7 +318,6 @@ export const WEBSITE_BIO_OPTIONS = [
   "A quiet but memorable presence, proving that the best reaction is not always the loudest one.",
   "A natural fit for group games, reaction clips, and the kind of off-script moments that happen when nobody is trying too hard.",
   "A creator in the AZ Off Script room who brings humor, honesty, and the kind of face that says everything before the answer does.",
-  "Vanessa write mine",
   "Other",
 ] as const;
 
