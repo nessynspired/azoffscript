@@ -101,10 +101,68 @@ export default function LobbyPage() {
   }, [supabase, member]);
 
   const firstName = member?.name?.split(" ")[0] ?? "Crew";
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    if (!member) return;
+    if (sessionStorage.getItem("azos-welcome-seen")) return;
+    const t = setTimeout(() => setShowWelcome(true), 1200);
+    return () => clearTimeout(t);
+  }, [member]);
+
+  function dismissWelcome() {
+    setShowWelcome(false);
+    sessionStorage.setItem("azos-welcome-seen", "1");
+  }
 
   return (
     <>
     <AnimatedIntro />
+    {showWelcome && member && (
+      <div
+        className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-desert-night/60 backdrop-blur-sm animate-slide-in"
+        onClick={dismissWelcome}
+      >
+        <div
+          className="card max-w-sm w-full p-6 text-center relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={dismissWelcome}
+            className="absolute top-3 right-3 text-smoked-charcoal/40 hover:text-smoked-charcoal text-lg"
+            aria-label="Close"
+          >✕</button>
+          <div className="flex justify-center mb-3">
+            <MascotImage pose="peace" size={120} />
+          </div>
+          <h2 className="font-display text-2xl text-desert-night leading-tight">
+            Hey {firstName}! 👋
+          </h2>
+          <p className="text-sm text-smoked-charcoal/70 mt-3 leading-relaxed">
+            Welcome to the room. This is your crew HQ — drop clips, check your schedule, and stay in the loop.
+          </p>
+          <p className="text-sm text-smoked-charcoal/70 mt-2 leading-relaxed">
+            Got a public card? That&apos;s how you show up on the website. Add your photo, vibe, and bio.
+          </p>
+          <p className="text-sm text-smoked-charcoal/70 mt-2 leading-relaxed">
+            Everything else is just for us — no pressure, no audience, just the room.
+          </p>
+          <Link
+            href="/portal/my-kit/public-card"
+            onClick={dismissWelcome}
+            className="btn btn-primary w-full mt-5"
+          >
+            See my public card →
+          </Link>
+          <button
+            onClick={dismissWelcome}
+            className="text-xs text-smoked-charcoal/50 hover:text-smoked-charcoal mt-3"
+          >
+            Maybe later
+          </button>
+        </div>
+      </div>
+    )}
     <div className="space-y-8">
       {/* Hero welcome band — primary poster background */}
       <section className="hero-band p-6 md:p-10 relative overflow-hidden min-h-[380px] md:min-h-[460px] flex items-end">
