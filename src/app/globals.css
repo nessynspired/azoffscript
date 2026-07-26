@@ -68,7 +68,7 @@ html {
 }
 
 body {
-  background-color: #07111c; /* night-deep — matches PWA splash + intro, no flash */
+  background-color: var(--color-sandstone-cream);
   color: var(--color-smoked-charcoal);
   font-family: var(--font-sans);
   font-size: var(--text-body);
