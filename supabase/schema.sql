@@ -833,6 +833,32 @@ create policy "clips delete own or admin" on storage.objects
   );
 
 -- ==========================================================================
+-- Storage bucket for crew photos (public — portal avatars + website crew photos)
+-- ==========================================================================
+
+insert into storage.buckets (id, name, public)
+values ('crew-photos', 'crew-photos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "crew photos upload own" on storage.objects;
+create policy "crew photos upload own" on storage.objects
+  for insert to authenticated with check (
+    bucket_id = 'crew-photos'
+    and (auth.uid() = (storage.foldername(name))[1]::uuid or public.is_admin())
+  );
+
+drop policy if exists "crew photos read all" on storage.objects;
+create policy "crew photos read all" on storage.objects
+  for select using (bucket_id = 'crew-photos');
+
+drop policy if exists "crew photos delete own or admin" on storage.objects;
+create policy "crew photos delete own or admin" on storage.objects
+  for delete to authenticated using (
+    bucket_id = 'crew-photos'
+    and (auth.uid() = (storage.foldername(name))[1]::uuid or public.is_admin())
+  );
+
+-- ==========================================================================
 -- Seed: helpful once you've created your first admin user via signup,
 -- run this to promote a specific email to admin (replace the email):
 --

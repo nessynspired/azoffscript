@@ -1,0 +1,12 @@
+Fix profile RLS policies + add crew-photos storage bucket
+
+- Fix: profile_change_requests + approved_public_profile policies now use
+  public.current_member_id() instead of auth.uid() (which never matched
+  because member_id stores members.id, not auth.users.id)
+- Add admin override to all profile policies so Vanessa can manage any member
+- Add crew-photos storage bucket (public) with upload/read/delete policies
+- Update schema.sql with crew-photos bucket + crew photos RLS policies
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
