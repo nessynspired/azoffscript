@@ -76,6 +76,9 @@ export interface Database {
           comfort_level: string | null;
           share_comfort: string | null;
           do_not_use_for: string[] | null;
+          room_vibe: string[] | null;
+          tag_me: string | null;
+          best_platform: string | null;
           first_wave: boolean;
           kit_acknowledged: boolean;
           ground_rules_acknowledged_at: string | null;
@@ -106,6 +109,9 @@ export interface Database {
           comfort_level?: string | null;
           share_comfort?: string | null;
           do_not_use_for?: string[] | null;
+          room_vibe?: string[] | null;
+          tag_me?: string | null;
+          best_platform?: string | null;
           first_wave?: boolean;
           kit_acknowledged?: boolean;
           ground_rules_acknowledged_at?: string | null;
@@ -136,6 +142,9 @@ export interface Database {
           comfort_level?: string | null;
           share_comfort?: string | null;
           do_not_use_for?: string[] | null;
+          room_vibe?: string[] | null;
+          tag_me?: string | null;
+          best_platform?: string | null;
           first_wave?: boolean;
           kit_acknowledged?: boolean;
           ground_rules_acknowledged_at?: string | null;
@@ -747,6 +756,10 @@ export interface Database {
           lane: string | null;
           guest_or_recurring: string | null;
           clips_not_guaranteed: string | null;
+          content_interests: string[] | null;
+          availability_slots: string[] | null;
+          willingness: string | null;
+          anything_else: string | null;
           status: JoinSubmissionStatus;
           converted_invite_id: string | null;
           admin_notes: string | null;
@@ -769,6 +782,10 @@ export interface Database {
           lane?: string | null;
           guest_or_recurring?: string | null;
           clips_not_guaranteed?: string | null;
+          content_interests?: string[] | null;
+          availability_slots?: string[] | null;
+          willingness?: string | null;
+          anything_else?: string | null;
           status?: JoinSubmissionStatus;
           converted_invite_id?: string | null;
           admin_notes?: string | null;
@@ -791,6 +808,10 @@ export interface Database {
           lane?: string | null;
           guest_or_recurring?: string | null;
           clips_not_guaranteed?: string | null;
+          content_interests?: string[] | null;
+          availability_slots?: string[] | null;
+          willingness?: string | null;
+          anything_else?: string | null;
           status?: JoinSubmissionStatus;
           converted_invite_id?: string | null;
           admin_notes?: string | null;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { UserRole } from "@/lib/types/db";
 
 /**
@@ -17,47 +18,47 @@ import type { UserRole } from "@/lib/types/db";
  * Mobile: bottom nav with oversized center Drop button + "More" sheet.
  */
 
-type NavItem = { href: string; label: string; center?: boolean };
+type NavItem = { href: string; label: string; center?: boolean; info?: string };
 
 // ---- Crew menu (simple participation) ----
 const CREW_PRIMARY: NavItem[] = [
-  { href: "/portal/lobby", label: "Lobby" },
-  { href: "/portal/drop", label: "Drop" },
-  { href: "/portal/run-sheet", label: "Run Sheet" },
-  { href: "/portal/my-kit", label: "My Kit" },
+  { href: "/portal/lobby", label: "Lobby", info: "Your home base — activity feed, what's due, quick stats, and jump-in buttons." },
+  { href: "/portal/drop", label: "Drop", info: "Quick drop a video, TikTok/Instagram link, or text idea into the room." },
+  { href: "/portal/run-sheet", label: "Run Sheet", info: "The central hub for all content — from raw drops to posted clips. Switch tabs for different views." },
+  { href: "/portal/my-kit", label: "My Kit", info: "Your personal profile, comfort settings, gear status, and your drops/approvals." },
 ];
 
 const CREW_MORE: NavItem[] = [
-  { href: "/portal/crew", label: "Crew" },
-  { href: "/portal/sparks", label: "Spark Board" },
-  { href: "/portal/brand-locker", label: "Brand Locker" },
-  { href: "/portal/ground-rules", label: "Ground Rules" },
-  { href: "/portal/quick-terms", label: "Quick Terms" },
-  { href: "/portal/notifications", label: "Notifications" },
+  { href: "/portal/crew", label: "Crew", info: "The crew directory — see everyone in the room, their roles, and tags." },
+  { href: "/portal/sparks", label: "Spark Board", info: "Drop raw content ideas and vote on ideas you like. Best ones become Ready Bank templates." },
+  { href: "/portal/brand-locker", label: "Brand Locker", info: "Official brand assets — logos, colors, captions, hashtags. Copy anything you need for content." },
+  { href: "/portal/ground-rules", label: "Ground Rules", info: "How the room works — core rules, comfort guidelines, and the content flow." },
+  { href: "/portal/quick-terms", label: "Quick Terms", info: "The quick room rules you agreed to when you joined. Required before dropping clips." },
+  { href: "/portal/notifications", label: "Notifications", info: "Every drop, tag, and status change — plus push notification settings." },
 ];
 
 // ---- Planner/Admin menu (the planning machine) ----
 const PLANNER_PRIMARY: NavItem[] = [
-  { href: "/portal/lobby", label: "Lobby" },
-  { href: "/portal/drop", label: "Drop" },
-  { href: "/portal/run-sheet", label: "Run Sheet" },
-  { href: "/portal/ready-bank", label: "Ready Bank" },
-  { href: "/portal/crew", label: "Crew" },
+  { href: "/portal/lobby", label: "Lobby", info: "Your home base — activity feed, what's due, quick stats, and jump-in buttons." },
+  { href: "/portal/drop", label: "Drop", info: "Quick drop a video, TikTok/Instagram link, or text idea into the room." },
+  { href: "/portal/run-sheet", label: "Run Sheet", info: "The central hub for all content — from raw drops to posted clips. Switch tabs for different views." },
+  { href: "/portal/ready-bank", label: "Ready Bank", info: "Library of vetted content templates ready to schedule. Create clips from templates here." },
+  { href: "/portal/crew", label: "Crew", info: "The crew directory — see everyone, their roles, terms status, and manage member profiles." },
 ];
 
 const PLANNER_MORE: NavItem[] = [
-  { href: "/portal/sparks", label: "Spark Board" },
-  { href: "/portal/gear-board", label: "Gear Board" },
-  { href: "/portal/crew-profiles", label: "Crew Profiles" },
-  { href: "/portal/invites", label: "Invites" },
-  { href: "/portal/join-submissions", label: "Join Submissions" },
-  { href: "/portal/agreements", label: "Agreements" },
-  { href: "/portal/public-cards", label: "Public Cards" },
-  { href: "/portal/brand-locker", label: "Brand Locker" },
-  { href: "/portal/ground-rules", label: "Ground Rules" },
-  { href: "/portal/quick-terms", label: "Quick Terms" },
-  { href: "/portal/money-side", label: "Money Side" },
-  { href: "/portal/notifications", label: "Notifications" },
+  { href: "/portal/sparks", label: "Spark Board", info: "Drop raw content ideas and vote on ideas you like. Best ones become Ready Bank templates." },
+  { href: "/portal/gear-board", label: "Gear Board", info: "Admin only. Track personalized merch for each crew member — tumblers, shirts, badges, cards." },
+  { href: "/portal/crew-profiles", label: "Crew Profiles", info: "Admin only. Control who appears on the public website and how they're shown." },
+  { href: "/portal/invites", label: "Invites", info: "Admin only. Generate one-time invite codes for new crew members signing up." },
+  { href: "/portal/join-submissions", label: "Join Submissions", info: "Admin only. Review public /join form submissions and convert approved ones to invite codes." },
+  { href: "/portal/agreements", label: "Agreements", info: "Legal documents — Creator Release, Revenue Addendum. Read and sign here." },
+  { href: "/portal/public-cards", label: "Public Cards", info: "Admin only. Review and approve crew public profile card requests for the website." },
+  { href: "/portal/brand-locker", label: "Brand Locker", info: "Official brand assets — logos, colors, captions, hashtags. Copy anything you need." },
+  { href: "/portal/ground-rules", label: "Ground Rules", info: "How the room works — core rules, comfort guidelines, and the content flow." },
+  { href: "/portal/quick-terms", label: "Quick Terms", info: "The quick room rules everyone agreed to. Admins can see who has accepted." },
+  { href: "/portal/money-side", label: "Money Side", info: "Revenue tracking, splits, and payouts. Mostly setup right now — money isn't active yet." },
+  { href: "/portal/notifications", label: "Notifications", info: "Every drop, tag, and status change — plus push notification settings." },
 ];
 
 // ---- Mobile bottom nav ----
@@ -81,12 +82,14 @@ interface PortalNavProps {
   memberName: string;
   memberRole: UserRole;
   unreadNotifications?: number;
+  avatarUrl?: string | null;
 }
 
 export function PortalTopBar({
   memberName,
   memberRole,
   unreadNotifications: propUnread = 0,
+  avatarUrl = null,
 }: PortalNavProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -143,17 +146,19 @@ export function PortalTopBar({
 
         <nav className="flex items-center gap-1 flex-1">
           {primaryNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`px-3 py-2 rounded-full text-sm font-extrabold uppercase tracking-wide transition-colors ${
-                isActive(item.href)
-                  ? "bg-copper-clay text-bone-white"
-                  : "text-sandstone-cream/80 hover:text-sunburst-yellow hover:bg-white/5"
-              }`}
-            >
-              {item.label}
-            </Link>
+            <span key={item.href} className="relative inline-flex">
+              <Link
+                href={item.href}
+                className={`px-3 py-2 rounded-full text-sm font-extrabold uppercase tracking-wide transition-colors ${
+                  isActive(item.href)
+                    ? "bg-copper-clay text-bone-white"
+                    : "text-sandstone-cream/80 hover:text-sunburst-yellow hover:bg-white/5"
+                }`}
+              >
+                {item.label}
+              </Link>
+              {item.info && <InfoTooltip text={item.info} dark />}
+            </span>
           ))}
 
           {/* More dropdown */}
@@ -172,23 +177,28 @@ export function PortalTopBar({
               </svg>
             </button>
             {moreOpen && (
-              <div className="absolute top-full left-0 mt-2 bg-desert-night border border-copper-clay/40 rounded-2xl py-2 min-w-[180px] shadow-[var(--shadow-lift)] animate-pop">
+              <div className="absolute top-full left-0 mt-2 bg-desert-night border border-copper-clay/40 rounded-2xl py-2 min-w-[260px] shadow-[var(--shadow-lift)] animate-pop">
                 {moreNav.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setMoreOpen(false)}
-                    className={`flex items-center justify-between px-4 py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${
+                    className={`flex flex-col px-4 py-2.5 transition-colors ${
                       isActive(item.href)
                         ? "text-sunburst-yellow bg-white/5"
                         : "text-sandstone-cream/80 hover:text-sunburst-yellow hover:bg-white/5"
                     }`}
                   >
-                    {item.label}
-                    {item.href === "/portal/notifications" && unread > 0 && (
-                      <span className="bg-sunburst-yellow text-desert-night text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
-                        {unread > 9 ? "9+" : unread}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold uppercase tracking-wide">{item.label}</span>
+                      {item.href === "/portal/notifications" && unread > 0 && (
+                        <span className="bg-sunburst-yellow text-desert-night text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                          {unread > 9 ? "9+" : unread}
+                        </span>
+                      )}
+                    </div>
+                    {item.info && (
+                      <span className="text-[10px] text-sandstone-cream/40 mt-0.5 leading-snug">{item.info}</span>
                     )}
                   </Link>
                 ))}
@@ -200,9 +210,21 @@ export function PortalTopBar({
         <div className="flex items-center gap-3 shrink-0">
           <Link
             href="/portal/my-kit"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition-colors"
+            className="flex items-center gap-2 px-2 py-1 rounded-full bg-white/10 hover:bg-white/15 transition-colors"
+            title="My Kit"
           >
-            <span className="font-extrabold text-sm">{memberName}</span>
+            {/* Avatar circle — shows uploaded portal avatar, or initials fallback */}
+            <span className="w-9 h-9 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-copper-clay/40">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={memberName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-display text-sm text-sandstone-cream">
+                  {memberName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                </span>
+              )}
+            </span>
+            <span className="hidden sm:inline font-extrabold text-sm">{memberName}</span>
             <span
               className={`chip ${
                 memberRole === "admin"
@@ -210,7 +232,7 @@ export function PortalTopBar({
                   : isPlanner
                     ? "chip-copper"
                     : "chip-teal"
-              } !py-0.5 !px-2 !text-[10px]`}
+              } !py-0.5 !px-2 !text-[10px] hidden sm:inline-flex`}
             >
               {memberRole === "admin" ? "Admin" : isPlanner ? "Planner" : "Crew"}
             </span>
@@ -238,6 +260,8 @@ export function PortalBottomNav() {
   const isPlanner = member?.role === "admin" || member?.can_plan_content === true;
   const mobileNav = isPlanner ? PLANNER_MOBILE : CREW_MOBILE;
   const moreNav = isPlanner ? PLANNER_MORE : CREW_MORE;
+  const avatarUrl = member?.photo_url ?? null;
+  const memberName = member?.name ?? "Crew";
 
   async function handleSignOut() {
     await signOut();
@@ -328,6 +352,28 @@ export function PortalBottomNav() {
                 ✕
               </button>
             </div>
+
+            {/* Profile header with avatar */}
+            <Link
+              href="/portal/my-kit"
+              onClick={() => setMoreOpen(false)}
+              className="flex items-center gap-3 mb-4 p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors"
+            >
+              <span className="w-12 h-12 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-copper-clay/40">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt={memberName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-display text-base text-sandstone-cream">
+                    {memberName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sandstone-cream truncate">{memberName}</p>
+                <p className="text-xs text-sandstone-cream/50">View My Kit →</p>
+              </div>
+            </Link>
             <div className="grid grid-cols-2 gap-3">
               {moreNav.map((item) => (
                 <Link

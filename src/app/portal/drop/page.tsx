@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage } from "@/components/MascotImage";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { DROP_LANES, LANE_META, DESTINATIONS } from "@/lib/crew-data";
 import { useTermsStatus } from "@/lib/hooks/use-terms-status";
 import type { Database, DropType } from "@/lib/types/db";
@@ -241,6 +242,7 @@ export default function DropPage() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="font-display text-3xl md:text-4xl text-desert-night">Drop something.</h1>
+          <InfoTooltip text="Drop a video file, paste a TikTok/Instagram/YouTube link, or type a text idea. Pick a lane (content category), choose where it's going, and tag anyone who's in it. It goes straight to the Run Sheet for planning." />
           <p className="text-smoked-charcoal/60 mt-2">
             One take is fine. No pressure to be perfect.
           </p>

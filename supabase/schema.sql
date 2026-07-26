@@ -120,6 +120,9 @@ create table if not exists public.members (
   comfort_level   text default 'Ask Every Time',  -- Low-Key, Comfortable, Spotlight Okay, Behind the Scenes, Ask Every Time
   share_comfort   text default 'Ask before tagging/sharing',  -- Main page only, Okay to share, Ask before tagging/sharing, Do not tag me, Do not post me
   do_not_use_for  text[] default '{}',          -- silly, reaction_memes, relationship, drama, beauty_body, parenting, sponsored, main_focus, tagging, other
+  room_vibe      text[] default '{}',            -- multi-select room vibe chips (Funny, Quiet, Blunt, etc.)
+  tag_me         text,                           -- tag preference: 'Yes, tag me when I'm posted' | 'Ask me before tagging' | etc.
+  best_platform  text,                           -- best platform to tag: TikTok | Instagram | etc.
   first_wave   boolean not null default true,
   kit_acknowledged boolean not null default false,
   ground_rules_acknowledged_at timestamptz,
@@ -470,6 +473,10 @@ create table if not exists public.join_submissions (
 -- Add new columns to existing tables (safe to re-run)
 alter table public.join_submissions add column if not exists guest_or_recurring text;
 alter table public.join_submissions add column if not exists clips_not_guaranteed text;
+alter table public.join_submissions add column if not exists content_interests text[] default '{}';
+alter table public.join_submissions add column if not exists availability_slots text[] default '{}';
+alter table public.join_submissions add column if not exists willingness text;
+alter table public.join_submissions add column if not exists anything_else text;
 
 create index if not exists idx_join_submissions_status on public.join_submissions(status);
 create index if not exists idx_join_submissions_created_at on public.join_submissions(created_at desc);

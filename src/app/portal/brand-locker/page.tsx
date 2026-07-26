@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
+import { InfoTooltip } from "@/components/InfoTooltip";
 
 const HASHTAGS = [
   "#AZOffScript", "#OffScriptRoom", "#ArizonaOurWay", "#RedFlagOrRealLife",
@@ -73,6 +74,7 @@ export default function BrandLockerPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">Brand Locker</h1>
+        <InfoTooltip text="The official brand asset library — logos, mascot poses, brand colors (with hex codes), approved captions, hashtags, content formats, and gear templates. Copy any asset to use in your content so everything stays on-brand." />
         <p className="text-smoked-charcoal/70 mt-2 text-lg">Everything approved for AZ Off Script lives here.</p>
       </div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database, UserRole } from "@/lib/types/db";
 
 type InviteCode = Database["public"]["Tables"]["invite_codes"]["Row"];
@@ -83,6 +84,7 @@ export default function AdminInvitesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Invite Codes</h1>
+        <InfoTooltip text="Admin only. Generate a one-time code for someone new joining the room. They enter this code when signing up at /login — it matches them to their pre-configured name, nickname, and profile. Each code only works once." />
         <p className="text-smoked-charcoal/70 mt-2 text-lg">Generate a code for each crew member. They enter it when signing up.</p>
       </div>
 

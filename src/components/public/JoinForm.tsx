@@ -3,63 +3,90 @@
 import { useState } from "react";
 import { MascotImage } from "@/components/MascotImage";
 
-const ROLES = [
-  "On camera talking / giving opinions",
-  "Facial reactions / side-eye",
-  "Quick yes-or-no answers",
-  "Group videos",
-  "Solo clips from home",
+// ===== JOIN FORM DROPDOWN OPTIONS =====
+
+const CAMERA_COMFORT_OPTIONS = [
+  "Yes, I'm comfortable",
+  "Yes, but I warm up first",
+  "Yes, mostly in group videos",
+  "Yes, mostly with quick clips",
+  "Maybe, I'm nervous but interested",
+  "Not sure yet",
+  "No, I prefer behind the scenes",
+] as const;
+
+const CONTENT_INTEREST_OPTIONS = [
   "Funny trends",
-  "Mom-life content",
+  "Reaction videos",
+  "Group games",
+  "Hot takes",
   "Comedy skits",
-  "Ideas, prompts, or trends",
-  "Filming or behind the scenes",
-  "Planning or organizing",
-  "Still figuring it out",
-];
+  "Mom-life content",
+  "Friendship topics",
+  "Dating / relationship topics",
+  "Group chat situations",
+  "Arizona local humor",
+  "Food / taste tests",
+  "Beauty / style content",
+  "No-talking reaction clips",
+  "Facial expression / side-eye clips",
+  "Quick yes/no prompts",
+  "Bloopers",
+  "Random ideas",
+  "Not sure yet",
+] as const;
 
-const LANES = [
-  "Women's Round 2 room",
-  "Guest appearance",
-  "Behind the scenes",
-  "Couples content later",
-  "Local business / community feature",
-  "Future AZ Off Script wave",
-];
+const WILLINGNESS_OPTIONS = [
+  { value: "yes", label: "Yes, send me the first prompt" },
+  { value: "maybe", label: "Maybe, I want to ask questions first" },
+  { value: "not_sure", label: "Not sure yet" },
+  { value: "no", label: "No, I'm looking for something more guaranteed" },
+] as const;
 
-const GUEST_OPTIONS = [
-  { value: "yes", label: "Yes" },
-  { value: "maybe", label: "Maybe, explain it to me" },
-  { value: "no", label: "No, I only want to join if I'm a main recurring face" },
-];
-
-const POSTING_OPTIONS = [
-  { value: "yes", label: "Yes, I understand the brand chooses what fits" },
-  { value: "maybe", label: "Maybe, I want to understand the process" },
-  { value: "no", label: "No, I only want to participate if my clips are guaranteed to post" },
-];
+const AVAILABILITY_OPTIONS = [
+  "Weekday mornings",
+  "Weekday afternoons",
+  "Weekdays after 5 PM",
+  "Friday evenings",
+  "Saturday mornings",
+  "Saturday afternoons",
+  "Saturday evenings",
+  "Sunday mornings",
+  "Sunday afternoons",
+  "Sunday evenings",
+  "Once a week",
+  "Twice a month",
+  "Once a month",
+  "Flexible with notice",
+  "Depends on childcare",
+  "Depends on transportation",
+] as const;
 
 export function JoinForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    name: "", city: "", socials: "", comfortableOnCamera: "",
-    contentType: "", roles: [] as string[], availability: "",
-    boundaries: "", why: "", lane: "",
-    guestOrRecurring: "", clipsNotGuaranteed: "",
+    name: "",
+    city: "",
+    socials: "",
+    comfortableOnCamera: "",
+    contentInterests: [] as string[],
+    willingness: "",
+    availability: [] as string[],
+    anythingElse: "",
   });
 
   function update(key: string, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function toggleRole(role: string) {
+  function toggleArrayItem(key: "contentInterests" | "availability", item: string) {
     setForm((prev) => ({
       ...prev,
-      roles: prev.roles.includes(role)
-        ? prev.roles.filter((r) => r !== role)
-        : [...prev.roles, role],
+      [key]: prev[key].includes(item)
+        ? prev[key].filter((x) => x !== item)
+        : [...prev[key], item],
     }));
   }
 
@@ -91,104 +118,115 @@ export function JoinForm() {
         <MascotImage pose="peace" size={100} className="inline-block" />
         <h3 className="font-display text-2xl text-desert-night mt-4">We got your vibe.</h3>
         <p className="text-smoked-charcoal/70 mt-2">
-          Thanks for reaching out. If the room feels like a fit, we&apos;ll be in touch.
+          Thanks for reaching out. If the room feels like a fit, we&apos;ll send you the first prompt.
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="card p-6 space-y-5">
+      {/* Name */}
       <div>
         <label className="label" htmlFor="join-name">Name</label>
         <input id="join-name" className="field" required value={form.name} onChange={(e) => update("name", e.target.value)} />
       </div>
+
+      {/* City */}
       <div>
         <label className="label" htmlFor="join-city">City</label>
         <input id="join-city" className="field" required placeholder="Phoenix, Tucson, Mesa…" value={form.city} onChange={(e) => update("city", e.target.value)} />
       </div>
+
+      {/* Social handles */}
       <div>
         <label className="label" htmlFor="join-socials">Social handles</label>
         <input id="join-socials" className="field" placeholder="@yourhandle" value={form.socials} onChange={(e) => update("socials", e.target.value)} />
       </div>
+
+      {/* Camera comfort — dropdown */}
       <div>
         <label className="label" htmlFor="join-camera">Are you comfortable on camera?</label>
         <select id="join-camera" className="field" value={form.comfortableOnCamera} onChange={(e) => update("comfortableOnCamera", e.target.value)}>
           <option value="">Select…</option>
-          <option value="yes">Yes, bring it on</option>
-          <option value="somewhat">Somewhat — warming up to it</option>
-          <option value="no">Not yet — prefer behind the scenes</option>
+          {CAMERA_COMFORT_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
         </select>
       </div>
+
+      {/* Content interests — multi-select chips */}
       <div>
-        <label className="label" htmlFor="join-content">What kind of content would you actually enjoy?</label>
-        <textarea id="join-content" className="field min-h-[80px]" placeholder="Hot takes, games, reactions…" value={form.contentType} onChange={(e) => update("contentType", e.target.value)} />
-      </div>
-      <div>
-        <label className="label">What feels most like you?</label>
+        <label className="label">What kind of content sounds fun to you?</label>
+        <p className="text-xs text-smoked-charcoal/50 mb-2">Pick all that sound fun.</p>
         <div className="flex flex-wrap gap-2">
-          {ROLES.map((role) => (
+          {CONTENT_INTEREST_OPTIONS.map((opt) => (
             <button
-              key={role}
+              key={opt}
               type="button"
-              onClick={() => toggleRole(role)}
-              className={`chip ${form.roles.includes(role) ? "chip-copper" : "chip-cream"}`}
+              onClick={() => toggleArrayItem("contentInterests", opt)}
+              className={`chip ${form.contentInterests.includes(opt) ? "chip-copper" : "chip-cream"}`}
             >
-              {role}
+              {opt}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Willingness — dropdown */}
       <div>
-        <label className="label" htmlFor="join-avail">Availability</label>
-        <input id="join-avail" className="field" placeholder="Weekdays after 5, weekends…" value={form.availability} onChange={(e) => update("availability", e.target.value)} />
-      </div>
-      <div>
-        <label className="label" htmlFor="join-boundaries">Boundaries (optional)</label>
-        <input id="join-boundaries" className="field" placeholder="Things to avoid" value={form.boundaries} onChange={(e) => update("boundaries", e.target.value)} />
-      </div>
-      <div>
-        <label className="label" htmlFor="join-why">Why does this interest you?</label>
-        <textarea id="join-why" className="field min-h-[80px]" value={form.why} onChange={(e) => update("why", e.target.value)} />
-      </div>
-      <div>
-        <label className="label" htmlFor="join-lane">Which lane are you interested in?</label>
-        <select id="join-lane" className="field" value={form.lane} onChange={(e) => update("lane", e.target.value)}>
+        <label className="label" htmlFor="join-willing">Are you willing to try one simple Round 2 drop?</label>
+        <select id="join-willing" className="field" value={form.willingness} onChange={(e) => update("willingness", e.target.value)}>
           <option value="">Select…</option>
-          {LANES.map((lane) => (
-            <option key={lane} value={lane}>{lane}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className="label" htmlFor="join-guest">Are you okay starting as a guest or featured face before becoming recurring?</label>
-        <select id="join-guest" className="field" value={form.guestOrRecurring} onChange={(e) => update("guestOrRecurring", e.target.value)}>
-          <option value="">Select…</option>
-          {GUEST_OPTIONS.map((opt) => (
+          {WILLINGNESS_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
       </div>
+
+      {/* Availability — multi-select chips */}
       <div>
-        <label className="label" htmlFor="join-posting">Are you okay submitting clips without every clip being posted?</label>
-        <select id="join-posting" className="field" value={form.clipsNotGuaranteed} onChange={(e) => update("clipsNotGuaranteed", e.target.value)}>
-          <option value="">Select…</option>
-          {POSTING_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+        <label className="label">Availability</label>
+        <p className="text-xs text-smoked-charcoal/50 mb-2">Pick all that work for you.</p>
+        <div className="flex flex-wrap gap-2">
+          {AVAILABILITY_OPTIONS.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => toggleArrayItem("availability", opt)}
+              className={`chip ${form.availability.includes(opt) ? "chip-copper" : "chip-cream"}`}
+            >
+              {opt}
+            </button>
           ))}
-        </select>
+        </div>
       </div>
+
+      {/* Anything we should know — free text */}
+      <div>
+        <label className="label" htmlFor="join-anything">Anything we should know?</label>
+        <textarea
+          id="join-anything"
+          className="field min-h-[100px]"
+          placeholder="Tell us your vibe, boundaries, questions, or anything that would help us know if you fit the room."
+          value={form.anythingElse}
+          onChange={(e) => update("anythingElse", e.target.value)}
+        />
+      </div>
+
+      {/* Quick note */}
       <div className="card p-4 bg-sandstone-cream/60 border border-copper-clay/30 text-xs text-smoked-charcoal/70 leading-relaxed space-y-2">
-        <p className="font-bold text-desert-night">A quick note:</p>
+        <p className="font-bold text-desert-night">Quick note:</p>
         <p>
           Submitting this form does not guarantee selection, posting, tagging, payment, personal page
-          promotion, partnership, ownership, or a permanent recurring spot.
+          promotion, partnership, ownership, or a permanent spot.
         </p>
         <p>
-          AZ Off Script chooses what gets posted based on brand fit, comfort, chemistry, timing,
-          consistency, and what makes the room stronger.
+          Round 2 starts with a simple content drop. AZ Off Script chooses what fits based on the
+          prompt, comfort, chemistry, timing, consistency, and what makes the room stronger.
         </p>
       </div>
+
       <button type="submit" disabled={submitting} className="btn btn-primary btn-lg w-full disabled:opacity-60 disabled:cursor-not-allowed">
         {submitting ? "Sending…" : "Tell Us Your Vibe"}
       </button>

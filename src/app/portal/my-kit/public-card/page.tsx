@@ -4,6 +4,15 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { InfoTooltip } from "@/components/InfoTooltip";
+import { DropdownOrOther } from "@/components/DropdownOrOther";
+import {
+  PUBLIC_TITLE_OPTIONS,
+  SECONDARY_ROLE_OPTIONS,
+  PERSONALITY_LINE_OPTIONS,
+  WEBSITE_BIO_OPTIONS,
+} from "@/lib/profile-options";
+// These are re-exported with expanded lists from profile-options
 import type { Database, TagPreference, ProfileVisibility, PhotoPermissionStatus } from "@/lib/types/db";
 
 type ApprovedProfile = Database["public"]["Tables"]["approved_public_profile"]["Row"];
@@ -133,8 +142,13 @@ export default function MyPublicCardPage() {
       requested_changes_note: changeNote || null,
     };
     const { error: insErr } = await supabase.from("approved_public_profile").upsert(payload, { onConflict: "member_id" });
+    if (insErr) { setSaving(false); setError(insErr.message); return; }
+
+    // Also save portal avatar to members.photo_url so it shows in the portal nav
+    if (portalAvatar) {
+      await supabase.from("members").update({ photo_url: portalAvatar }).eq("id", member.id);
+    }
     setSaving(false);
-    if (insErr) { setError(insErr.message); return; }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
     load();
@@ -184,6 +198,11 @@ export default function MyPublicCardPage() {
     });
     setSubmitting(false);
     if (reqErr) { setError(reqErr.message); return; }
+
+    // Also save portal avatar to members.photo_url so it shows in the portal nav
+    if (portalAvatar) {
+      await supabase.from("members").update({ photo_url: portalAvatar }).eq("id", member.id);
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
     load();
@@ -210,6 +229,7 @@ export default function MyPublicCardPage() {
       <section className="bg-desert-night p-6 md:p-8 rounded-2xl">
         <p className="text-sandstone-cream/70 text-sm font-bold uppercase tracking-wide">My Kit</p>
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">My Public Card</h1>
+        <div className="mt-1"><InfoTooltip dark text="This is how you show up on the public website (azoffscript.com). Edit your display name, title, bio, photo, and social links. When you submit changes, they go to an admin for approval before going live. You can also control whether your card is visible at all." /></div>
         <p className="text-sandstone-cream/60 text-sm mt-2 max-w-xl">
           This is how you show up on the website, portal, and member cards.
           You can request changes — Vanessa approves before anything public changes.
@@ -280,25 +300,38 @@ export default function MyPublicCardPage() {
 
         {/* Titles */}
         <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <p className="label">Public role / title</p>
-            <input className="field" value={publicTitle} onChange={(e) => setPublicTitle(e.target.value)} placeholder="e.g. The Sweet Touch" />
-          </div>
-          <div>
-            <p className="label">Secondary role</p>
-            <input className="field" value={secondaryRole} onChange={(e) => setSecondaryRole(e.target.value)} placeholder="e.g. First Wave Creator" />
-          </div>
+          <DropdownOrOther
+            label="Public role / title"
+            value={publicTitle}
+            onChange={setPublicTitle}
+            options={PUBLIC_TITLE_OPTIONS}
+            placeholder="e.g. The Sweet Touch"
+          />
+          <DropdownOrOther
+            label="Secondary role"
+            value={secondaryRole}
+            onChange={setSecondaryRole}
+            options={SECONDARY_ROLE_OPTIONS}
+            placeholder="e.g. First Wave Creator"
+          />
         </div>
 
         {/* Personality + bio */}
-        <div>
-          <p className="label">Short personality line</p>
-          <input className="field" value={shortLine} onChange={(e) => setShortLine(e.target.value)} placeholder="One sentence — used on cards and short bios" />
-        </div>
-        <div>
-          <p className="label">Website bio (longer)</p>
-          <textarea className="field min-h-[100px]" value={websiteBio} onChange={(e) => setWebsiteBio(e.target.value)} placeholder="2-4 sentences for the website crew page" />
-        </div>
+        <DropdownOrOther
+          label="Short personality line"
+          value={shortLine}
+          onChange={setShortLine}
+          options={PERSONALITY_LINE_OPTIONS}
+          placeholder="One sentence — used on cards and short bios"
+        />
+        <DropdownOrOther
+          label="Website bio (longer)"
+          value={websiteBio}
+          onChange={setWebsiteBio}
+          options={WEBSITE_BIO_OPTIONS}
+          placeholder="2-4 sentences for the website crew page"
+          textarea
+        />
 
         {/* Preferences */}
         <div className="grid md:grid-cols-2 gap-4">

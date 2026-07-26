@@ -6,14 +6,14 @@ import { MascotImage } from "@/components/MascotImage";
 import { JoinForm } from "@/components/public/JoinForm";
 
 export const metadata: Metadata = {
-  title: "Be in the Room — AZ Off Script Round 2 Interest Form",
+  title: "AZ Off Script — Round 2 Drop Form",
   description:
-    "Interested in joining AZ Off Script? Tell us your vibe, content comfort level, availability, and how you could fit the room.",
+    "Round 2 is opening. We pick the prompt, you send your version, we see how the room feels together. Tell us your vibe.",
   alternates: { canonical: "/join" },
   openGraph: {
-    title: "Be in the Room — AZ Off Script Round 2 Interest Form",
+    title: "AZ Off Script — Round 2 Drop Form",
     description:
-      "Interested in joining AZ Off Script? Tell us your vibe, content comfort level, availability, and how you could fit the room.",
+      "Round 2 is opening. We pick the prompt, you send your version, we see how the room feels together. Tell us your vibe.",
   },
 };
 
@@ -26,47 +26,43 @@ export default function JoinPage() {
 
       <section className="pt-32 md:pt-24 pb-8 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <span className="chip chip-copper mb-6">Be in the Room</span>
+          <span className="chip chip-copper mb-6">Round 2 is opening</span>
           <h1 className="font-display text-3xl md:text-6xl text-desert-night leading-tight">
-            Think you fit<br />the room?
+            Think your vibe<br />fits the room?
           </h1>
           <p className="text-xl text-smoked-charcoal/80 mt-6 max-w-2xl mx-auto leading-relaxed">
-            AZ Off Script started as women wanting to get together, make quick videos, laugh, try
-            trends, react to random prompts, do funny skits, talk mom-life, and create without
-            overthinking everything.
+            AZ Off Script started with a simple idea: women getting together, making quick videos,
+            laughing, trying trends, reacting to random prompts, doing funny skits, talking mom-life,
+            and creating without overthinking everything.
           </p>
           <p className="text-base text-smoked-charcoal/80 mt-4 max-w-2xl mx-auto leading-relaxed">
             Now we&apos;re building that same energy under AZ Off Script.
           </p>
           <p className="text-base text-smoked-charcoal/80 mt-4 max-w-2xl mx-auto leading-relaxed">
-            Round 1 already started, and Round 2 is opening slowly and intentionally.
+            Round 1 already started, and Round 2 is opening.
           </p>
           <p className="text-base text-smoked-charcoal/80 mt-4 max-w-2xl mx-auto leading-relaxed">
-            We are not trying to pack the room with everybody. Too many people and nobody knows
-            who&apos;s who. We&apos;re keeping it small on purpose so the personalities actually
-            stand out.
+            We&apos;re keeping the room small on purpose because too many people and nobody knows
+            who&apos;s who.
+          </p>
+          <p className="text-base text-smoked-charcoal/80 mt-4 max-w-2xl mx-auto leading-relaxed font-bold">
+            For Round 2, we&apos;ll start simple:
+          </p>
+          <p className="text-base text-smoked-charcoal/80 mt-2 max-w-2xl mx-auto leading-relaxed">
+            We pick the prompt.<br />
+            You send your version.<br />
+            We see how the room feels together.
           </p>
           <p className="text-base text-smoked-charcoal/80 mt-4 max-w-2xl mx-auto leading-relaxed">
-            We&apos;re looking for women who bring something real to the room — funny, quiet,
-            blunt, polished, chaotic, calm, stylish, thoughtful, unexpected, or just naturally fun
-            to watch.
+            You do not have to be an influencer.<br />
+            You do not have to be loud.<br />
+            You do not have to be perfect.
           </p>
           <p className="text-base text-smoked-charcoal/80 mt-4 max-w-2xl mx-auto leading-relaxed">
-            Some women may be featured on camera. Some may drop quick reaction clips. Some may join
-            a filming day. Some may bring ideas or prompts. Some may be saved for a future round.
+            You just have to be real, fun, respectful, and willing to show up.
           </p>
-          <p className="text-base text-smoked-charcoal/80 mt-4 max-w-2xl mx-auto leading-relaxed">
-            You do not have to be an influencer. You do not have to be loud. You just have to be
-            real, respectful, and actually want to have fun with it.
-          </p>
-          <p className="text-base text-smoked-charcoal/60 mt-4 max-w-2xl mx-auto leading-relaxed">
-            Right now, AZ Off Script is focused on the women-led room. As the brand grows, it may
-            expand into future waves, couples, mixed groups, local features, and other Arizona
-            creator lanes.
-          </p>
-          <p className="text-base text-smoked-charcoal/60 mt-4 max-w-2xl mx-auto leading-relaxed">
-            Tell us your vibe. We&apos;ll reach out if there&apos;s a fit for this round, a guest
-            feature, or a future one.
+          <p className="text-lg text-copper-deep font-bold mt-6 max-w-2xl mx-auto leading-relaxed">
+            Tell us your vibe below.
           </p>
           <div className="flex justify-center mt-8">
             <MascotImage pose="peace" size={100} />
@@ -77,7 +73,7 @@ export default function JoinPage() {
       <section className="py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="font-display text-3xl text-desert-night">Tell us your vibe.</h2>
+            <h2 className="font-display text-3xl text-desert-night">Round 2 Drop Form</h2>
           </div>
           <JoinForm />
         </div>

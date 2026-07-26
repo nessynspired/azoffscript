@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database, PhotoPermissionStatus, ProfileApprovalStatus } from "@/lib/types/db";
 
 type ApprovedProfile = Database["public"]["Tables"]["approved_public_profile"]["Row"];
@@ -129,6 +130,7 @@ export default function PublicCardsAdminPage() {
       <section className="bg-desert-night p-6 md:p-8 rounded-2xl">
         <p className="text-sandstone-cream/70 text-sm font-bold uppercase tracking-wide">Admin</p>
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">Public Cards</h1>
+        <div className="mt-1"><InfoTooltip dark text="Admin only. When crew members edit their public card (from My Kit → Public Card), the changes come here for your approval. Review their display name, bio, photo, and social links before they go live on the website." /></div>
         <p className="text-sandstone-cream/60 text-sm mt-2 max-w-xl">
           Review crew profile change requests. Approve, edit, or reject before anything goes public.
         </p>

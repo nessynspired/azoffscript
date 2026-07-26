@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage } from "@/components/MascotImage";
 import type { Database, IdeaCategory, IdeaStatus } from "@/lib/types/db";
@@ -120,6 +121,7 @@ export default function SparkBoardPage() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Spark Board</h1>
+          <InfoTooltip text="Drop raw content ideas here — anything you think could be a video. Vote on ideas you like. Admins can mark the best ones as Crew Favorites, which moves them to the Ready Bank for planning." />
           <p className="text-smoked-charcoal/70 mt-2 text-lg">Got a wild idea? Toss it in.</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn btn-primary btn-lg">

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage } from "@/components/MascotImage";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { SignaturePad } from "@/components/SignaturePad";
 import {
   ALL_AGREEMENTS,
@@ -1210,6 +1211,7 @@ export default function AgreementsPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Agreements</h1>
+        <InfoTooltip text="Legal documents like the Creator Release and Revenue Addendum. Read through each section, then sign at the bottom. Admins can manage agreement versions and see who has signed." />
         <p className="text-smoked-charcoal/70 mt-2">
           Versioned participation agreements. Admin-only. Crew does not see this page yet.
         </p>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database, JoinSubmissionStatus } from "@/lib/types/db";
 
 type Submission = Database["public"]["Tables"]["join_submissions"]["Row"];
@@ -133,6 +134,7 @@ export default function JoinSubmissionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Join Submissions</h1>
+        <InfoTooltip text="Admin only. When someone fills out the public /join form on the website, their submission shows up here. Review their info (name, city, vibe, socials) and decide if you want to invite them. Approved submissions can be converted into invite codes." />
         <p className="text-smoked-charcoal/70 mt-2 text-lg">
           People who filled out the public /join form. Review, follow up, or convert to an invite code.
         </p>
@@ -236,11 +238,46 @@ export default function JoinSubmissionsPage() {
                         </div>
                       </div>
                     )}
+                    {sub.content_interests && sub.content_interests.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-desert-night/60 mb-1">Content interests</p>
+                        <div className="flex flex-wrap gap-1">
+                          {sub.content_interests.map((r) => (
+                            <span key={r} className="chip chip-copper !text-[10px]">{r}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {sub.availability && (
                       <Field label="Availability" value={sub.availability} />
                     )}
+                    {sub.availability_slots && sub.availability_slots.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-desert-night/60 mb-1">Availability</p>
+                        <div className="flex flex-wrap gap-1">
+                          {sub.availability_slots.map((r) => (
+                            <span key={r} className="chip chip-cream !text-[10px]">{r}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {sub.willingness && (
+                      <Field
+                        label="Willing to try first drop"
+                        value={
+                          sub.willingness === "yes" ? "Yes, send me the first prompt"
+                          : sub.willingness === "maybe" ? "Maybe, I want to ask questions first"
+                          : sub.willingness === "not_sure" ? "Not sure yet"
+                          : sub.willingness === "no" ? "No, looking for something more guaranteed"
+                          : sub.willingness
+                        }
+                      />
+                    )}
                     {sub.boundaries && (
                       <Field label="Boundaries" value={sub.boundaries} />
+                    )}
+                    {sub.anything_else && (
+                      <Field label="Anything we should know" value={sub.anything_else} />
                     )}
                     {sub.why && (
                       <Field label="Why this interests them" value={sub.why} />

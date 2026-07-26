@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { MascotImage } from "@/components/MascotImage";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from "@/lib/notify";
 import type { Database } from "@/lib/types/db";
 
@@ -108,6 +109,7 @@ export default function NotificationsPage() {
       <div className="max-w-lg mx-auto pt-4">
         <div className="flex items-center justify-between gap-4 mb-2">
           <h1 className="font-display text-3xl md:text-4xl text-desert-night">Notifications</h1>
+          <InfoTooltip text="Every time someone drops a clip, tags you, or changes a status, you get a notification here. You can also turn on push notifications to get alerts on your phone." />
           {unreadCount > 0 && (
             <button onClick={markAllRead} className="btn btn-secondary btn-sm">
               Mark all read

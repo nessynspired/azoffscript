@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ImmersiveHome, type PublicCrewMember } from "@/components/ImmersiveHome";
-import { AnimatedIntro } from "@/components/AnimatedIntro";
+import { RoomEntrySplash } from "@/components/RoomEntrySplash";
 import { OrganizationSchema, WebSiteSchema } from "@/components/public/StructuredData";
 import { createClient } from "@/lib/supabase/server";
 
@@ -78,7 +78,7 @@ export default async function HomePage() {
     <>
       <OrganizationSchema />
       <WebSiteSchema />
-      <AnimatedIntro />
+      <RoomEntrySplash />
       <ImmersiveHome crew={crew} crewNames={crewNames} />
     </>
   );

@@ -52,11 +52,19 @@ export async function POST(request: NextRequest) {
     ? body.roles.filter((r): r is string => typeof r === "string").slice(0, 12)
     : [];
 
+  // Round 2 form fields (multi-select arrays)
+  const contentInterests = Array.isArray(body.contentInterests)
+    ? body.contentInterests.filter((r): r is string => typeof r === "string").slice(0, 20)
+    : [];
+  const availabilitySlots = Array.isArray(body.availability)
+    ? body.availability.filter((r): r is string => typeof r === "string").slice(0, 20)
+    : [];
+
   const submission = {
     name,
     city,
     socials: cap(str(body.socials), 200),
-    comfortable_on_camera: cap(str(body.comfortableOnCamera), 20),
+    comfortable_on_camera: cap(str(body.comfortableOnCamera), 60),
     content_type: cap(str(body.contentType), 2000),
     roles,
     availability: cap(str(body.availability), 200),
@@ -65,6 +73,11 @@ export async function POST(request: NextRequest) {
     lane: cap(str(body.lane), 120),
     guest_or_recurring: cap(str(body.guestOrRecurring), 20),
     clips_not_guaranteed: cap(str(body.clipsNotGuaranteed), 20),
+    // Round 2 fields
+    content_interests: contentInterests,
+    availability_slots: availabilitySlots,
+    willingness: cap(str(body.willingness), 20),
+    anything_else: cap(str(body.anythingElse), 2000),
     ip_address: getClientIp(request),
     user_agent: cap(request.headers.get("user-agent") ?? "", 500),
   };
@@ -94,8 +107,7 @@ export async function POST(request: NextRequest) {
         .eq("role", "admin");
 
       if (admins && admins.length > 0) {
-        const laneLabel = inserted.lane ? ` — ${inserted.lane}` : "";
-        const noteBody = `New join submission from ${inserted.name}${laneLabel}`;
+        const noteBody = `New Round 2 join submission from ${inserted.name}`;
         await service.from("notifications").insert(
           admins.map((a) => ({
             user_id: a.id,

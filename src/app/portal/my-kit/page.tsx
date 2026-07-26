@@ -5,6 +5,19 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { getMemberCard, getMemberGear } from "@/lib/crew-data";
+import { InfoTooltip } from "@/components/InfoTooltip";
+import { DropdownOrOther } from "@/components/DropdownOrOther";
+import {
+  NICKNAME_TITLE_OPTIONS,
+  AVAILABILITY_OPTIONS,
+  ROOM_VIBE_OPTIONS,
+  ONE_LINER_OPTIONS,
+  CAMERA_COMFORT_OPTIONS as CAMERA_COMFORT_PRESETS,
+  CONTENT_COMFORT_OPTIONS,
+  DO_NOT_USE_FOR_OPTIONS as DO_NOT_USE_FOR_PRESETS,
+  TAG_ME_OPTIONS,
+  BEST_PLATFORM_OPTIONS,
+} from "@/lib/profile-options";
 import { useTermsStatus } from "@/lib/hooks/use-terms-status";
 import { QUICK_TERMS_VERSION } from "@/lib/terms";
 import type { Database, GearStatus } from "@/lib/types/db";
@@ -41,15 +54,9 @@ const GEAR_STATUS_CHIP: Record<GearStatus, string> = {
   hold: "chip-hold",
 };
 
-const CAMERA_COMFORT_OPTIONS = ["Yes", "Maybe", "Behind-the-scenes"];
+const CAMERA_COMFORT_OPTIONS = CAMERA_COMFORT_PRESETS;
 
-const COMFORT_LEVELS = [
-  { value: "Low-Key", desc: "Involved, but don't make me the main focus without asking" },
-  { value: "Comfortable", desc: "Okay being in regular group clips after approval" },
-  { value: "Spotlight Okay", desc: "Okay being featured more directly if I approve the clip" },
-  { value: "Behind the Scenes", desc: "I want to help, but don't post me much or at all" },
-  { value: "Ask Every Time", desc: "Clip-by-clip approval before anything with me goes public" },
-];
+const COMFORT_LEVELS = CONTENT_COMFORT_OPTIONS.map((v) => ({ value: v, desc: "" }));
 
 const SHARE_COMFORTS = [
   { value: "Main page only", desc: "Okay on AZ Off Script page, but don't ask me to share it" },
@@ -59,17 +66,7 @@ const SHARE_COMFORTS = [
   { value: "Do not post me", desc: "I'm behind the scenes only" },
 ];
 
-const DO_NOT_USE_FOR_OPTIONS = [
-  { value: "silly", label: "Silly/goofy clips" },
-  { value: "reaction_memes", label: "Reaction memes" },
-  { value: "relationship", label: "Relationship topics" },
-  { value: "drama", label: "Drama/debate topics" },
-  { value: "beauty_body", label: "Beauty/body/appearance jokes" },
-  { value: "parenting", label: "Parenting/kids topics" },
-  { value: "sponsored", label: "Sponsored content" },
-  { value: "main_focus", label: "Anything where I'm the main focus" },
-  { value: "tagging", label: "Tagging my social page" },
-];
+const DO_NOT_USE_FOR_OPTIONS = DO_NOT_USE_FOR_PRESETS.map((v) => ({ value: v, label: v }));
 
 export default function MyWaveKitPage() {
   const { member } = useAuth();
@@ -97,6 +94,9 @@ export default function MyWaveKitPage() {
   const [comfortLevel, setComfortLevel] = useState("Ask Every Time");
   const [shareComfort, setShareComfort] = useState("Ask before tagging/sharing");
   const [doNotUseFor, setDoNotUseFor] = useState<string[]>([]);
+  const [roomVibe, setRoomVibe] = useState<string[]>([]);
+  const [tagMe, setTagMe] = useState("");
+  const [bestPlatform, setBestPlatform] = useState("");
 
   const load = useCallback(async () => {
     if (!member) return;
@@ -144,6 +144,9 @@ export default function MyWaveKitPage() {
       setComfortLevel(d.comfort_level ?? "Ask Every Time");
       setShareComfort(d.share_comfort ?? "Ask before tagging/sharing");
       setDoNotUseFor(d.do_not_use_for ?? []);
+      setRoomVibe(d.room_vibe ?? []);
+      setTagMe(d.tag_me ?? "");
+      setBestPlatform(d.best_platform ?? "");
     }
   }, [member, supabase]);
 
@@ -160,6 +163,9 @@ export default function MyWaveKitPage() {
       comfort_level: comfortLevel,
       share_comfort: shareComfort,
       do_not_use_for: doNotUseFor,
+      room_vibe: roomVibe,
+      tag_me: tagMe || null,
+      best_platform: bestPlatform || null,
       kit_acknowledged: true,
     }).eq("id", member.id);
     if (!error) {
@@ -200,6 +206,9 @@ export default function MyWaveKitPage() {
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">
           You&apos;re part of the First Wave.
         </h1>
+        <div className="mt-1">
+          <InfoTooltip dark text="Your personal hub — edit your profile, comfort settings, and social links. See your gear status, your drops, approvals waiting on you, and your assignments. Everything here is private to you (and admins)." />
+        </div>
         <Link href="/portal/my-kit/public-card" className="inline-flex items-center gap-2 mt-4 bg-copper-clay/20 hover:bg-copper-clay/30 text-sandstone-cream rounded-xl px-4 py-2 text-sm font-bold transition">
           <span>My Public Card</span>
           <span className="text-sandstone-cream/60">→</span>
@@ -218,15 +227,25 @@ export default function MyWaveKitPage() {
       {/* ===== FIRST WAVE CARD ===== */}
       <div className="card p-6 ticket-stub">
         <div className="flex items-center gap-5">
-          <div className="w-20 h-20 rounded-full bg-copper-clay/20 flex items-center justify-center shrink-0 overflow-hidden">
-            {profile.photo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="font-display text-3xl text-copper-clay">
-                {profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-              </span>
-            )}
+          <div className="relative shrink-0">
+            <div className="w-20 h-20 rounded-full bg-copper-clay/20 flex items-center justify-center overflow-hidden border-2 border-copper-clay/30">
+              {profile.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.photo_url} alt={profile.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-display text-3xl text-copper-clay">
+                  {profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                </span>
+              )}
+            </div>
+            <Link
+              href="/portal/my-kit/public-card"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-copper-clay text-bone-white flex items-center justify-center text-xs font-bold shadow-lg hover:bg-copper-deep transition-colors"
+              title="Upload photo"
+              aria-label="Upload photo"
+            >
+              ✎
+            </Link>
           </div>
           <div className="flex-1">
             <h2 className="font-display text-3xl text-desert-night leading-none">{profile.name}</h2>
@@ -239,6 +258,11 @@ export default function MyWaveKitPage() {
               {profile.role === "admin" && <span className="chip chip-yellow">Admin</span>}
               {tags.map((t) => <span key={t} className="chip chip-teal !text-[10px]">{t}</span>)}
             </div>
+            {!profile.photo_url && (
+              <Link href="/portal/my-kit/public-card" className="inline-block mt-3 text-xs text-copper-deep font-bold hover:underline">
+                + Add your portal photo
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -453,6 +477,28 @@ export default function MyWaveKitPage() {
               <span className="label">Camera comfort</span>
               <span className="font-bold text-desert-night">{cameraComfort || "Not set"}</span>
             </div>
+            {roomVibe.length > 0 && (
+              <div>
+                <span className="label">Room Vibe</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {roomVibe.map((v) => (
+                    <span key={v} className="chip chip-copper !text-[10px]">{v}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {tagMe && (
+              <div className="flex justify-between items-center">
+                <span className="label">Tag me?</span>
+                <span className="font-bold text-desert-night text-right">{tagMe}</span>
+              </div>
+            )}
+            {bestPlatform && (
+              <div className="flex justify-between items-center">
+                <span className="label">Best platform to tag</span>
+                <span className="font-bold text-desert-night">{bestPlatform}</span>
+              </div>
+            )}
             {availability && (
               <div className="flex justify-between items-center">
                 <span className="label">Best days/times</span>
@@ -497,12 +543,36 @@ export default function MyWaveKitPage() {
               <input id="kit-name" className="field" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
-              <label className="label" htmlFor="kit-nickname">Your Title</label>
-              <input id="kit-nickname" className="field" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="e.g. The Real One" />
+              <DropdownOrOther
+                label="Your Title"
+                value={nickname}
+                onChange={setNickname}
+                options={NICKNAME_TITLE_OPTIONS}
+                placeholder="e.g. The Real One"
+              />
             </div>
             <div>
-              <label className="label" htmlFor="kit-twist">One-liner (optional)</label>
-              <input id="kit-twist" className="field" value={plotTwist} onChange={(e) => setPlotTwist(e.target.value)} placeholder="One line that describes you" maxLength={120} />
+              <DropdownOrOther
+                label="One-liner / Plot Twist"
+                value={plotTwist}
+                onChange={setPlotTwist}
+                options={ONE_LINER_OPTIONS}
+                placeholder="One line that describes you"
+              />
+            </div>
+            <div>
+              <label className="label">Your Room Vibe</label>
+              <p className="text-xs text-smoked-charcoal/60 mb-2">Pick all that sound like you.</p>
+              <div className="flex flex-wrap gap-2">
+                {ROOM_VIBE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setRoomVibe((prev) => prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt])}
+                    className={`chip ${roomVibe.includes(opt) ? "chip-copper" : "chip-cream"}`}
+                  >{opt}</button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="label">Can we tag your social handle?</label>
@@ -510,6 +580,24 @@ export default function MyWaveKitPage() {
                 <button onClick={() => setCanTag(true)} className={`chip ${canTag === true ? "chip-approved" : "chip-cream"}`}>Yes</button>
                 <button onClick={() => setCanTag(false)} className={`chip ${canTag === false ? "chip-danger" : "chip-cream"}`}>No</button>
               </div>
+            </div>
+            <div>
+              <label className="label">Tag me?</label>
+              <select className="field" value={tagMe} onChange={(e) => setTagMe(e.target.value)}>
+                <option value="">Select…</option>
+                {TAG_ME_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Best platform to tag</label>
+              <select className="field" value={bestPlatform} onChange={(e) => setBestPlatform(e.target.value)}>
+                <option value="">Select…</option>
+                {BEST_PLATFORM_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="label">Best social handle</label>
@@ -521,15 +609,21 @@ export default function MyWaveKitPage() {
             </div>
             <div>
               <label className="label">Camera comfort</label>
-              <div className="flex gap-2">
+              <select className="field" value={cameraComfort} onChange={(e) => setCameraComfort(e.target.value)}>
+                <option value="">Select…</option>
                 {CAMERA_COMFORT_OPTIONS.map((opt) => (
-                  <button key={opt} onClick={() => setCameraComfort(opt)} className={`chip ${cameraComfort === opt ? "chip-copper" : "chip-cream"}`}>{opt}</button>
+                  <option key={opt} value={opt}>{opt}</option>
                 ))}
-              </div>
+              </select>
             </div>
             <div>
-              <label className="label" htmlFor="kit-avail">Best days/times</label>
-              <input id="kit-avail" className="field" value={availability} onChange={(e) => setAvailability(e.target.value)} placeholder="Weekdays after 5, weekends free" />
+              <DropdownOrOther
+                label="Best days/times"
+                value={availability}
+                onChange={setAvailability}
+                options={AVAILABILITY_OPTIONS}
+                placeholder="Weekdays after 5, weekends free"
+              />
             </div>
             <div>
               <label className="label" htmlFor="kit-address">Mailing Address <span className="text-xs text-cactus-teal font-bold normal-case">🔒 private</span></label>
@@ -543,18 +637,12 @@ export default function MyWaveKitPage() {
             </div>
             <div>
               <label className="label">Content Comfort Level</label>
-              <div className="space-y-2">
+              <select className="field" value={comfortLevel} onChange={(e) => setComfortLevel(e.target.value)}>
+                <option value="">Select…</option>
                 {COMFORT_LEVELS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setComfortLevel(opt.value)}
-                    className={`w-full text-left p-3 rounded-xl border-2 transition-colors ${comfortLevel === opt.value ? "border-copper-clay bg-copper-clay/10" : "border-desert-night/10 hover:border-desert-night/20"}`}
-                  >
-                    <p className="font-bold text-desert-night text-sm">{opt.value}</p>
-                    <p className="text-xs text-smoked-charcoal/60">{opt.desc}</p>
-                  </button>
+                  <option key={opt.value} value={opt.value}>{opt.value}</option>
                 ))}
-              </div>
+              </select>
             </div>
             <div>
               <label className="label">Share Comfort</label>

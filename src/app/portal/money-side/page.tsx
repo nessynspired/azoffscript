@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage } from "@/components/MascotImage";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database } from "@/lib/types/db";
 
 type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "role" | "can_plan_content">;
@@ -73,6 +74,7 @@ export default function MoneySidePage() {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Money Side</h1>
+          <InfoTooltip text="Tracks revenue from paid content, platform payouts, and merch. Planners can log revenue events and set up splits. Admins approve payouts. Right now this is mostly setup — money isn't active yet." />
         </div>
 
         <div className="card-dark p-8 relative overflow-hidden">
@@ -124,6 +126,7 @@ export default function MoneySidePage() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Money Side</h1>
+          <InfoTooltip text="Tracks revenue from paid content, platform payouts, and merch. Planners can log revenue events and set up splits. Admins approve payouts. Right now this is mostly setup — money isn't active yet." />
           <p className="text-smoked-charcoal/70 mt-2">
             Revenue events, splits, and payouts. {isAdmin ? "You can approve payouts." : "You can view but not approve payouts."}
           </p>

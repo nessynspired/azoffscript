@@ -12,7 +12,13 @@ import {
   type QuickDropTemplate,
   type EffortLabel,
 } from "@/lib/quick-drop-templates";
+import {
+  OFF_SCRIPT_BY_TEMPLATE_ID,
+  SCRIPT_LAYER_FILTERS,
+  type OffScriptVersion,
+} from "@/lib/off-script-versions";
 import { calcDeadlinesFromLive, nextSunday } from "@/lib/plan-defaults";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database } from "@/lib/types/db";
 
 type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content">;
@@ -41,6 +47,8 @@ export default function ReadyBankPage() {
   const [effortFilter, setEffortFilter] = useState<string | null>(null);
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [bucketFilter, setBucketFilter] = useState<string | null>(null);
+  const [versionFilter, setVersionFilter] = useState<"current" | "offscript" | "both">("current");
+  const [scriptLayerFilters, setScriptLayerFilters] = useState<string[]>([]);
 
   // Saved templates (localStorage bookmarks)
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -157,9 +165,27 @@ export default function ReadyBankPage() {
     if (tagFilters.includes("arizona") && !t.bucket.includes("Arizona") && t.bucket !== "Arizona Moments") return false;
     if (tagFilters.includes("groupDay") && t.effort !== "Group Day") return false;
     if (tagFilters.includes("editHeavy") && !t.needsEditing) return false;
+
+    // Version filter — "offscript" only shows templates that have a B version
+    const offScript = OFF_SCRIPT_BY_TEMPLATE_ID.get(t.id);
+    if (versionFilter === "offscript" && !offScript) return false;
+
+    // Script Layer filter — template must match ALL selected script layer tags
+    if (scriptLayerFilters.length > 0 && offScript) {
+      const hasAll = scriptLayerFilters.every((f) => offScript.scriptTags.includes(f));
+      if (!hasAll) return false;
+    }
+    if (scriptLayerFilters.length > 0 && !offScript) return false;
+
     if (search.trim()) {
       const q = search.toLowerCase();
-      if (!t.name.toLowerCase().includes(q) && !t.bucket.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q)) return false;
+      const matchA = t.name.toLowerCase().includes(q) || t.bucket.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
+      const matchB = offScript
+        ? offScript.scriptTitle.toLowerCase().includes(q) ||
+          offScript.scriptDescription.toLowerCase().includes(q) ||
+          offScript.promptExamples.some((p) => p.toLowerCase().includes(q))
+        : false;
+      if (!matchA && !matchB) return false;
     }
     return true;
   });
@@ -178,6 +204,7 @@ export default function ReadyBankPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-3xl md:text-4xl text-desert-night">Ready Bank</h1>
+        <InfoTooltip text="A library of vetted, ready-to-use content templates and ideas. These are sparks from the Spark Board that have been approved for production. Planners can create scheduled clips from any template here — that sends them to the Run Sheet for the crew to film." />
         <p className="text-smoked-charcoal/70 mt-2">
           Vetted ideas and formats ready to pull into the calendar. Not posted. Not filmed. Just ready to plan.
         </p>
@@ -263,6 +290,51 @@ export default function ReadyBankPage() {
             })}
           </div>
         </div>
+
+        {/* Version filter — A: Current / B: Off Script / Both */}
+        <div>
+          <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5 flex items-center gap-1">
+            Version
+            <InfoTooltip text="A: Current = the original format. B: Off Script = the deeper brand-native rewrite with social script / script break angle. Both = show every card with a toggle on each." />
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setVersionFilter("current")}
+              className={`chip !text-xs ${versionFilter === "current" ? "chip-copper" : "chip-cream"}`}
+            >A: Current</button>
+            <button
+              onClick={() => setVersionFilter("offscript")}
+              className={`chip !text-xs ${versionFilter === "offscript" ? "chip-copper" : "chip-cream"}`}
+            >B: Off Script</button>
+            <button
+              onClick={() => setVersionFilter("both")}
+              className={`chip !text-xs ${versionFilter === "both" ? "chip-copper" : "chip-cream"}`}
+            >Both</button>
+          </div>
+        </div>
+
+        {/* Script Layer filter — only relevant when Off Script versions are visible */}
+        {(versionFilter === "offscript" || versionFilter === "both") && (
+          <div>
+            <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5 flex items-center gap-1">
+              Script Layer
+              <InfoTooltip text="Filter by the type of social script being broken. A card matches if its Off Script version has ALL selected tags." />
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setScriptLayerFilters([])}
+                className={`chip !text-[10px] ${scriptLayerFilters.length === 0 ? "chip-copper" : "chip-cream"}`}
+              >All</button>
+              {SCRIPT_LAYER_FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setScriptLayerFilters((prev) => prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f])}
+                  className={`chip !text-[10px] ${scriptLayerFilters.includes(f) ? "chip-copper" : "chip-cream"}`}
+                >{f}</button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Results count */}
@@ -276,6 +348,8 @@ export default function ReadyBankPage() {
           <ReadyBankCard
             key={t.id}
             template={t}
+            offScript={OFF_SCRIPT_BY_TEMPLATE_ID.get(t.id)}
+            versionFilter={versionFilter}
             isSaved={savedIds.includes(t.id)}
             isPlanner={isPlanner}
             onToggleSave={() => toggleSaved(t.id)}
@@ -395,9 +469,11 @@ export default function ReadyBankPage() {
 }
 
 function ReadyBankCard({
-  template, isSaved, isPlanner, onToggleSave, onAddToWeek, onAddToDate, onAssignCrew,
+  template, offScript, versionFilter, isSaved, isPlanner, onToggleSave, onAddToWeek, onAddToDate, onAssignCrew,
 }: {
   template: QuickDropTemplate;
+  offScript?: OffScriptVersion;
+  versionFilter: "current" | "offscript" | "both";
   isSaved: boolean;
   isPlanner: boolean;
   onToggleSave: () => void;
@@ -405,18 +481,45 @@ function ReadyBankCard({
   onAddToDate: () => void;
   onAssignCrew: () => void;
 }) {
+  // Default to B view when version filter is "offscript"
+  const [showB, setShowB] = useState(versionFilter === "offscript");
+
+  // Sync when version filter changes
+  useEffect(() => {
+    if (versionFilter === "offscript") setShowB(true);
+    if (versionFilter === "current") setShowB(false);
+  }, [versionFilter]);
+
+  const hasB = !!offScript;
+
   return (
     <div className="card p-5 space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-display text-lg text-desert-night">{template.name}</p>
+          <p className="font-display text-lg text-desert-night">
+            {showB && offScript ? offScript.scriptTitle : template.name}
+          </p>
           <p className="text-xs text-smoked-charcoal/50 mt-0.5">{template.bucket}</p>
         </div>
         <button onClick={onToggleSave} className="text-2xl shrink-0" title={isSaved ? "Saved" : "Save for later"}>
           {isSaved ? "🔖" : "📑"}
         </button>
       </div>
+
+      {/* A/B toggle — only show if B version exists and version filter allows both */}
+      {hasB && versionFilter === "both" && (
+        <div className="flex gap-1 bg-desert-night/10 rounded-lg p-1 w-fit">
+          <button
+            onClick={() => setShowB(false)}
+            className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${!showB ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+          >A: Current</button>
+          <button
+            onClick={() => setShowB(true)}
+            className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${showB ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+          >B: Off Script</button>
+        </div>
+      )}
 
       {/* Tags */}
       <div className="flex flex-wrap gap-1.5">
@@ -425,27 +528,86 @@ function ReadyBankCard({
         {!template.needsTalking && <span className="chip chip-cream !text-[9px]">🤫 No talking</span>}
         {template.needsEditing && <span className="chip chip-cream !text-[9px]">✂️ Edit</span>}
         {template.adminStitches && <span className="chip chip-cream !text-[9px]">🔗 Stitch</span>}
+        {showB && offScript && offScript.scriptTags.map((tag) => (
+          <span key={tag} className="chip chip-copper !text-[9px]">{tag}</span>
+        ))}
       </div>
 
-      {/* Description */}
-      <p className="text-sm text-smoked-charcoal/70">{template.description}</p>
+      {/* ===== A: CURRENT VERSION ===== */}
+      {!showB && (
+        <>
+          <p className="text-sm text-smoked-charcoal/70">{template.description}</p>
 
-      {/* SEO phrase */}
-      <div className="bg-cactus-teal/10 rounded-lg p-2">
-        <p className="text-xs font-bold text-desert-night/50 uppercase">Search phrase</p>
-        <p className="text-sm text-desert-night font-bold">&ldquo;{template.seoPhrase}&rdquo;</p>
-      </div>
+          <div className="bg-cactus-teal/10 rounded-lg p-2">
+            <p className="text-xs font-bold text-desert-night/50 uppercase">Search phrase</p>
+            <p className="text-sm text-desert-night font-bold">&ldquo;{template.seoPhrase}&rdquo;</p>
+          </div>
 
-      {/* Caption + hashtags */}
-      <div className="space-y-1">
-        <p className="text-xs font-bold text-desert-night/50 uppercase">Caption starter</p>
-        <p className="text-sm text-desert-night">{template.captionStarter}</p>
-        <div className="flex flex-wrap gap-1 mt-1">
-          {template.hashtagStarter.map((tag) => (
-            <span key={tag} className="text-[10px] text-copper-deep">{tag} </span>
-          ))}
-        </div>
-      </div>
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-desert-night/50 uppercase">Caption starter</p>
+            <p className="text-sm text-desert-night">{template.captionStarter}</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {template.hashtagStarter.map((tag) => (
+                <span key={tag} className="text-[10px] text-copper-deep">{tag} </span>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ===== B: OFF SCRIPT VERSION ===== */}
+      {showB && offScript && (
+        <>
+          <p className="text-sm text-smoked-charcoal/70">{offScript.scriptDescription}</p>
+
+          {/* The Script / The Break — the core of the B version */}
+          <div className="space-y-2">
+            <div className="bg-smoked-charcoal/5 rounded-lg p-2 border-l-3 border-smoked-charcoal/30">
+              <p className="text-xs font-bold text-smoked-charcoal/50 uppercase">The Script</p>
+              <p className="text-sm text-smoked-charcoal italic">&ldquo;{offScript.socialScript}&rdquo;</p>
+            </div>
+            <div className="bg-copper-clay/10 rounded-lg p-2 border-l-3 border-copper-clay">
+              <p className="text-xs font-bold text-copper-deep uppercase">The Break</p>
+              <p className="text-sm text-desert-night font-bold">{offScript.scriptBreak}</p>
+            </div>
+          </div>
+
+          {/* Audience Mirror */}
+          <div className="bg-cactus-teal/10 rounded-lg p-2">
+            <p className="text-xs font-bold text-desert-night/50 uppercase">Audience Mirror</p>
+            <p className="text-sm text-desert-night">{offScript.audienceMirror}</p>
+          </div>
+
+          {/* Caption starter (B version) */}
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-desert-night/50 uppercase">B Caption Starter</p>
+            <p className="text-sm text-desert-night">{offScript.scriptCaptionStarter}</p>
+          </div>
+
+          {/* Prompt examples */}
+          {offScript.promptExamples.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Prompt Examples</p>
+              <ul className="space-y-1">
+                {offScript.promptExamples.map((p, i) => (
+                  <li key={i} className="text-sm text-smoked-charcoal/70 flex gap-2">
+                    <span className="text-copper-clay shrink-0">→</span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Depth level */}
+          <p className="text-[10px] text-smoked-charcoal/40 italic">Depth: {offScript.depthLevel}</p>
+        </>
+      )}
+
+      {/* No B version available */}
+      {showB && !hasB && (
+        <p className="text-sm text-smoked-charcoal/40 italic">No Off Script version for this format yet.</p>
+      )}
 
       {/* Actions */}
       {isPlanner ? (

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database } from "@/lib/types/db";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
@@ -132,6 +133,7 @@ export default function CrewProfilesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Crew Profiles</h1>
+        <InfoTooltip text="Admin only. Controls who shows up on the public website (azoffscript.com homepage and /crew page). Toggle 'Make Public' for each person, edit their bio/nickname/tags, and pick how they're sorted. Changes go live immediately." />
         <p className="text-smoked-charcoal/70 mt-2 text-lg">
           Control who appears on the public website and how they&apos;re shown.
         </p>

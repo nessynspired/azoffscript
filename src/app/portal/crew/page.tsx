@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import { QUICK_TERMS_VERSION } from "@/lib/terms";
 import type { Database } from "@/lib/types/db";
 
@@ -161,6 +162,7 @@ export default function CrewPage() {
         </div>
         <div className="relative z-10">
           <h1 className="font-display text-3xl md:text-5xl text-sandstone-cream leading-none drop-shadow-lg">The Crew</h1>
+          <div className="mt-1"><InfoTooltip dark text="The crew directory — everyone in the room with their roles, tags, and profiles. Admins can see terms status (who signed what), toggle planning access, and create member rows for people who signed up but didn't get a profile." /></div>
           <p className="text-sandstone-cream/90 mt-2 text-lg drop-shadow">First Wave members of The Off Script Room.</p>
         </div>
       </section>

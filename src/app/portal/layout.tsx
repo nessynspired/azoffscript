@@ -33,11 +33,12 @@ function PortalShell({ children }: { children: React.ReactNode }) {
   // member row may briefly not exist right after signup if trigger is delayed
   const memberName = member?.name ?? user.email?.split("@")[0] ?? "Crew";
   const memberRole = member?.role ?? "member";
+  const avatarUrl = member?.photo_url ?? null;
 
   return (
     <TermsGate>
       <div className="portal-shell">
-        <PortalTopBar memberName={memberName} memberRole={memberRole} />
+        <PortalTopBar memberName={memberName} memberRole={memberRole} avatarUrl={avatarUrl} />
         <QuickTermsBanner />
         <main className="max-w-7xl mx-auto w-full px-4 md:px-6 py-6 md:py-8">
           {children}

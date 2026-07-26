@@ -9,6 +9,7 @@ import { HEAT_VIBES, POST_COUNTS, EFFORT_LEVELS, generateWeekPlan, calcDeadlines
 import { QUICK_DROP_TEMPLATES, CONTENT_BUCKETS, getTemplate, getTemplatesByBucket, getExampleFor, type QuickDropTemplate, type EffortLabel } from "@/lib/quick-drop-templates";
 import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
@@ -238,22 +239,25 @@ export default function RunSheetPage() {
   const productionClips = clips.filter((c) => c.type === "video" || c.type === "final_cut");
   const themeMap = new Map(themes.map((t) => [t.id, t]));
 
-  const TABS: { key: typeof tab; label: string; count?: number }[] = [
-    { key: "week", label: "This Week" },
-    ...(canPlanContent ? [{ key: "planner" as const, label: "Planner" }] : []),
-    { key: "calendar", label: "Calendar" },
-    { key: "flow", label: "Studio Flow", count: productionClips.length },
-    { key: "board", label: "Assignment Board", count: assignments.length },
-    { key: "trends", label: "Trend Drops", count: trends.length },
-    { key: "heat", label: "Weekly Heat", count: themes.length },
-    { key: "watch", label: "Watch", count: clips.filter((c) => c.status === "Live").length },
+  const TABS: { key: typeof tab; label: string; count?: number; info: string }[] = [
+    { key: "week", label: "This Week", info: "Your default view — shows recent drops, your part (assignments), greenlights you need to give, deadlines this week, what's going live, and what's stuck. Good for a quick check-in." },
+    ...(canPlanContent ? [{ key: "planner" as const, label: "Planner", info: "Admin/planner dashboard — stuck clips, waiting assignments, clips ready for Vanessa to greenlight, and trends that need planning. Use this to keep things moving." }] : []),
+    { key: "calendar", label: "Calendar", info: "Week or month view showing scheduled post dates, deadlines, and active themes. Planners can drag templates from the side panel onto the calendar to schedule them." },
+    { key: "flow", label: "Studio Flow", count: productionClips.length, info: "Kanban pipeline showing videos moving through production: Dropped → Planned → Shot → Cutting → Review → Ready → Scheduled → Live → Vault. Only shows actual videos, not links or ideas." },
+    { key: "board", label: "Assignment Board", count: assignments.length, info: "Shows who's been assigned to what. Planners can assign crew members to clips and track whether assignments are done, waiting, or overdue." },
+    { key: "trends", label: "Trend Drops", count: trends.length, info: "TikTok trends and references the crew has dropped for inspiration. Planners can group trends into Weekly Heat themes and turn them into planned clips." },
+    { key: "heat", label: "Weekly Heat", count: themes.length, info: "The weekly content theme — what the room is focused on this week. Planners can create themes, attach trends and clips to them, and set the date range." },
+    { key: "watch", label: "Watch", count: clips.filter((c) => c.status === "Live").length, info: "Clips that have gone live (posted to TikTok, Instagram, etc.). Filter by platform. Use this to watch what's already out there." },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">The Run Sheet</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-4xl md:text-5xl text-desert-night leading-none">The Run Sheet</h1>
+            <InfoTooltip text="The central hub for all content — from raw drops to posted clips. Use the tabs below to switch between views: This Week (overview), Calendar (schedule), Studio Flow (production pipeline), and more. Click any clip to see details, tag people, set deadlines, or change status." />
+          </div>
           <p className="text-smoked-charcoal/70 mt-2 text-lg">This is what&apos;s moving next.</p>
         </div>
         {canPlanContent && (
@@ -278,13 +282,15 @@ export default function RunSheetPage() {
       {/* Tab bar — horizontal scroll on mobile, wrap on desktop */}
       <div className="flex gap-2 bg-desert-night/10 rounded-full p-1 w-fit overflow-x-auto max-w-full -mx-4 px-4 md:mx-0 md:px-1 md:flex-wrap">
         {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-full text-sm font-black uppercase whitespace-nowrap shrink-0 ${tab === t.key ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
-          >
-            {t.label}{t.count !== undefined ? ` (${t.count})` : ""}
-          </button>
+          <span key={t.key} className="relative inline-flex">
+            <button
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2 rounded-full text-sm font-black uppercase whitespace-nowrap shrink-0 ${tab === t.key ? "bg-desert-night text-sunburst-yellow" : "text-desert-night"}`}
+            >
+              {t.label}{t.count !== undefined ? ` (${t.count})` : ""}
+            </button>
+            <InfoTooltip text={t.info} />
+          </span>
         ))}
       </div>
 
@@ -751,6 +757,7 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
+  const [showSidePanel, setShowSidePanel] = useState(false);
   const scheduled = clips.filter((c) => c.scheduled_date || c.clip_due_date || c.approval_due || c.idea_due_date || c.final_cut_due || c.due_date);
   const today = new Date();
 
@@ -834,9 +841,21 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
         </div>
       )}
 
+      {/* Toggle for side panel (planners only) */}
+      {canPlanContent && member && members && onRefresh && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowSidePanel(!showSidePanel)}
+            className={`btn btn-sm ${showSidePanel ? "btn-primary" : "btn-secondary"}`}
+          >
+            {showSidePanel ? "✕ Hide templates" : "+ Show Ready to Schedule"}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Calendar grid */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-7 gap-2">
+        {/* Calendar grid — always 7 columns so it doesn't stack vertically */}
+        <div className="flex-1 grid grid-cols-7 gap-1 md:gap-2 min-w-0">
         {days.map((day) => {
           const isToday = day.toDateString() === today.toDateString();
           const isOtherMonth = isMonth && day.getMonth() !== monthDate.getMonth();
@@ -845,9 +864,9 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
             return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
           });
           return (
-            <div key={day.toISOString()} className={`card p-2 ${isMonth ? "min-h-[90px]" : "min-h-[120px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
+            <div key={day.toISOString()} className={`card p-1 md:p-2 ${isMonth ? "min-h-[70px] md:min-h-[90px]" : "min-h-[90px] md:min-h-[120px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
               <div className="flex items-center justify-between">
-                <p className={`font-display text-sm text-desert-night ${isMonth ? "text-xs" : ""}`}>
+                <p className={`font-display text-desert-night ${isMonth ? "text-[10px] md:text-xs" : "text-xs md:text-sm"}`}>
                   {(isMonth || day.getDate() === 1 || isToday) ? day.toLocaleDateString(undefined, { weekday: "short" }) : ""}
                 </p>
                 <p className={`text-xs ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
@@ -883,8 +902,8 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
         </div>
       )}
 
-        {/* Ready to Schedule side panel — planner/admin only */}
-        {canPlanContent && member && members && onRefresh && (
+        {/* Ready to Schedule side panel — planner/admin only, toggleable */}
+        {canPlanContent && member && members && onRefresh && showSidePanel && (
           <ReadyToSchedulePanel member={member} members={members} onRefresh={onRefresh} />
         )}
       </div>

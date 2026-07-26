@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { getMemberGear } from "@/lib/crew-data";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database, GearItemType, GearStatus } from "@/lib/types/db";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
@@ -112,6 +113,7 @@ export default function AdminGearBoardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Gear Board</h1>
+        <InfoTooltip text="Admin only. Track personalized merch for each crew member — tumblers, mugs, shirts, badges, stickers, invites, and member cards. Update the status from 'not started' through 'delivered' so everyone knows where their gear is." />
         <p className="text-smoked-charcoal/70 mt-2 text-lg">Manage personalized gear for every member.</p>
       </div>
 
