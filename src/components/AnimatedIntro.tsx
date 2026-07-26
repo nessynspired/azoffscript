@@ -71,7 +71,7 @@ export function AnimatedIntro() {
   const isLight = theme === "afternoon";
   const textColor = isLight ? "#0d1b2a" : "#faf7f0";
   const subColor = isLight ? "#8f4226" : "#ffd23f";
-  const logoSrc = isLight ? "/assets/logos/logo-combined-black.png" : "/assets/logos/logo-combined-white.png";
+  const logoSrc = "/assets/logos/logo-official.png";
 
   return (
     <div

@@ -14,7 +14,7 @@ export function PublicNav() {
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/logos/logo-combined-white.png" alt="AZ Off Script" className="h-10 w-auto" />
+          <img src="/assets/logos/logo-official.png" alt="AZ Off Script" className="h-12 w-auto" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">

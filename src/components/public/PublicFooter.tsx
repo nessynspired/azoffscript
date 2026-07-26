@@ -16,7 +16,7 @@ export function PublicFooter() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/logos/logo-combined-white.png" alt="AZ Off Script" className="h-9 w-auto" />
+            <img src="/assets/logos/logo-official.png" alt="AZ Off Script" className="h-10 w-auto" />
           </div>
 
           <nav className="flex flex-wrap items-center gap-3 md:gap-4 text-sm">
