@@ -109,7 +109,7 @@ export default function RunSheetPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "heat" | "watch" | "planner" | "readybank">("week");
+  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "heat" | "watch" | "planner">("week");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
@@ -243,7 +243,6 @@ export default function RunSheetPage() {
     ...(canPlanContent ? [{ key: "planner" as const, label: "Planner" }] : []),
     { key: "calendar", label: "Calendar" },
     { key: "flow", label: "Studio Flow", count: productionClips.length },
-    ...(canPlanContent ? [{ key: "readybank" as const, label: "Ready Bank" }] : []),
     { key: "board", label: "Assignment Board", count: assignments.length },
     { key: "trends", label: "Trend Drops", count: trends.length },
     { key: "heat", label: "Weekly Heat", count: themes.length },
@@ -421,11 +420,6 @@ export default function RunSheetPage() {
           onSelectClip={(id) => setSelectedClip(id)}
           onRefresh={load}
         />
-      )}
-
-      {/* READY BANK — vetted ideas/templates ready to schedule */}
-      {tab === "readybank" && canPlanContent && (
-        <ReadyBankTab member={member} members={members} onRefresh={load} />
       )}
 
       {/* WATCH — posted/live videos */}

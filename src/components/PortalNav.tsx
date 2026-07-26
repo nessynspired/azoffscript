@@ -28,9 +28,8 @@ const CREW_PRIMARY: NavItem[] = [
 ];
 
 const CREW_MORE: NavItem[] = [
-  { href: "/portal/drop", label: "Drop a Clip" },
   { href: "/portal/crew", label: "Crew" },
-  { href: "/portal/ready", label: "Greenlights" },
+  { href: "/portal/sparks", label: "Spark Board" },
   { href: "/portal/brand-locker", label: "Brand Locker" },
   { href: "/portal/ground-rules", label: "Ground Rules" },
   { href: "/portal/notifications", label: "Notifications" },
@@ -46,10 +45,7 @@ const PLANNER_PRIMARY: NavItem[] = [
 ];
 
 const PLANNER_MORE: NavItem[] = [
-  { href: "/portal/drop", label: "Drop a Clip" },
-  { href: "/portal/ready-bank", label: "Ready Bank" },
   { href: "/portal/sparks", label: "Spark Board" },
-  { href: "/portal/ready", label: "Greenlights" },
   { href: "/portal/gear-board", label: "Gear Board" },
   { href: "/portal/invites", label: "Invites" },
   { href: "/portal/agreements", label: "Agreements" },
@@ -66,8 +62,8 @@ const PLANNER_MORE: NavItem[] = [
 const CREW_MOBILE: NavItem[] = [
   { href: "/portal/lobby", label: "Lobby" },
   { href: "/portal/run-sheet", label: "Run Sheet" },
+  { href: "/portal/crew", label: "Crew" },
   { href: "/portal/my-kit", label: "My Kit" },
-  { href: "/portal/sparks", label: "Sparks" },
 ];
 
 const PLANNER_MOBILE: NavItem[] = [
