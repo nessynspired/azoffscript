@@ -33,23 +33,29 @@ function wordmarkSVG({ textColor, azColor }) {
 }
 
 async function makeCombinedLogo(name, { textColor, azColor, bgColor, includeBg }) {
-  // 1. Prepare mascot: crop top square (head + upper body), resize to logo height
   const LOGO_H = 400;
-  const mascotTopCrop = 1024; // crop top 1024px of the 1024x1536 mascot
+
+  // 1. Prepare mascot: crop a tight center column from the top portion
+  //    (just the character, not the transparent space around it), then
+  //    resize to logo height. The mascot is 1024x1536 — the character
+  //    occupies roughly the center 620px of the width.
+  const mascotTopCrop = 1024;
+  const cropLeft = 200;  // skip transparent left margin
+  const cropWidth = 624; // tight crop around the character
   const mascot = await sharp(MASCOT_SRC)
-    .extract({ left: 0, top: 0, width: 1024, height: mascotTopCrop })
-    .resize(Math.round(LOGO_H * (1024 / mascotTopCrop)), LOGO_H, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } });
+    .extract({ left: cropLeft, top: 0, width: cropWidth, height: mascotTopCrop })
+    .resize({ height: LOGO_H, fit: "inside" });
 
   // 2. Render the wordmark text as a PNG
   const wordmark = await sharp(Buffer.from(wordmarkSVG({ textColor, azColor })))
     .resize({ height: LOGO_H, fit: "inside" });
 
-  // 3. Get dimensions
+  // 3. Get trimmed dimensions
   const mascotMeta = await mascot.metadata();
   const wordMeta = await wordmark.metadata();
   const mascotW = mascotMeta.width;
   const wordW = wordMeta.width;
-  const gap = 30;
+  const gap = 12; // tight gap between character and wordmark
   const totalW = mascotW + gap + wordW;
   const totalH = LOGO_H;
 

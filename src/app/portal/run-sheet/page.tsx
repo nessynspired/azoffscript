@@ -754,25 +754,41 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
   members?: Member[];
   onRefresh?: () => Promise<void>;
 }) {
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
   const scheduled = clips.filter((c) => c.scheduled_date || c.clip_due_date || c.approval_due || c.idea_due_date || c.final_cut_due || c.due_date);
   const today = new Date();
+
+  // Week view setup
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - today.getDay() + weekOffset * 7);
-  const days = Array.from({ length: 7 }).map((_, i) => {
+  const weekDays = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
     return d;
   });
 
-  // Active themes for this week
-  const weekThemes = themes.filter((t) => {
+  // Month view setup
+  const monthDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+  const monthStart = new Date(monthDate);
+  monthStart.setDate(1 - monthStart.getDay()); // back to Sunday
+  const monthDays = Array.from({ length: 42 }).map((_, i) => {
+    const d = new Date(monthStart);
+    d.setDate(monthStart.getDate() + i);
+    return d;
+  });
+
+  // Active themes for current view range
+  const viewStart = viewMode === "week" ? weekStart : monthDays[0];
+  const viewEnd = viewMode === "week" ? weekDays[6] : monthDays[41];
+  const viewThemes = themes.filter((t) => {
     if (!t.start_date && !t.end_date) return false;
-    const ws = weekStart.getTime();
-    const we = days[6].getTime();
+    const vs = viewStart.getTime();
+    const ve = viewEnd.getTime();
     const ts = t.start_date ? new Date(t.start_date).getTime() : 0;
     const te = t.end_date ? new Date(t.end_date).getTime() : Date.now();
-    return ts <= we && te >= ws;
+    return ts <= ve && te >= vs;
   });
 
   const DEADLINE_TYPES: { field: keyof ClipMeta; label: string; color: string }[] = [
@@ -783,24 +799,42 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
     { field: "scheduled_date", label: "Goes Live", color: "text-cactus-teal" },
   ];
 
+  const isMonth = viewMode === "month";
+  const days = isMonth ? monthDays : weekDays;
+  const offset = isMonth ? monthOffset : weekOffset;
+  const setOffset = isMonth ? setMonthOffset : setWeekOffset;
+
   return (
     <div className="space-y-4">
-      {/* Week navigation */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => setWeekOffset(weekOffset - 1)} className="btn btn-ghost btn-sm">← Prev</button>
+      {/* Navigation + view toggle */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <button onClick={() => setOffset(offset - 1)} className="btn btn-ghost btn-sm">← Prev</button>
         <span className="font-display text-lg text-desert-night">
-          {days[0].toLocaleDateString(undefined, { month: "short", day: "numeric" })} — {days[6].toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          {isMonth
+            ? monthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+            : `${weekDays[0].toLocaleDateString(undefined, { month: "short", day: "numeric" })} — ${weekDays[6].toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+          }
         </span>
-        <button onClick={() => setWeekOffset(weekOffset + 1)} className="btn btn-ghost btn-sm">Next →</button>
-        {weekOffset !== 0 && (
-          <button onClick={() => setWeekOffset(0)} className="btn btn-secondary btn-sm ml-2">Today</button>
+        <button onClick={() => setOffset(offset + 1)} className="btn btn-ghost btn-sm">Next →</button>
+        {offset !== 0 && (
+          <button onClick={() => setOffset(0)} className="btn btn-secondary btn-sm ml-2">Today</button>
         )}
+        <div className="ml-auto flex gap-1 bg-desert-night/10 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode("week")}
+            className={`px-3 py-1 text-xs font-bold rounded-md transition ${viewMode === "week" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+          >Week</button>
+          <button
+            onClick={() => setViewMode("month")}
+            className={`px-3 py-1 text-xs font-bold rounded-md transition ${viewMode === "month" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+          >Month</button>
+        </div>
       </div>
 
-      {/* Active Weekly Heat for this week */}
-      {weekThemes.length > 0 && (
+      {/* Active Weekly Heat for this range */}
+      {viewThemes.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {weekThemes.map((t) => (
+          {viewThemes.map((t) => (
             <span key={t.id} className="chip chip-copper">🔥 {t.name}</span>
           ))}
         </div>
@@ -808,37 +842,37 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
 
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Calendar grid */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-7 gap-3">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-7 gap-2">
         {days.map((day) => {
           const isToday = day.toDateString() === today.toDateString();
+          const isOtherMonth = isMonth && day.getMonth() !== monthDate.getMonth();
           const dayClips = scheduled.filter((c) => {
             const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
             return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
           });
           return (
-            <div key={day.toISOString()} className={`card p-3 min-h-[120px] ${isToday ? "ring-2 ring-copper-clay" : ""}`}>
+            <div key={day.toISOString()} className={`card p-2 ${isMonth ? "min-h-[90px]" : "min-h-[120px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
               <div className="flex items-center justify-between">
-                <p className="font-display text-sm text-desert-night">
-                  {day.toLocaleDateString(undefined, { weekday: "short" })}
+                <p className={`font-display text-sm text-desert-night ${isMonth ? "text-xs" : ""}`}>
+                  {(isMonth || day.getDate() === 1 || isToday) ? day.toLocaleDateString(undefined, { weekday: "short" }) : ""}
                 </p>
-                <p className={`text-xs ${isToday ? "text-copper-deep font-black" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
+                <p className={`text-xs ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
               </div>
-              <div className="space-y-2 mt-2">
+              <div className="space-y-1 mt-1">
                 {dayClips.map((c) => {
-                  // Find which deadline(s) match this day
                   const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
                     const val = c[dt.field] as string | null;
                     return val && new Date(val).toDateString() === day.toDateString();
                   });
                   const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
                   return (
-                    <div key={c.id} className={`rounded-lg p-2 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
-                      <p className="text-xs font-bold text-desert-night leading-tight">{c.title}</p>
+                    <div key={c.id} className={`rounded-lg p-1.5 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
+                      <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"}`}>{c.title}</p>
                       {matchingDeadlines.map((d) => (
-                        <span key={d.label} className={`text-[10px] font-black ${d.color} block`}>{d.label}</span>
+                        <span key={d.label} className={`font-black ${d.color} block ${isMonth ? "text-[9px]" : "text-[10px]"}`}>{d.label}</span>
                       ))}
-                      <span className={`chip ${STATUS_CHIP[c.status]} !text-[10px] !py-0.5 mt-1`}>{c.status}</span>
-                      {c.theme_id && themeMap.get(c.theme_id) && (
+                      <span className={`chip ${STATUS_CHIP[c.status]} ${isMonth ? "!text-[9px] !py-0" : "!text-[10px] !py-0.5"} mt-1`}>{c.status}</span>
+                      {c.theme_id && themeMap.get(c.theme_id) && !isMonth && (
                         <span className="text-[10px] text-copper-deep block mt-1">🔥 {themeMap.get(c.theme_id)!.name}</span>
                       )}
                     </div>
