@@ -83,6 +83,8 @@ export function TermsGate({ children }: { children: React.ReactNode }) {
     }
 
     setSubmitting(false);
+    // Skip the AnimatedIntro — the welcome popup already served as the intro
+    sessionStorage.setItem("azos-intro-played", "1");
     setPhase("done");
   }
 
@@ -128,6 +130,19 @@ export function TermsGate({ children }: { children: React.ReactNode }) {
         </p>
 
         <div className="space-y-3 mt-5">
+          {/* Select all checkbox */}
+          <label className="flex items-center gap-3 cursor-pointer bg-copper-clay/10 rounded-xl p-3 border-2 border-copper-clay/30 group sticky top-0">
+            <input
+              type="checkbox"
+              checked={allChecked}
+              onChange={(e) => setChecked(QUICK_TERMS_COPY.checkboxes.map(() => e.target.checked))}
+              className="w-5 h-5 shrink-0 accent-copper-clay cursor-pointer"
+            />
+            <span className="text-sm font-bold text-desert-night">
+              {allChecked ? "✓ All agreed" : "Select all — I agree to all the rules below"}
+            </span>
+          </label>
+
           {QUICK_TERMS_COPY.checkboxes.map((label, i) => (
             <label key={i} className="flex items-start gap-3 cursor-pointer group">
               <input

@@ -39,13 +39,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/favicon-32.png?v=15", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16.png?v=15", sizes: "16x16", type: "image/png" },
+      { url: "/icons/icon-192.png?v=15", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png?v=15", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/icons/favicon-32.png"],
+    apple: [{ url: "/icons/apple-touch-icon.png?v=15", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/icons/favicon-32.png?v=15"],
   },
   openGraph: {
     title: "AZ Off Script — The Off Script Room",
@@ -89,8 +89,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Off Script" />
         {/* Favicon */}
-        <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="icon" href="/icons/favicon-32.png?v=15" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=15" />
       </head>
       <body className="min-h-full flex flex-col" style={{ backgroundColor: "#f2e8d8" }}>
         {children}
