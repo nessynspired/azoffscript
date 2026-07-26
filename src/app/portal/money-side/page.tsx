@@ -104,7 +104,7 @@ export default function MoneySidePage() {
                   <li>• Direct costs are deducted first (shirts, props, printing, shipping, tools)</li>
                   <li>• The revenue type is selected (paid content, platform, merch, events)</li>
                   <li>• Contributors are identified for that specific content</li>
-                  <li>• Vanessa/admin approves the split</li>
+                  <li>• The split gets approved before payout</li>
                   <li>• Written agreements must be in place before any payout</li>
                 </ul>
               </div>

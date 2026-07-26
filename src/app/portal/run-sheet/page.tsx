@@ -241,7 +241,7 @@ export default function RunSheetPage() {
 
   const TABS: { key: typeof tab; label: string; count?: number; info: string }[] = [
     { key: "week", label: "This Week", info: "Your default view — shows recent drops, your part (assignments), greenlights you need to give, deadlines this week, what's going live, and what's stuck. Good for a quick check-in." },
-    ...(canPlanContent ? [{ key: "planner" as const, label: "Planner", info: "Admin/planner dashboard — stuck clips, waiting assignments, clips ready for Vanessa to greenlight, and trends that need planning. Use this to keep things moving." }] : []),
+    ...(canPlanContent ? [{ key: "planner" as const, label: "Planner", info: "Planner dashboard — stuck clips, waiting assignments, clips ready for greenlight, and trends that need planning. Use this to keep things moving." }] : []),
     { key: "calendar", label: "Calendar", info: "Week or month view showing scheduled post dates, deadlines, and active themes. Planners can drag templates from the side panel onto the calendar to schedule them." },
     { key: "flow", label: "Studio Flow", count: productionClips.length, info: "Kanban pipeline showing videos moving through production: Dropped → Planned → Shot → Cutting → Review → Ready → Scheduled → Live → Vault. Only shows actual videos, not links or ideas." },
     { key: "board", label: "Assignment Board", count: assignments.length, info: "Shows who's been assigned to what. Planners can assign crew members to clips and track whether assignments are done, waiting, or overdue." },
@@ -2150,7 +2150,7 @@ function WeeklyHeatTab({
           <span className="text-5xl">🔥</span>
           <p className="font-display text-2xl text-desert-night mt-4">No Weekly Heat yet.</p>
           <p className="text-smoked-charcoal/70 mt-2">
-            {canPlanContent ? "Create one to start organizing your content by week." : "Ask an admin or planner to create one."}
+            {canPlanContent ? "Create one to start organizing your content by week." : "Ask a planner to create one."}
           </p>
         </div>
       ) : (
@@ -2846,7 +2846,7 @@ function PlannerDashboard({
       <div>
         <h2 className="font-display text-3xl text-desert-night">Planner View</h2>
         <p className="text-smoked-charcoal/70 mt-1">
-          {isAdmin ? "You have full admin access." : "You can plan and organize. Vanessa has final say."}
+          {isAdmin ? "You have full access." : "You can plan and organize. Final say stays with the brand."}
         </p>
       </div>
 

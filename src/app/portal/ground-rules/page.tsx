@@ -28,7 +28,7 @@ const RULES = [
   },
   {
     title: "How the room moves.",
-    body: "Crew sends their finals. Vanessa stitches them together, schedules, and posts. The Run Sheet tracks it all: Dropped → Planned → Shot → Review → Ready → Scheduled → Live.",
+    body: "Crew sends their finals. They get stitched together, scheduled, and posted. The Run Sheet tracks it all: Dropped → Planned → Shot → Review → Ready → Scheduled → Live.",
     tone: "flow",
   },
   {
@@ -67,7 +67,7 @@ const COMFORT_RULES = [
   },
   {
     title: "Comfort issues go on hold.",
-    body: "If a clip causes tension, embarrassment, attitude, hurt feelings, or discomfort, it goes on hold for comfort review. Vanessa can review it privately or decide not to use it. No arguing in the group chat.",
+    body: "If a clip causes tension, embarrassment, attitude, hurt feelings, or discomfort, it goes on hold for comfort review. It can be reviewed privately or decided not to use. No arguing in the group chat.",
   },
   {
     title: "Each member chooses their comfort level.",

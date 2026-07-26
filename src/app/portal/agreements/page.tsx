@@ -371,7 +371,7 @@ function IntroMessagePopup({
             aria-label="Close"
           >×</button>
           <div className="relative z-10">
-            <span className="chip chip-yellow mb-2">Message from Vanessa</span>
+            <span className="chip chip-yellow mb-2">Welcome to the room</span>
             <h2 className="font-display text-2xl text-sandstone-cream leading-tight">
               Hey {firstName},
             </h2>
@@ -409,7 +409,7 @@ function IntroMessagePopup({
 
           <p>Please read it, ask me anything that feels confusing, and only sign when you feel clear.</p>
 
-          <p className="font-display text-base text-desert-night">— Vanessa</p>
+          <p className="font-display text-base text-desert-night">— AZ Off Script</p>
 
           {/* Continue button */}
           <button
@@ -1050,8 +1050,8 @@ export default function AgreementsPage() {
   if (member?.role !== "admin") {
     return (
       <div className="card p-10 text-center">
-        <p className="font-display text-2xl text-desert-night">Admin only.</p>
-        <p className="text-smoked-charcoal/70 mt-2">Only Vanessa can manage agreements.</p>
+        <p className="font-display text-2xl text-desert-night">Restricted.</p>
+        <p className="text-smoked-charcoal/70 mt-2">Agreements are managed centrally.</p>
       </div>
     );
   }

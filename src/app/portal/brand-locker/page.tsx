@@ -211,7 +211,7 @@ export default function BrandLockerPage() {
       {tab === "templates" && (
         <div className="space-y-4">
           <p className="text-sm text-smoked-charcoal/70">
-            Blank templates for personalized gear. Vanessa uses these in the Gear Board to create each member&apos;s items.
+            Blank templates for personalized gear. These are used in the Gear Board to create each member&apos;s items.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {GEAR_TEMPLATES.map((t) => (

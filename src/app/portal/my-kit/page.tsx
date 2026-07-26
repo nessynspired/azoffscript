@@ -290,7 +290,7 @@ export default function MyWaveKitPage() {
         <h2 className="font-display text-2xl text-desert-night mb-3">Your Gear</h2>
         {gear.length === 0 ? (
           <div className="card p-5 text-center">
-            <p className="text-smoked-charcoal/70">Your gear hasn&apos;t been set up yet. Vanessa will add your items soon.</p>
+            <p className="text-smoked-charcoal/70">Your gear hasn&apos;t been set up yet. Items will be added soon.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -693,7 +693,7 @@ export default function MyWaveKitPage() {
 
       {/* Default rule note */}
       <p className="text-xs text-desert-night/40 text-center pb-4">
-        No kids are posted unless Vanessa separately approves and gets clear permission.
+        No kids are posted unless separately approved with clear permission.
       </p>
     </div>
   );

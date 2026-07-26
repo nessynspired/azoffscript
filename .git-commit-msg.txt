@@ -1,0 +1,23 @@
+Remove Vanessa/admin names from member-facing copy
+
+- Public card: "an admin approves" -> "they get reviewed"
+- My Kit: "Vanessa will add your items" -> "items will be added"
+- My Kit: "Vanessa separately approves" -> "separately approved"
+- Login: "Ask Vanessa" -> "Ask for one to get in" / "Reach out for help"
+- Money Side: "Vanessa/admin approves the split" -> "The split gets approved"
+- Brand Locker: "Vanessa uses these" -> "These are used"
+- Gear Board: "Only Vanessa can manage gear" -> "Gear is managed centrally"
+- Agreements: "Only Vanessa can manage" -> "Agreements are managed centrally"
+- Agreements intro: "Message from Vanessa" -> "Welcome to the room"
+- Agreements signature: "— Vanessa" -> "— AZ Off Script"
+- Run Sheet: "Vanessa has final say" -> "Final say stays with the brand"
+- Run Sheet: "ready for Vanessa to greenlight" -> "ready for greenlight"
+- Ground Rules: "Vanessa stitches" -> "They get stitched"
+- Ground Rules: "Vanessa can review" -> "It can be reviewed"
+- Ready page: "When Vanessa puts a clip in Review" -> "When a clip goes into Review"
+
+Approval language kept only on public card (website-facing changes).
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

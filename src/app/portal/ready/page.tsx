@@ -102,7 +102,7 @@ export default function ReadyToPostPage() {
         <div className="card p-10 text-center">
           <div className="inline-block"><MascotImage pose="shades" size={120} /></div>
           <p className="font-display text-2xl text-desert-night mt-4">Nothing waiting for your greenlight.</p>
-          <p className="text-smoked-charcoal/70 mt-2">When Vanessa puts a clip in Review, it&apos;ll show up here for your approval.</p>
+          <p className="text-smoked-charcoal/70 mt-2">When a clip goes into Review, it&apos;ll show up here for your approval.</p>
           <Link href="/portal/drop" className="btn btn-primary mt-6">Send a Clip</Link>
         </div>
       ) : (

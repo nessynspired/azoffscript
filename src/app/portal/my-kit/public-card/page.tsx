@@ -229,10 +229,10 @@ export default function MyPublicCardPage() {
       <section className="bg-desert-night p-6 md:p-8 rounded-2xl">
         <p className="text-sandstone-cream/70 text-sm font-bold uppercase tracking-wide">My Kit</p>
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">My Public Card</h1>
-        <div className="mt-1"><InfoTooltip dark text="This is how you show up on the public website (azoffscript.com). Edit your display name, title, bio, photo, and social links. When you submit changes, they go to an admin for approval before going live. You can also control whether your card is visible at all." /></div>
+        <div className="mt-1"><InfoTooltip dark text="This is how you show up on the public website (azoffscript.com). Edit your display name, title, bio, photo, and social links. When you submit changes, they get reviewed before going live. You can also control whether your card is visible at all." /></div>
         <p className="text-sandstone-cream/60 text-sm mt-2 max-w-xl">
           This is how you show up on the website, portal, and member cards.
-          You can request changes — Vanessa approves before anything public changes.
+          You can request changes — they get reviewed before anything public changes.
         </p>
       </section>
 

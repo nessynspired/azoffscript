@@ -32,7 +32,7 @@ export default function LoginPage() {
       } else {
         // sign up: requires a valid invite code
         if (!inviteCode.trim()) {
-          setError("You need an invite code to join. Ask Vanessa for one.");
+          setError("You need an invite code to join. Ask for one to get in.");
           setLoading(false);
           return;
         }
@@ -54,7 +54,7 @@ export default function LoginPage() {
       const msg = err instanceof Error ? err.message : "Something went wrong.";
       // friendly error mapping per DESIGNSPEC §14
       if (msg.toLowerCase().includes("invalid login")) {
-        setError("Looks like that login did not hit. Try again or message Vanessa.");
+        setError("Looks like that login did not hit. Try again or reach out for help.");
       } else {
         setError(msg);
       }
@@ -104,7 +104,7 @@ export default function LoginPage() {
                     autoComplete="off"
                   />
                   <p className="text-xs text-sandstone-cream/50 mt-1">
-                    Don&apos;t have one? Ask Vanessa.
+                    Don&apos;t have one? Ask for one to get in.
                   </p>
                 </div>
                 <div>
@@ -116,7 +116,7 @@ export default function LoginPage() {
                     className="field"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Vanessa"
+                    placeholder="Your name"
                     required
                     autoComplete="name"
                   />
@@ -182,7 +182,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-4 text-xs text-sandstone-cream/40 text-center">
-            Having trouble getting in? Text Vanessa.
+            Having trouble getting in? Reach out for help.
           </p>
         </div>
       </div>
