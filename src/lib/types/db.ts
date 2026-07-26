@@ -999,6 +999,37 @@ export interface Database {
           signed_date?: string | null;
         };
       };
+      quick_terms_acceptances: {
+        Relationships: [];
+        Row: {
+          id: string;
+          created_at: string;
+          user_id: string;
+          member_id: string;
+          agreement_type: "quick_terms" | "creator_release" | "revenue_addendum";
+          agreement_version: string;
+          accepted_at: string;
+          accepted_ip: string | null;
+          user_agent: string | null;
+          accepted_checkbox_snapshot: string[];
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          user_id: string;
+          member_id: string;
+          agreement_type?: "quick_terms" | "creator_release" | "revenue_addendum";
+          agreement_version: string;
+          accepted_at?: string;
+          accepted_ip?: string | null;
+          user_agent?: string | null;
+          accepted_checkbox_snapshot: string[];
+        };
+        Update: {
+          accepted_ip?: string | null;
+          user_agent?: string | null;
+        };
+      };
       agreement_audit_log: {
         Relationships: [];
         Row: {

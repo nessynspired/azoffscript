@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage } from "@/components/MascotImage";
 import { DROP_LANES, LANE_META, DESTINATIONS } from "@/lib/crew-data";
+import { useTermsStatus } from "@/lib/hooks/use-terms-status";
 import type { Database, DropType } from "@/lib/types/db";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
@@ -230,6 +231,8 @@ export default function DropPage() {
 
   // ===== DROP FORM — quick actions first, details after =====
   const [dropMode, setDropMode] = useState<"link" | "clip" | "prompt" | "caption" | null>(null);
+  const termsStatus = useTermsStatus();
+  const clipLocked = !termsStatus.loading && !termsStatus.creatorReleaseSigned;
 
   return (
     <main className="portal-shell px-4 pt-6">
@@ -257,14 +260,21 @@ export default function DropPage() {
             </button>
 
             <button
-              onClick={() => setDropMode("clip")}
-              className="card p-5 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center gap-4"
+              onClick={() => !clipLocked && setDropMode("clip")}
+              disabled={clipLocked}
+              className={`card p-5 w-full text-left flex items-center gap-4 ${clipLocked ? "opacity-60 cursor-not-allowed" : "hover:-translate-y-0.5 transition-transform"}`}
             >
               <span className="text-3xl">🎬</span>
-              <div>
+              <div className="flex-1">
                 <p className="font-display text-xl text-desert-night">Drop a Quick Clip</p>
                 <p className="text-sm text-smoked-charcoal/60">Record a video and send it.</p>
+                {clipLocked && (
+                  <p className="text-xs text-copper-deep font-bold mt-2">
+                    🔒 Sign the Creator Release first to upload clips.
+                  </p>
+                )}
               </div>
+              {clipLocked && <span className="text-2xl">🔒</span>}
             </button>
 
             <button

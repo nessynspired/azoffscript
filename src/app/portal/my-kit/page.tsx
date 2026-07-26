@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { getMemberCard, getMemberGear } from "@/lib/crew-data";
+import { useTermsStatus } from "@/lib/hooks/use-terms-status";
+import { QUICK_TERMS_VERSION } from "@/lib/terms";
 import type { Database, GearStatus } from "@/lib/types/db";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
@@ -203,6 +205,9 @@ export default function MyWaveKitPage() {
           <span className="text-sandstone-cream/60">→</span>
         </Link>
       </section>
+
+      {/* ===== TERMS STATUS ===== */}
+      <TermsStatusCard />
 
       {saved && (
         <div className="card p-4 bg-cactus-teal/15 border-2 border-cactus-teal animate-slide-in">
@@ -603,5 +608,74 @@ export default function MyWaveKitPage() {
         No kids are posted unless Vanessa separately approves and gets clear permission.
       </p>
     </div>
+  );
+}
+
+function TermsStatusCard() {
+  const t = useTermsStatus();
+
+  if (t.loading) {
+    return (
+      <section className="card p-5">
+        <p className="font-display text-lg text-desert-night">Terms Status</p>
+        <p className="text-sm text-smoked-charcoal/50 mt-2">Loading…</p>
+      </section>
+    );
+  }
+
+  const rows = [
+    {
+      label: "Quick Room Rules",
+      status: t.quickTermsAccepted ? "Accepted" : "Not accepted",
+      version: t.quickTermsVersion,
+      date: t.quickTermsDate,
+      ok: t.quickTermsAccepted,
+    },
+    {
+      label: "Creator Participation + Media Release",
+      status: t.creatorReleaseSigned ? "Signed" : "Not signed",
+      version: null,
+      date: t.creatorReleaseDate,
+      ok: t.creatorReleaseSigned,
+    },
+    {
+      label: "Revenue Addendum",
+      status: t.revenueAddendumSigned ? "Signed" : "Not active",
+      version: null,
+      date: t.revenueAddendumDate,
+      ok: t.revenueAddendumSigned,
+    },
+  ];
+
+  return (
+    <section className="card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-display text-lg text-desert-night">Terms Status</p>
+        <span className="text-xs text-smoked-charcoal/50">Current Quick Terms: {QUICK_TERMS_VERSION}</span>
+      </div>
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center justify-between gap-3 py-2 border-b border-desert-night/5 last:border-0">
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-desert-night">{r.label}</p>
+              {r.version && <p className="text-xs text-smoked-charcoal/50">Version {r.version}</p>}
+              {r.date && (
+                <p className="text-xs text-smoked-charcoal/50">
+                  {new Date(r.date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                </p>
+              )}
+            </div>
+            <span className={`chip shrink-0 ${r.ok ? "chip-approved" : "chip-yellow"}`}>
+              {r.ok ? "✓ " : ""}{r.status}
+            </span>
+          </div>
+        ))}
+      </div>
+      {!t.creatorReleaseSigned && (
+        <Link href="/portal/agreements" className="btn btn-primary w-full mt-4 text-sm">
+          Sign Creator Release to unlock clip uploads →
+        </Link>
+      )}
+    </section>
   );
 }

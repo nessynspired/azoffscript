@@ -1,0 +1,166 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { createClient } from "@/lib/supabase/client";
+import { MascotImage } from "@/components/MascotImage";
+import { QUICK_TERMS_VERSION, WELCOME_COPY, QUICK_TERMS_COPY } from "@/lib/terms";
+import type { Database } from "@/lib/types/db";
+
+type Acceptance = Database["public"]["Tables"]["quick_terms_acceptances"]["Row"];
+
+/**
+ * TermsGate — shows on first login (or when terms version changes):
+ *   1. Welcome popup
+ *   2. Quick Room Rules (must check all boxes + agree)
+ *
+ * Blocks portal access until quick terms are accepted.
+ */
+export function TermsGate({ children }: { children: React.ReactNode }) {
+  const { member, loading } = useAuth();
+  const supabase = createClient();
+  const [phase, setPhase] = useState<"loading" | "welcome" | "terms" | "done">("loading");
+  const [acceptance, setAcceptance] = useState<Acceptance | null>(null);
+  const [checked, setChecked] = useState<boolean[]>(QUICK_TERMS_COPY.checkboxes.map(() => false));
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (loading || !member) return;
+    (async () => {
+      const { data } = await supabase
+        .from("quick_terms_acceptances")
+        .select("*")
+        .eq("member_id", member.id)
+        .eq("agreement_type", "quick_terms")
+        .order("accepted_at", { ascending: false })
+        .limit(1);
+
+      const latest = (data ?? [])[0];
+      setAcceptance(latest ?? null);
+
+      // If no acceptance, or version is outdated, show the flow
+      if (!latest || latest.agreement_version !== QUICK_TERMS_VERSION) {
+        setPhase("welcome");
+      } else {
+        setPhase("done");
+      }
+    })();
+  }, [loading, member, supabase]);
+
+  async function acceptTerms() {
+    if (!member) return;
+    const allChecked = checked.every(Boolean);
+    if (!allChecked) return;
+
+    setSubmitting(true);
+    // Insert via client (RLS allows member to insert own)
+    const { error } = await supabase
+      .from("quick_terms_acceptances")
+      .insert({
+        user_id: member.user_id,
+        member_id: member.id,
+        agreement_type: "quick_terms",
+        agreement_version: QUICK_TERMS_VERSION,
+        accepted_checkbox_snapshot: QUICK_TERMS_COPY.checkboxes,
+      });
+
+    if (error) {
+      // Try the API route as fallback (captures IP/UA server-side)
+      try {
+        await fetch("/api/quick-terms/accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agreementVersion: QUICK_TERMS_VERSION,
+            checkboxSnapshot: QUICK_TERMS_COPY.checkboxes,
+          }),
+        });
+      } catch {
+        alert("Could not save your agreement. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    setSubmitting(false);
+    setPhase("done");
+  }
+
+  if (phase === "loading" || phase === "done") {
+    return <>{children}</>;
+  }
+
+  // ===== WELCOME POPUP =====
+  if (phase === "welcome") {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-desert-night/80 backdrop-blur-sm overflow-y-auto">
+        <div className="card max-w-lg w-full p-6 md:p-8 my-auto max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-center mb-4">
+            <MascotImage pose="peace" size={120} />
+          </div>
+          <h2 className="font-display text-2xl md:text-3xl text-desert-night text-center leading-tight">
+            {WELCOME_COPY.title}
+          </h2>
+          <div className="text-sm text-smoked-charcoal/80 mt-4 leading-relaxed whitespace-pre-line">
+            {WELCOME_COPY.body}
+          </div>
+          <button
+            onClick={() => setPhase("terms")}
+            className="btn btn-primary w-full mt-6"
+          >
+            {WELCOME_COPY.button} →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== QUICK TERMS =====
+  const allChecked = checked.every(Boolean);
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-desert-night/80 backdrop-blur-sm overflow-y-auto">
+      <div className="card max-w-lg w-full p-6 md:p-8 my-auto max-h-[90vh] overflow-y-auto">
+        <h2 className="font-display text-2xl md:text-3xl text-desert-night leading-tight">
+          {QUICK_TERMS_COPY.title}
+        </h2>
+        <p className="text-sm text-smoked-charcoal/70 mt-3 leading-relaxed">
+          {QUICK_TERMS_COPY.intro}
+        </p>
+
+        <div className="space-y-3 mt-5">
+          {QUICK_TERMS_COPY.checkboxes.map((label, i) => (
+            <label key={i} className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={checked[i]}
+                onChange={(e) => setChecked((prev) => prev.map((c, idx) => idx === i ? e.target.checked : c))}
+                className="mt-1 w-5 h-5 shrink-0 accent-copper-clay cursor-pointer"
+              />
+              <span className="text-sm text-smoked-charcoal/80 leading-relaxed group-hover:text-desert-night transition">
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+
+        <button
+          onClick={acceptTerms}
+          disabled={!allChecked || submitting}
+          className={`btn w-full mt-6 ${allChecked ? "btn-primary" : "btn-ghost opacity-50 cursor-not-allowed"}`}
+        >
+          {submitting ? "Saving…" : QUICK_TERMS_COPY.button}
+        </button>
+
+        {!allChecked && (
+          <p className="text-xs text-smoked-charcoal/50 text-center mt-2">
+            Please check all boxes to continue.
+          </p>
+        )}
+
+        <p className="text-xs text-smoked-charcoal/50 mt-4 leading-relaxed border-t border-desert-night/10 pt-4">
+          {QUICK_TERMS_COPY.footer}
+        </p>
+      </div>
+    </div>
+  );
+}

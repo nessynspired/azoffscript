@@ -5,9 +5,20 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
+import { QUICK_TERMS_VERSION } from "@/lib/terms";
 import type { Database } from "@/lib/types/db";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
+type Acceptance = Database["public"]["Tables"]["quick_terms_acceptances"]["Row"];
+type Signature = Database["public"]["Tables"]["agreement_signatures"]["Row"];
+
+interface MemberTerms {
+  quickTerms: boolean;
+  quickTermsVersion: string | null;
+  quickTermsDate: string | null;
+  creatorRelease: boolean;
+  creatorReleaseDate: string | null;
+}
 
 export default function CrewPage() {
   const { member: me } = useAuth();
@@ -16,6 +27,7 @@ export default function CrewPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Member | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [termsMap, setTermsMap] = useState<Record<string, MemberTerms>>({});
 
   const isAdmin = me?.role === "admin";
 
@@ -24,7 +36,35 @@ export default function CrewPage() {
       setMembers(data ?? []);
       setLoading(false);
     });
-  }, [supabase]);
+
+    // Admin: load terms status for all members
+    if (me?.role === "admin") {
+      (async () => {
+        const [qtRes, sigRes] = await Promise.all([
+          supabase.from("quick_terms_acceptances").select("*").order("accepted_at", { ascending: false }),
+          supabase.from("agreement_signatures").select("*").order("created_at", { ascending: false }),
+        ]);
+        const map: Record<string, MemberTerms> = {};
+        for (const a of (qtRes.data ?? []) as Acceptance[]) {
+          if (!map[a.member_id]) map[a.member_id] = { quickTerms: false, quickTermsVersion: null, quickTermsDate: null, creatorRelease: false, creatorReleaseDate: null };
+          if (a.agreement_type === "quick_terms") {
+            map[a.member_id].quickTerms = true;
+            map[a.member_id].quickTermsVersion = a.agreement_version;
+            map[a.member_id].quickTermsDate = a.accepted_at;
+          } else if (a.agreement_type === "creator_release") {
+            map[a.member_id].creatorRelease = true;
+            map[a.member_id].creatorReleaseDate = a.accepted_at;
+          }
+        }
+        for (const s of (sigRes.data ?? []) as Signature[]) {
+          if (!map[s.member_id]) map[s.member_id] = { quickTerms: false, quickTermsVersion: null, quickTermsDate: null, creatorRelease: false, creatorReleaseDate: null };
+          map[s.member_id].creatorRelease = true;
+          if (!map[s.member_id].creatorReleaseDate) map[s.member_id].creatorReleaseDate = s.created_at;
+        }
+        setTermsMap(map);
+      })();
+    }
+  }, [supabase, me]);
 
   async function togglePlanContent(memberId: string, current: boolean) {
     setToggling(true);
@@ -59,6 +99,55 @@ export default function CrewPage() {
           <p className="text-sandstone-cream/90 mt-2 text-lg drop-shadow">First Wave members of The Off Script Room.</p>
         </div>
       </section>
+
+      {/* ===== ADMIN TERMS OVERVIEW ===== */}
+      {isAdmin && members.length > 0 && (
+        <section className="card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-display text-lg text-desert-night">Terms Status — All Crew</p>
+            <span className="text-xs text-smoked-charcoal/50">Quick Terms {QUICK_TERMS_VERSION}</span>
+          </div>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-smoked-charcoal/50 uppercase border-b border-desert-night/10">
+                  <th className="py-2 pr-4">Member</th>
+                  <th className="py-2 pr-4">Quick Terms</th>
+                  <th className="py-2 pr-4">Creator Release</th>
+                  <th className="py-2 pr-4">Clip Uploads</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => {
+                  const t = termsMap[m.id];
+                  const qtOk = t?.quickTerms && t.quickTermsVersion === QUICK_TERMS_VERSION;
+                  const crOk = t?.creatorRelease;
+                  return (
+                    <tr key={m.id} className="border-b border-desert-night/5">
+                      <td className="py-2 pr-4 font-bold text-desert-night">{m.name}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`chip !text-[10px] ${qtOk ? "chip-approved" : "chip-yellow"}`}>
+                          {qtOk ? "✓ Accepted" : "Missing"}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className={`chip !text-[10px] ${crOk ? "chip-approved" : "chip-yellow"}`}>
+                          {crOk ? "✓ Signed" : "Not signed"}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className={`chip !text-[10px] ${crOk ? "chip-approved" : "chip-yellow"}`}>
+                          {crOk ? "Unlocked" : "🔒 Locked"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {members.length === 0 ? (
         <div className="card p-10 text-center">
@@ -186,6 +275,33 @@ export default function CrewPage() {
               <div className="mt-4">
                 <p className="label">Availability</p>
                 <p className="text-sm text-desert-night">{selected.availability}</p>
+              </div>
+            )}
+
+            {/* Terms status (admin view) */}
+            {isAdmin && termsMap[selected.id] && (
+              <div className="mt-4 bg-desert-night/5 rounded-xl p-4">
+                <p className="label">Terms Status</p>
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-desert-night">Quick Room Rules</span>
+                    <span className={`chip !text-[10px] ${termsMap[selected.id].quickTerms ? "chip-approved" : "chip-yellow"}`}>
+                      {termsMap[selected.id].quickTerms ? `✓ ${termsMap[selected.id].quickTermsVersion}` : "Not accepted"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-desert-night">Creator Release</span>
+                    <span className={`chip !text-[10px] ${termsMap[selected.id].creatorRelease ? "chip-approved" : "chip-yellow"}`}>
+                      {termsMap[selected.id].creatorRelease ? "✓ Signed" : "Not signed"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-desert-night">Clip Uploads</span>
+                    <span className={`chip !text-[10px] ${termsMap[selected.id].creatorRelease ? "chip-approved" : "chip-yellow"}`}>
+                      {termsMap[selected.id].creatorRelease ? "Unlocked" : "🔒 Locked"}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 
