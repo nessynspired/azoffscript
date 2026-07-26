@@ -92,7 +92,7 @@ export default function RootLayout({
         <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
-      <body className="min-h-full flex flex-col" style={{ backgroundColor: "#07111c" }}>
+      <body className="min-h-full flex flex-col" style={{ backgroundColor: "#f2e8d8" }}>
         {children}
         {/* Service worker registration — enables offline + install-to-home-screen */}
         <script
