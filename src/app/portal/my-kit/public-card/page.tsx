@@ -120,6 +120,38 @@ export default function MyPublicCardPage() {
     setUrl(data.publicUrl);
   }
 
+  // Portal avatar saves INSTANTLY to members.photo_url — no approval needed.
+  // It shows in the portal nav right away. Only the website photo needs review.
+  async function uploadPortalAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !member) return;
+    setError(null);
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const path = `${member.id}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("crew-photos").upload(path, file, { upsert: true });
+    if (upErr) {
+      setError(`Upload failed: ${upErr.message}`);
+      return;
+    }
+    const { data } = supabase.storage.from("crew-photos").getPublicUrl(path);
+    const url = data.publicUrl;
+    setPortalAvatar(url);
+    // Save instantly to members.photo_url so it shows in the portal nav immediately
+    const { error: memErr } = await supabase.from("members").update({ photo_url: url }).eq("id", member.id);
+    if (memErr) {
+      setError(`Saved to storage but could not update profile: ${memErr.message}`);
+      return;
+    }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  }
+
+  async function clearPortalAvatar() {
+    if (!member) return;
+    setPortalAvatar(null);
+    await supabase.from("members").update({ photo_url: null }).eq("id", member.id);
+  }
+
   async function saveDraft() {
     if (!member) return;
     setSaving(true);
@@ -231,8 +263,8 @@ export default function MyPublicCardPage() {
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">My Public Card</h1>
         <div className="mt-1"><InfoTooltip dark text="This is how you show up on the public website (azoffscript.com). Edit your display name, title, bio, photo, and social links. When you submit changes, they get reviewed before going live. You can also control whether your card is visible at all." /></div>
         <p className="text-sandstone-cream/60 text-sm mt-2 max-w-xl">
-          This is how you show up on the website, portal, and member cards.
-          You can request changes — they get reviewed before anything public changes.
+          Your portal avatar saves instantly and shows in the portal right away.
+          Your website photo, title, and bio get reviewed before going live on azoffscript.com.
         </p>
       </section>
 
@@ -360,31 +392,31 @@ export default function MyPublicCardPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Website photo */}
+            {/* Website photo — needs review before going live on the website */}
             <PhotoUpload
-              label="Website photo"
+              label="Website photo (reviewed before going live)"
               url={websitePhoto}
               onUpload={(e) => uploadPhoto(e, useSamePhoto ? (u) => { setWebsitePhoto(u); setPortalAvatar(u); } : setWebsitePhoto, "crew-photos")}
               onClear={() => { setWebsitePhoto(null); if (useSamePhoto) { setPortalAvatar(null); } }}
             />
-            {/* Portal avatar */}
+            {/* Portal avatar — saves instantly, shows in portal nav right away */}
             <PhotoUpload
-              label="Portal avatar"
+              label="Portal avatar (instant)"
               url={portalAvatar}
-              onUpload={(e) => uploadPhoto(e, setPortalAvatar, "crew-photos")}
-              onClear={() => setPortalAvatar(null)}
+              onUpload={uploadPortalAvatar}
+              onClear={clearPortalAvatar}
               disabled={useSamePhoto}
             />
           </div>
 
-          {/* Photo warnings */}
+          {/* Photo warnings — only about the website photo */}
           <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-3">
-            <p className="text-xs font-bold text-yellow-800 mb-1">Before you upload — check for:</p>
+            <p className="text-xs font-bold text-yellow-800 mb-1">Website photo — check for:</p>
             <ul className="text-xs text-yellow-800/80 space-y-0.5">
               {PHOTO_WARNINGS.map((w) => <li key={w}>• {w}</li>)}
             </ul>
             <p className="text-[10px] text-yellow-800/60 mt-2">
-              Every photo is reviewed before it goes live. It may be approved for the website, portal only, or you may be asked for a new one.
+              The website photo is reviewed before it goes live on azoffscript.com. Your portal avatar shows instantly — no review needed.
             </p>
           </div>
         </div>

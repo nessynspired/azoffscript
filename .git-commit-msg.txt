@@ -1,0 +1,14 @@
+Portal avatar saves instantly — no approval needed
+
+- Portal avatar upload now writes directly to members.photo_url and shows
+  in the portal nav immediately. No review, no Submit for Review required.
+- Website photo still goes through the review flow before going live on
+  azoffscript.com.
+- Updated labels: "Website photo (reviewed before going live)" vs
+  "Portal avatar (instant)"
+- Updated header copy to explain the two-tier system clearly
+- Photo warning box now only mentions the website photo
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
