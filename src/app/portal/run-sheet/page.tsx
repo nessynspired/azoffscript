@@ -197,7 +197,7 @@ export default function RunSheetPage() {
   }
 
   async function deleteClip(clipId: string) {
-    if (member?.role !== "admin") return;
+    if (!isAdmin && !member?.can_plan_content) return;
     const clip = clips.find((c) => c.id === clipId);
     if (!confirm(`Delete "${clip?.title ?? "this clip"}"? This can't be undone.`)) return;
     const { error } = await supabase.from("clips").delete().eq("id", clipId);
@@ -1261,8 +1261,8 @@ function ClipDetailModal({
                 )}
               </div>
             </div>
-            {/* Delete is admin-only */}
-            {isAdmin && (
+            {/* Delete — planners and admins */}
+            {canPlanContent && (
               <div className="pt-4 border-t border-desert-night/10">
                 <button
                   onClick={() => onDelete(clip.id)}
@@ -1722,7 +1722,7 @@ function TrendDropsTab({
                         className={`chip !text-[9px] ${t.status === s ? TREND_CHIP[s] ?? "chip-cream" : "chip-cream opacity-50 hover:opacity-100"}`}
                       >{s}</button>
                     ))}
-                    {isAdmin && (
+                    {canPlanContent && (
                       <button onClick={() => deleteTrend(t.id)} className="chip chip-danger !text-[9px] ml-auto">Delete</button>
                     )}
                   </div>
@@ -2129,7 +2129,7 @@ function WeeklyHeatTab({
                   </div>
                 )}
 
-                {isAdmin && (
+                {canPlanContent && (
                   <button onClick={() => deleteTheme(t.id)} className="btn btn-danger btn-sm mt-4">Delete</button>
                 )}
               </div>
