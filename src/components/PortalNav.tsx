@@ -32,6 +32,7 @@ const CREW_MORE: NavItem[] = [
   { href: "/portal/sparks", label: "Spark Board" },
   { href: "/portal/brand-locker", label: "Brand Locker" },
   { href: "/portal/ground-rules", label: "Ground Rules" },
+  { href: "/portal/quick-terms", label: "Quick Terms" },
   { href: "/portal/notifications", label: "Notifications" },
 ];
 
@@ -47,11 +48,14 @@ const PLANNER_PRIMARY: NavItem[] = [
 const PLANNER_MORE: NavItem[] = [
   { href: "/portal/sparks", label: "Spark Board" },
   { href: "/portal/gear-board", label: "Gear Board" },
+  { href: "/portal/crew-profiles", label: "Crew Profiles" },
   { href: "/portal/invites", label: "Invites" },
+  { href: "/portal/join-submissions", label: "Join Submissions" },
   { href: "/portal/agreements", label: "Agreements" },
   { href: "/portal/public-cards", label: "Public Cards" },
   { href: "/portal/brand-locker", label: "Brand Locker" },
   { href: "/portal/ground-rules", label: "Ground Rules" },
+  { href: "/portal/quick-terms", label: "Quick Terms" },
   { href: "/portal/money-side", label: "Money Side" },
   { href: "/portal/notifications", label: "Notifications" },
 ];

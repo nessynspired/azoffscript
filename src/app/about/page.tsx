@@ -26,7 +26,6 @@ export default function AboutPage() {
 
       <section className="pt-32 md:pt-24 pb-8 px-4">
         <div className="max-w-3xl mx-auto">
-          <span className="chip chip-copper mb-6">About</span>
           <h1 className="font-display text-3xl md:text-6xl text-desert-night leading-tight">
             About AZ Off Script
           </h1>
@@ -104,7 +103,7 @@ export default function AboutPage() {
               <p className="font-display text-lg text-desert-night">If it makes the room react, it belongs here.</p>
             </div>
             <div className="card p-5 bg-sandstone-cream">
-              <p className="font-display text-lg text-desert-night">Arizona born. Arizona loud.</p>
+              <p className="font-display text-lg text-desert-night">Arizona born. Arizona real.</p>
             </div>
             <div className="card p-5 bg-sandstone-cream">
               <p className="font-display text-lg text-desert-night">We catch the moment before everyone acts normal again.</p>
@@ -120,7 +119,7 @@ export default function AboutPage() {
         </h2>
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
           <Link href="/watch" className="btn btn-primary btn-lg">Watch the Vibe</Link>
-          <Link href="/join" className="btn btn-secondary btn-lg">Join the Crew</Link>
+          <Link href="/join" className="btn btn-secondary btn-lg">Be in the Room</Link>
         </div>
       </section>
 

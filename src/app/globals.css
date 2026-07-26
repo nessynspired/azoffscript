@@ -65,6 +65,12 @@ html {
   -webkit-text-size-adjust: 100%;
   /* Prevent horizontal scroll on mobile (especially PWA standalone mode) */
   overflow-x: hidden;
+  /* Explicit background so the PWA window background (from manifest) never
+     shows through the html element. Without this, Android Chrome's standalone
+     mode uses the manifest's background_color (#07111c navy) for any gap
+     between the html element and the viewport, making the whole page appear
+     navy before/while the body background paints. */
+  background-color: var(--color-sandstone-cream);
 }
 
 body {

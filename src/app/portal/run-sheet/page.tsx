@@ -1402,11 +1402,46 @@ function ThisWeekTab({
   const stuck = clips.filter((c) => c.status === "Hold" || c.status === "Do Not Post" ||
     (c.status === "Review" && c.approvals_blocked > 0));
 
+  // Recent drops — the 6 most recently dropped clips of any type (video, tiktok link, idea)
+  // This ensures fresh drops always have a visible home on the default tab
+  const recentDrops = clips
+    .filter((c) => c.status === "Dropped")
+    .slice(0, 6);
+
   // Active themes
   const activeThemes = themes.filter((t) => t.status === "Active" || t.status === "Planning");
 
   return (
     <div className="space-y-6">
+      {/* Recent Drops — fresh drops that haven't been planned yet */}
+      {recentDrops.length > 0 && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-2xl text-desert-night">📥 Recent Drops</h2>
+            <span className="text-xs text-smoked-charcoal/50">{recentDrops.length} waiting to be planned</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {recentDrops.map((clip) => (
+              <button
+                key={clip.id}
+                onClick={() => onSelectClip(clip.id)}
+                className="text-left bg-sandstone-cream/50 rounded-xl p-3 hover:bg-sandstone-cream transition-colors border border-transparent hover:border-copper-clay/30"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`chip !text-[9px] ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>
+                  {clip.type === "tiktok_link" && <span className="chip chip-teal !text-[9px]">TikTok</span>}
+                  {clip.type === "video" && <span className="chip chip-copper !text-[9px]">Video</span>}
+                  {clip.type === "final_cut" && <span className="chip chip-copper !text-[9px]">Final Cut</span>}
+                  {clip.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
+                </div>
+                <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2">{clip.title}</p>
+                <p className="text-xs text-smoked-charcoal/50 mt-1">{droppedByLabel(clip)}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Active Weekly Heat */}
       {activeThemes.length > 0 && (
         <div className="card-dark p-5">

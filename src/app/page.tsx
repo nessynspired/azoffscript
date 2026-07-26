@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { ImmersiveHome } from "@/components/ImmersiveHome";
+import { ImmersiveHome, type PublicCrewMember } from "@/components/ImmersiveHome";
 import { AnimatedIntro } from "@/components/AnimatedIntro";
 import { OrganizationSchema, WebSiteSchema } from "@/components/public/StructuredData";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "AZ Off Script — Arizona Creator Brand & Reaction Videos",
@@ -22,13 +23,63 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+// Dynamic — crew data comes from the database
+export const dynamic = "force-dynamic";
+
+async function getPublicCrew(): Promise<{ crew: PublicCrewMember[]; crewNames: string }> {
+  try {
+    const supabase = await createClient();
+
+    const [crewRes, settingsRes] = await Promise.all([
+      supabase
+        .from("members")
+        .select("id, name, nickname, public_bio, slug, display_order, first_wave, photo_url, card_image, gear_image, favorite_content")
+        .eq("public_visible", true),
+      supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "crew_sort_mode")
+        .single(),
+    ]);
+
+    const sortMode = settingsRes.data?.value ?? "first_wave_first";
+    let crew = (crewRes.data ?? []) as PublicCrewMember[];
+
+    if (sortMode === "manual") {
+      crew = [...crew].sort((a, b) => a.display_order - b.display_order);
+    } else if (sortMode === "alpha") {
+      crew = [...crew].sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      crew = [...crew].sort((a, b) => {
+        if (a.first_wave && !b.first_wave) return -1;
+        if (!a.first_wave && b.first_wave) return 1;
+        if (a.first_wave && b.first_wave) return a.display_order - b.display_order;
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    const names = crew.map((m) => m.name);
+    const crewNames = names.length > 0
+      ? names.length === 1
+        ? `${names[0]} is the AZ Off Script room — a mix of real reactions, hot takes, calm energy, funny timing, and Arizona personality.`
+        : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]} are the AZ Off Script room — a mix of real reactions, hot takes, calm energy, funny timing, and Arizona personality.`
+      : "";
+
+    return { crew, crewNames };
+  } catch {
+    return { crew: [], crewNames: "" };
+  }
+}
+
+export default async function HomePage() {
+  const { crew, crewNames } = await getPublicCrew();
+
   return (
     <>
       <OrganizationSchema />
       <WebSiteSchema />
       <AnimatedIntro />
-      <ImmersiveHome />
+      <ImmersiveHome crew={crew} crewNames={crewNames} />
     </>
   );
 }

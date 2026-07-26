@@ -25,13 +25,13 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   create type approval_status as enum (
     'Waiting', 'Approved', 'Approved With Edits',
-    'Needs Review', 'Do Not Post', 'No Tag', 'Don\'t Like How I Come Across'
+    'Needs Review', 'Do Not Post', 'No Tag', 'Don''t Like How I Come Across'
   );
 exception when duplicate_object then null; end $$;
 
 -- Add new status to existing enum if it was already created
 do $$ begin
-  alter type approval_status add value if not exists 'Don\'t Like How I Come Across';
+  alter type approval_status add value if not exists 'Don''t Like How I Come Across';
 exception when others then null; end $$;
 
 do $$ begin
@@ -124,20 +124,51 @@ create table if not exists public.members (
   kit_acknowledged boolean not null default false,
   ground_rules_acknowledged_at timestamptz,
   can_plan_content boolean not null default false,  -- admin can grant this to crew: edit calendar/deadlines + change clip status
+  -- Public profile fields (controls who appears on the public website)
+  public_visible  boolean not null default false,   -- if true, this member shows on the homepage + /crew page
+  public_bio      text,                             -- longer description for the public site (separate from plot_twist)
+  slug            text,                             -- URL slug, auto-generated from name (e.g. "vanessa")
+  display_order   integer not null default 100,     -- manual sort order (lower = first)
+  card_image      text,                             -- path to member card image (e.g. /cards/Vanessa-Card.webp)
+  gear_image      text,                             -- path to gear image (e.g. /gear/vanessagear.webp)
   created_at   timestamptz not null default now()
 );
+
+-- Add public profile columns to existing tables (safe to re-run)
+alter table public.members add column if not exists public_visible boolean not null default false;
+alter table public.members add column if not exists public_bio text;
+alter table public.members add column if not exists slug text;
+alter table public.members add column if not exists display_order integer not null default 100;
+alter table public.members add column if not exists card_image text;
+alter table public.members add column if not exists gear_image text;
+
+-- Site-wide settings (key-value) — used for crew sort mode, etc.
+create table if not exists public.site_settings (
+  key         text primary key,
+  value       text not null,
+  updated_at  timestamptz not null default now()
+);
+
+-- Default crew sort mode: 'manual' (by display_order) | 'alpha' (by name) | 'first_wave_first'
+insert into public.site_settings (key, value)
+values ('crew_sort_mode', 'first_wave_first')
+on conflict (key) do nothing;
 
 -- ==========================================================================
 -- Gear: personalized merch/items for each member (tumblers, shirts, badges, etc)
 -- Managed by admin in the Admin Gear Board
 -- ==========================================================================
-create type gear_item_type as enum (
-  'tumbler', 'mug', 'shirt', 'badge', 'sticker', 'invite', 'member_card'
-);
+do $$ begin
+  create type gear_item_type as enum (
+    'tumbler', 'mug', 'shirt', 'badge', 'sticker', 'invite', 'member_card'
+  );
+exception when duplicate_object then null; end $$;
 
-create type gear_status as enum (
-  'needs_name_check', 'mockup_ready', 'approved', 'ordered', 'delivered', 'hold', 'not_started'
-);
+do $$ begin
+  create type gear_status as enum (
+    'needs_name_check', 'mockup_ready', 'approved', 'ordered', 'delivered', 'hold', 'not_started'
+  );
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.gear (
   id              uuid primary key default gen_random_uuid(),
@@ -403,6 +434,51 @@ create table if not exists public.invite_codes (
 create index if not exists idx_invite_codes_code on public.invite_codes(code);
 
 -- ==========================================================================
+-- Join submissions: public interest form on /join.
+-- Anyone (unauthenticated) can submit. Only admins can read/update/delete.
+-- Admins can convert a submission into an invite code (converted_invite_id).
+-- ==========================================================================
+
+do $$ begin
+  create type public.join_submission_status as enum
+    ('New', 'Contacted', 'Approved', 'Rejected', 'Archived');
+exception when duplicate_object then null; end $$;
+
+create table if not exists public.join_submissions (
+  id                  uuid primary key default gen_random_uuid(),
+  name                text not null,
+  city                text not null,
+  socials             text,
+  comfortable_on_camera text,                -- 'yes' | 'somewhat' | 'no' | ''
+  content_type        text,                  -- free text: what content they'd enjoy
+  roles               text[] default '{}',   -- multi-select chips
+  availability        text,
+  boundaries          text,
+  why                 text,
+  lane                text,                  -- which lane they're interested in
+  guest_or_recurring  text,                  -- 'yes' | 'maybe' | 'no' | ''
+  clips_not_guaranteed text,                 -- 'yes' | 'maybe' | 'no' | ''
+  status              public.join_submission_status not null default 'New',
+  converted_invite_id uuid references public.invite_codes(id) on delete set null,
+  admin_notes         text,
+  ip_address          text,
+  user_agent          text,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now()
+);
+
+-- Add new columns to existing tables (safe to re-run)
+alter table public.join_submissions add column if not exists guest_or_recurring text;
+alter table public.join_submissions add column if not exists clips_not_guaranteed text;
+
+create index if not exists idx_join_submissions_status on public.join_submissions(status);
+create index if not exists idx_join_submissions_created_at on public.join_submissions(created_at desc);
+
+drop trigger if exists trg_join_submissions_updated on public.join_submissions;
+create trigger trg_join_submissions_updated before update on public.join_submissions
+  for each row execute function public.touch_updated_at();
+
+-- ==========================================================================
 -- Auto-create a member row when a new auth user signs up.
 -- REQUIRES a valid invite code stored in auth.users.raw_user_meta_data->>'invite_code'
 -- If no code or invalid code, the user is created but their member row is NOT created
@@ -500,11 +576,12 @@ alter table public.ideas enable row level security;
 alter table public.comments enable row level security;
 alter table public.notifications enable row level security;
 alter table public.activity enable row level security;
+alter table public.join_submissions enable row level security;
 
--- members: any authenticated member can read all crew; only self or admin can edit
+-- members: public can read only public_visible profiles; authenticated members can read all; only self or admin can edit
 drop policy if exists members_read on public.members;
 create policy members_read on public.members
-  for select to authenticated using (true);
+  for select using (public_visible = true or auth.role() = 'authenticated');
 
 drop policy if exists members_update_self on public.members;
 create policy members_update_self on public.members
@@ -517,6 +594,17 @@ create policy members_update_admin on public.members
 drop policy if exists members_insert_admin on public.members;
 create policy members_insert_admin on public.members
   for insert to authenticated with check (public.is_admin());
+
+-- site_settings: public can read, only admin can write
+alter table public.site_settings enable row level security;
+
+drop policy if exists site_settings_read on public.site_settings;
+create policy site_settings_read on public.site_settings
+  for select using (true);
+
+drop policy if exists site_settings_write on public.site_settings;
+create policy site_settings_write on public.site_settings
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- clips: all authenticated members can read; any member can insert; only admin or submitter can update/delete
 drop policy if exists clips_read on public.clips;
@@ -693,6 +781,21 @@ create policy activity_read on public.activity
 drop policy if exists activity_insert on public.activity;
 create policy activity_insert on public.activity
   for insert to authenticated with check (auth.uid() is not null);
+
+-- join_submissions: NO public insert policy — inserts go through the
+-- /api/join/submit route handler which uses the service role (after validation
+-- + rate limiting). Only admins can read/update/delete submissions.
+drop policy if exists join_submissions_read on public.join_submissions;
+create policy join_submissions_read on public.join_submissions
+  for select to authenticated using (public.is_admin());
+
+drop policy if exists join_submissions_update on public.join_submissions;
+create policy join_submissions_update on public.join_submissions
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists join_submissions_delete on public.join_submissions;
+create policy join_submissions_delete on public.join_submissions
+  for delete to authenticated using (public.is_admin());
 
 -- ==========================================================================
 -- Storage bucket for clip uploads (private — signed URLs only)

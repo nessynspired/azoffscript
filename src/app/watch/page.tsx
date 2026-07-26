@@ -77,7 +77,7 @@ export default function WatchPage() {
           Want to be in the room?
         </h2>
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-          <Link href="/join" className="btn btn-primary btn-lg">Join the Crew</Link>
+          <Link href="/join" className="btn btn-primary btn-lg">Be in the Room</Link>
           <Link href="/collabs" className="btn btn-secondary btn-lg">Work With Us</Link>
         </div>
       </section>

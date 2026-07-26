@@ -233,6 +233,7 @@ export default function DropPage() {
   const [dropMode, setDropMode] = useState<"link" | "clip" | "prompt" | "caption" | null>(null);
   const termsStatus = useTermsStatus();
   const clipLocked = !termsStatus.loading && !termsStatus.creatorReleaseSigned;
+  const termsLocked = !termsStatus.loading && !termsStatus.quickTermsAccepted;
 
   return (
     <main className="portal-shell px-4 pt-6">
@@ -245,8 +246,22 @@ export default function DropPage() {
           </p>
         </div>
 
+        {/* Quick terms lock — blocks all drops until the room rules are agreed */}
+        {termsLocked && (
+          <div className="card p-6 mb-4 bg-copper-deep/10 border-2 border-copper-clay text-center">
+            <span className="text-3xl">🔒</span>
+            <p className="font-display text-xl text-desert-night mt-2">Agree to the room rules first.</p>
+            <p className="text-sm text-smoked-charcoal/70 mt-1">
+              You can review and accept the Quick Room Rules in one minute.
+            </p>
+            <a href="/portal/quick-terms" className="btn btn-primary mt-4 inline-block">
+              Review &amp; Agree →
+            </a>
+          </div>
+        )}
+
         {/* Quick action buttons — pick what you're dropping */}
-        {!dropMode && (
+        {!dropMode && !termsLocked && (
           <div className="space-y-3">
             <button
               onClick={() => setDropMode("link")}

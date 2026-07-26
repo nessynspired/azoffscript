@@ -51,6 +51,8 @@ export type AssignmentStatus =
   | "Not Started" | "In Progress" | "Dropped" | "Waiting on Vanessa"
   | "Needs Tweak" | "Greenlit" | "Done" | "Skipped" | "Hold";
 
+export type JoinSubmissionStatus = "New" | "Contacted" | "Approved" | "Rejected" | "Archived";
+
 export interface Database {
   public: {
     Tables: {
@@ -78,6 +80,12 @@ export interface Database {
           kit_acknowledged: boolean;
           ground_rules_acknowledged_at: string | null;
           can_plan_content: boolean;
+          public_visible: boolean;
+          public_bio: string | null;
+          slug: string | null;
+          display_order: number;
+          card_image: string | null;
+          gear_image: string | null;
           created_at: string;
         };
         Insert: {
@@ -102,6 +110,12 @@ export interface Database {
           kit_acknowledged?: boolean;
           ground_rules_acknowledged_at?: string | null;
           can_plan_content?: boolean;
+          public_visible?: boolean;
+          public_bio?: string | null;
+          slug?: string | null;
+          display_order?: number;
+          card_image?: string | null;
+          gear_image?: string | null;
           created_at?: string;
         };
         Update: {
@@ -126,7 +140,31 @@ export interface Database {
           kit_acknowledged?: boolean;
           ground_rules_acknowledged_at?: string | null;
           can_plan_content?: boolean;
+          public_visible?: boolean;
+          public_bio?: string | null;
+          slug?: string | null;
+          display_order?: number;
+          card_image?: string | null;
+          gear_image?: string | null;
           created_at?: string;
+        };
+      };
+      site_settings: {
+        Relationships: [];
+        Row: {
+          key: string;
+          value: string;
+          updated_at: string;
+        };
+        Insert: {
+          key: string;
+          value: string;
+          updated_at?: string;
+        };
+        Update: {
+          key?: string;
+          value?: string;
+          updated_at?: string;
         };
       };
 
@@ -693,6 +731,76 @@ export interface Database {
         };
       };
 
+      join_submissions: {
+        Relationships: [{ foreignKeyName: "join_submissions_converted_invite_id_fkey"; columns: ["converted_invite_id"]; referencedRelation: "invite_codes"; referencedColumns: ["id"] }];
+        Row: {
+          id: string;
+          name: string;
+          city: string;
+          socials: string | null;
+          comfortable_on_camera: string | null;
+          content_type: string | null;
+          roles: string[] | null;
+          availability: string | null;
+          boundaries: string | null;
+          why: string | null;
+          lane: string | null;
+          guest_or_recurring: string | null;
+          clips_not_guaranteed: string | null;
+          status: JoinSubmissionStatus;
+          converted_invite_id: string | null;
+          admin_notes: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          city: string;
+          socials?: string | null;
+          comfortable_on_camera?: string | null;
+          content_type?: string | null;
+          roles?: string[] | null;
+          availability?: string | null;
+          boundaries?: string | null;
+          why?: string | null;
+          lane?: string | null;
+          guest_or_recurring?: string | null;
+          clips_not_guaranteed?: string | null;
+          status?: JoinSubmissionStatus;
+          converted_invite_id?: string | null;
+          admin_notes?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          city?: string;
+          socials?: string | null;
+          comfortable_on_camera?: string | null;
+          content_type?: string | null;
+          roles?: string[] | null;
+          availability?: string | null;
+          boundaries?: string | null;
+          why?: string | null;
+          lane?: string | null;
+          guest_or_recurring?: string | null;
+          clips_not_guaranteed?: string | null;
+          status?: JoinSubmissionStatus;
+          converted_invite_id?: string | null;
+          admin_notes?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
       revenue_events: {
         Relationships: [];
         Row: {
@@ -1121,6 +1229,7 @@ export interface Database {
       drop_type: DropType;
       platform: Platform;
       idea_category: IdeaCategory;
+      join_submission_status: JoinSubmissionStatus;
     };
   };
 }

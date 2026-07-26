@@ -7,15 +7,6 @@ import type { Database, UserRole } from "@/lib/types/db";
 
 type InviteCode = Database["public"]["Tables"]["invite_codes"]["Row"];
 
-const CREW_PROFILES = [
-  { name: "Vanessa", nickname: "The Room Builder", plot_twist: "Founder energy. Vision, direction, and the one making sure the chaos turns into something real.", favorite_content: ["Founder", "Creative Lead", "Organizer"] },
-  { name: "Ronnie", nickname: "The Sweet Touch", plot_twist: "Warm, creative, and the one who can bring personality into the room without forcing it.", favorite_content: ["Creative Energy", "Warm Vibe", "Food / Cake Energy"] },
-  { name: "Sholanda", nickname: "The Real One", plot_twist: "Says what everyone else was thinking — and somehow makes it useful.", favorite_content: ["Hot Takes", "Real Reactions", "Group Games"] },
-  { name: "Elaine", nickname: "The Quiet Surprise", plot_twist: "May not be the loudest in the room, but the reaction can say everything.", favorite_content: ["Reaction Queen", "Quiet Humor", "Side-Eye Energy"] },
-  { name: "Latasha", nickname: "The Wild Card", plot_twist: "The one people need to watch because you don't know what direction her answer is about to go.", favorite_content: ["Wild Card", "Unpredictable Answers", "Real Talk"] },
-  { name: "Maria", nickname: "The Fresh Energy", plot_twist: "Brings a different rhythm into the room and can make a simple question turn into a whole moment.", favorite_content: ["Fresh Vibe", "Group Chemistry", "Funny Questions"] },
-];
-
 function generateCode(name: string): string {
   const prefix = name.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -29,6 +20,9 @@ export default function AdminInvitesPage() {
   const [invites, setInvites] = useState<InviteCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
+  const [customForm, setCustomForm] = useState({ name: "", nickname: "", plot_twist: "", role: "member" as UserRole });
+  const [customError, setCustomError] = useState<string | null>(null);
+  const [creatingCustom, setCreatingCustom] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("invite_codes").select("*").order("created_at", { ascending: false });
@@ -38,17 +32,28 @@ export default function AdminInvitesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function createInvite(profile: typeof CREW_PROFILES[0], role: UserRole = "member") {
-    const code = generateCode(profile.name);
+  async function createCustomInvite() {
+    if (!customForm.name.trim()) {
+      setCustomError("Name is required");
+      return;
+    }
+    setCreatingCustom(true);
+    setCustomError(null);
+    const code = generateCode(customForm.name);
     const { error } = await supabase.from("invite_codes").insert({
       code,
-      name: profile.name,
-      nickname: profile.nickname,
-      plot_twist: profile.plot_twist,
-      favorite_content: profile.favorite_content,
-      role,
+      name: customForm.name.trim(),
+      nickname: customForm.nickname.trim() || null,
+      plot_twist: customForm.plot_twist.trim() || null,
+      role: customForm.role,
     });
-    if (error) { alert(error.message); return; }
+    if (error) {
+      setCustomError(error.message);
+      setCreatingCustom(false);
+      return;
+    }
+    setCustomForm({ name: "", nickname: "", plot_twist: "", role: "member" });
+    setCreatingCustom(false);
     load();
   }
 
@@ -74,9 +79,6 @@ export default function AdminInvitesPage() {
     );
   }
 
-  // Which crew members already have codes?
-  const codedNames = new Set(invites.map((i) => i.name));
-
   return (
     <div className="space-y-6">
       <div>
@@ -84,29 +86,64 @@ export default function AdminInvitesPage() {
         <p className="text-smoked-charcoal/70 mt-2 text-lg">Generate a code for each crew member. They enter it when signing up.</p>
       </div>
 
-      {/* Generate codes for crew members who don't have one yet */}
+      {/* Create invite — works for anyone */}
       <div className="card p-5">
-        <h2 className="font-display text-xl text-desert-night mb-3">Generate Invites</h2>
+        <h2 className="font-display text-xl text-desert-night mb-1">Create Invite</h2>
+        <p className="text-xs text-smoked-charcoal/60 mb-4">
+          Generate an invite code for a new crew member, guest, or anyone joining the room. They&apos;ll use this code when signing up.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {CREW_PROFILES.map((profile) => {
-            const hasCode = codedNames.has(profile.name);
-            return (
-              <div key={profile.name} className="flex items-center justify-between bg-sandstone-cream/50 rounded-xl p-3">
-                <div>
-                  <p className="font-bold text-desert-night">{profile.name}</p>
-                  <p className="text-xs text-cactus-teal font-bold">{profile.nickname}</p>
-                </div>
-                <button
-                  onClick={() => createInvite(profile, profile.name === "Vanessa" ? "admin" : "member")}
-                  disabled={hasCode}
-                  className={`btn ${hasCode ? "btn-ghost" : "btn-primary"} btn-sm`}
-                >
-                  {hasCode ? "Code exists" : "Generate"}
-                </button>
-              </div>
-            );
-          })}
+          <div>
+            <label className="label">Name</label>
+            <input
+              className="field"
+              placeholder="Jamie"
+              value={customForm.name}
+              onChange={(e) => setCustomForm((p) => ({ ...p, name: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="label">Nickname (optional)</label>
+            <input
+              className="field"
+              placeholder="The New Energy"
+              value={customForm.nickname}
+              onChange={(e) => setCustomForm((p) => ({ ...p, nickname: e.target.value }))}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="label">Plot twist / bio (optional)</label>
+            <input
+              className="field"
+              placeholder="What they bring to the room…"
+              value={customForm.plot_twist}
+              onChange={(e) => setCustomForm((p) => ({ ...p, plot_twist: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="label">Role</label>
+            <select
+              className="field"
+              value={customForm.role}
+              onChange={(e) => setCustomForm((p) => ({ ...p, role: e.target.value as UserRole }))}
+            >
+              <option value="member">Member (crew)</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={createCustomInvite}
+              disabled={!customForm.name.trim() || creatingCustom}
+              className="btn btn-primary btn-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {creatingCustom ? "Creating…" : "Generate Code"}
+            </button>
+          </div>
         </div>
+        {customError && (
+          <p className="text-sm text-copper-deep font-bold mt-3">{customError}</p>
+        )}
       </div>
 
       {/* Existing codes */}

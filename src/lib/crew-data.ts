@@ -64,7 +64,10 @@ export const CREW: CrewMember[] = [
 ];
 
 export const CREW_NAMES_SHORT =
-  "Vanessa, Ronnie, Sholanda, Elaine, Latasha, and Maria are the first AZ Off Script room — a mix of real reactions, hot takes, calm energy, funny timing, and Arizona personality. They are the First Wave, not the limit of what AZ Off Script can become.";
+  "Vanessa, Ronnie, Sholanda, Elaine, Latasha, and Maria are the first AZ Off Script room — a mix of real reactions, hot takes, calm energy, funny timing, and Arizona personality.";
+
+export const CREW_NAMES_FOLLOWUP =
+  "They are the First Wave, not the limit of what AZ Off Script can become.";
 
 /**
  * Member image paths — gear mockups and member cards.

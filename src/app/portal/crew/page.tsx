@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,16 @@ interface MemberTerms {
   creatorReleaseDate: string | null;
 }
 
+interface AuthUser {
+  id: string;
+  email: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  email_confirmed_at: string | null;
+  has_member_row: boolean;
+  member_name: string | null;
+}
+
 export default function CrewPage() {
   const { member: me } = useAuth();
   const supabase = createClient();
@@ -28,6 +38,11 @@ export default function CrewPage() {
   const [selected, setSelected] = useState<Member | null>(null);
   const [toggling, setToggling] = useState(false);
   const [termsMap, setTermsMap] = useState<Record<string, MemberTerms>>({});
+  const [authUsers, setAuthUsers] = useState<AuthUser[]>([]);
+  const [creatingFor, setCreatingFor] = useState<AuthUser | null>(null);
+  const [createForm, setCreateForm] = useState({ name: "", nickname: "", plot_twist: "" });
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const isAdmin = me?.role === "admin";
 
@@ -37,7 +52,7 @@ export default function CrewPage() {
       setLoading(false);
     });
 
-    // Admin: load terms status for all members
+    // Admin: load terms status for all members + auth user login activity
     if (me?.role === "admin") {
       (async () => {
         const [qtRes, sigRes] = await Promise.all([
@@ -62,6 +77,17 @@ export default function CrewPage() {
           if (!map[s.member_id].creatorReleaseDate) map[s.member_id].creatorReleaseDate = s.created_at;
         }
         setTermsMap(map);
+
+        // Pull auth user login activity (service role, admin-only route)
+        try {
+          const res = await fetch("/api/admin/auth-users");
+          if (res.ok) {
+            const data = await res.json();
+            setAuthUsers(data.users ?? []);
+          }
+        } catch (err) {
+          console.warn("[crew] failed to load auth users:", err);
+        }
       })();
     }
   }, [supabase, me]);
@@ -78,6 +104,41 @@ export default function CrewPage() {
     setToggling(false);
   }
 
+  async function createMemberRow(authUser: AuthUser) {
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const res = await fetch("/api/admin/create-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: authUser.id,
+          email: authUser.email,
+          name: createForm.name.trim(),
+          nickname: createForm.nickname.trim() || undefined,
+          plot_twist: createForm.plot_twist.trim() || undefined,
+          role: "member",
+          first_wave: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to create member");
+      // Refresh members + auth users
+      const [memRes, authRes] = await Promise.all([
+        supabase.from("members").select("*").order("role", { ascending: false }).order("name"),
+        fetch("/api/admin/auth-users").then((r) => r.json()),
+      ]);
+      setMembers(memRes.data ?? []);
+      if (authRes.users) setAuthUsers(authRes.users);
+      setCreatingFor(null);
+      setCreateForm({ name: "", nickname: "", plot_twist: "" });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create member");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center py-16 gap-4">
@@ -86,6 +147,10 @@ export default function CrewPage() {
       </div>
     );
   }
+
+  // Build a lookup of auth users by user_id, and find accounts with no member row
+  const authByUserId = new Map(authUsers.map((u) => [u.id, u]));
+  const orphans = authUsers.filter((u) => !u.has_member_row);
 
   return (
     <div className="space-y-6">
@@ -115,6 +180,7 @@ export default function CrewPage() {
                   <th className="py-2 pr-4">Quick Terms</th>
                   <th className="py-2 pr-4">Creator Release</th>
                   <th className="py-2 pr-4">Clip Uploads</th>
+                  <th className="py-2 pr-4">Last Login</th>
                 </tr>
               </thead>
               <tbody>
@@ -122,6 +188,7 @@ export default function CrewPage() {
                   const t = termsMap[m.id];
                   const qtOk = t?.quickTerms && t.quickTermsVersion === QUICK_TERMS_VERSION;
                   const crOk = t?.creatorRelease;
+                  const auth = authByUserId.get(m.user_id);
                   return (
                     <tr key={m.id} className="border-b border-desert-night/5">
                       <td className="py-2 pr-4 font-bold text-desert-night">{m.name}</td>
@@ -140,9 +207,130 @@ export default function CrewPage() {
                           {crOk ? "Unlocked" : "🔒 Locked"}
                         </span>
                       </td>
+                      <td className="py-2 pr-4 text-xs text-smoked-charcoal/70 whitespace-nowrap">
+                        {auth?.last_sign_in_at
+                          ? formatLoginTime(auth.last_sign_in_at)
+                          : auth
+                            ? <span className="text-smoked-charcoal/40">Never</span>
+                            : <span className="text-smoked-charcoal/30">—</span>}
+                      </td>
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* ===== ADMIN: LOGGED IN WITHOUT A CREW PROFILE ===== */}
+      {isAdmin && orphans.length > 0 && (
+        <section className="card p-5 border-2 border-copper-clay/30">
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-display text-lg text-desert-night">Logged in — no crew profile</p>
+            <span className="text-xs text-smoked-charcoal/50">{orphans.length} account(s)</span>
+          </div>
+          <p className="text-xs text-smoked-charcoal/60 mb-3">
+            These people created an account (or logged in) but never matched to a crew profile — usually because they signed up without a valid invite code. They can&apos;t access the portal. Click <strong>Create Member</strong> to fix them instantly.
+          </p>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-smoked-charcoal/50 uppercase border-b border-desert-night/10">
+                  <th className="py-2 pr-4">Email</th>
+                  <th className="py-2 pr-4">Email Verified</th>
+                  <th className="py-2 pr-4">Last Login</th>
+                  <th className="py-2 pr-4">Account Created</th>
+                  <th className="py-2 pr-4">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orphans.map((u) => (
+                  <Fragment key={u.id}>
+                    <tr className="border-b border-desert-night/5">
+                      <td className="py-2 pr-4 font-bold text-desert-night break-all">{u.email ?? "—"}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`chip !text-[10px] ${u.email_confirmed_at ? "chip-approved" : "chip-yellow"}`}>
+                          {u.email_confirmed_at ? "✓ Verified" : "Pending"}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4 text-xs text-smoked-charcoal/70 whitespace-nowrap">
+                        {u.last_sign_in_at ? formatLoginTime(u.last_sign_in_at) : <span className="text-smoked-charcoal/40">Never</span>}
+                      </td>
+                      <td className="py-2 pr-4 text-xs text-smoked-charcoal/70 whitespace-nowrap">
+                        {formatLoginTime(u.created_at)}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <button
+                          onClick={() => {
+                            setCreatingFor(u);
+                            setCreateForm({ name: "", nickname: "", plot_twist: "" });
+                            setCreateError(null);
+                          }}
+                          className="btn btn-primary btn-sm"
+                        >
+                          Create Member
+                        </button>
+                      </td>
+                    </tr>
+                    {creatingFor?.id === u.id && (
+                      <tr className="border-b border-desert-night/10 bg-copper-clay/5">
+                        <td colSpan={5} className="py-4 px-4">
+                          <div className="space-y-3 max-w-md">
+                            <p className="text-xs font-bold text-desert-night">
+                              Create a crew profile for {u.email}
+                            </p>
+                            <div>
+                              <label className="label">Name</label>
+                              <input
+                                className="field"
+                                placeholder="Latasha"
+                                value={createForm.name}
+                                onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <label className="label">Nickname (optional)</label>
+                              <input
+                                className="field"
+                                placeholder="The Wild Card"
+                                value={createForm.nickname}
+                                onChange={(e) => setCreateForm((p) => ({ ...p, nickname: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <label className="label">Plot twist / bio (optional)</label>
+                              <input
+                                className="field"
+                                placeholder="The one people need to watch…"
+                                value={createForm.plot_twist}
+                                onChange={(e) => setCreateForm((p) => ({ ...p, plot_twist: e.target.value }))}
+                              />
+                            </div>
+                            {createError && (
+                              <p className="text-sm text-copper-deep font-bold">{createError}</p>
+                            )}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => createMemberRow(u)}
+                                disabled={!createForm.name.trim() || creating}
+                                className="btn btn-primary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {creating ? "Creating…" : "✓ Create Member"}
+                              </button>
+                              <button
+                                onClick={() => { setCreatingFor(null); setCreateError(null); }}
+                                className="btn btn-ghost btn-sm"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
+                ))}
               </tbody>
             </table>
           </div>
@@ -324,4 +512,31 @@ export default function CrewPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Format an ISO timestamp as a short relative-ish string.
+ * - Within 24h: "Today, 3:45 PM"
+ * - Within 7 days: "3 days ago"
+ * - Otherwise: "Mar 15, 2026"
+ */
+function formatLoginTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = diffMs / 60000;
+  const diffHr = diffMin / 60;
+  const diffDay = diffHr / 24;
+
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${Math.floor(diffMin)}m ago`;
+  if (diffHr < 24 && d.getDate() === now.getDate()) {
+    return `Today, ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+  }
+  if (diffDay < 7) {
+    const days = Math.floor(diffDay);
+    if (days === 1) return "Yesterday";
+    return `${days} days ago`;
+  }
+  return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
 }

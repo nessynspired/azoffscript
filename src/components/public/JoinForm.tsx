@@ -3,10 +3,23 @@
 import { useState } from "react";
 import { MascotImage } from "@/components/MascotImage";
 
-const ROLES = ["On camera", "Ideas", "Filming", "Editing", "Planning", "Behind the scenes"];
+const ROLES = [
+  "On camera talking / giving opinions",
+  "Facial reactions / side-eye",
+  "Quick yes-or-no answers",
+  "Group videos",
+  "Solo clips from home",
+  "Funny trends",
+  "Mom-life content",
+  "Comedy skits",
+  "Ideas, prompts, or trends",
+  "Filming or behind the scenes",
+  "Planning or organizing",
+  "Still figuring it out",
+];
 
 const LANES = [
-  "Women's First Wave / Next Wave",
+  "Women's Round 2 room",
   "Guest appearance",
   "Behind the scenes",
   "Couples content later",
@@ -14,12 +27,27 @@ const LANES = [
   "Future AZ Off Script wave",
 ];
 
+const GUEST_OPTIONS = [
+  { value: "yes", label: "Yes" },
+  { value: "maybe", label: "Maybe, explain it to me" },
+  { value: "no", label: "No, I only want to join if I'm a main recurring face" },
+];
+
+const POSTING_OPTIONS = [
+  { value: "yes", label: "Yes, I understand the brand chooses what fits" },
+  { value: "maybe", label: "Maybe, I want to understand the process" },
+  { value: "no", label: "No, I only want to participate if my clips are guaranteed to post" },
+];
+
 export function JoinForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", city: "", socials: "", comfortableOnCamera: "",
     contentType: "", roles: [] as string[], availability: "",
     boundaries: "", why: "", lane: "",
+    guestOrRecurring: "", clipsNotGuaranteed: "",
   });
 
   function update(key: string, value: string) {
@@ -35,9 +63,26 @@ export function JoinForm() {
     }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/join/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Something went wrong. Please try again.");
+      }
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -80,7 +125,7 @@ export function JoinForm() {
         <textarea id="join-content" className="field min-h-[80px]" placeholder="Hot takes, games, reactions…" value={form.contentType} onChange={(e) => update("contentType", e.target.value)} />
       </div>
       <div>
-        <label className="label">What role fits you best?</label>
+        <label className="label">What feels most like you?</label>
         <div className="flex flex-wrap gap-2">
           {ROLES.map((role) => (
             <button
@@ -115,7 +160,41 @@ export function JoinForm() {
           ))}
         </select>
       </div>
-      <button type="submit" className="btn btn-primary btn-lg w-full">Tell Us Your Vibe</button>
+      <div>
+        <label className="label" htmlFor="join-guest">Are you okay starting as a guest or featured face before becoming recurring?</label>
+        <select id="join-guest" className="field" value={form.guestOrRecurring} onChange={(e) => update("guestOrRecurring", e.target.value)}>
+          <option value="">Select…</option>
+          {GUEST_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="label" htmlFor="join-posting">Are you okay submitting clips without every clip being posted?</label>
+        <select id="join-posting" className="field" value={form.clipsNotGuaranteed} onChange={(e) => update("clipsNotGuaranteed", e.target.value)}>
+          <option value="">Select…</option>
+          {POSTING_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+      <div className="card p-4 bg-sandstone-cream/60 border border-copper-clay/30 text-xs text-smoked-charcoal/70 leading-relaxed space-y-2">
+        <p className="font-bold text-desert-night">A quick note:</p>
+        <p>
+          Submitting this form does not guarantee selection, posting, tagging, payment, personal page
+          promotion, partnership, ownership, or a permanent recurring spot.
+        </p>
+        <p>
+          AZ Off Script chooses what gets posted based on brand fit, comfort, chemistry, timing,
+          consistency, and what makes the room stronger.
+        </p>
+      </div>
+      <button type="submit" disabled={submitting} className="btn btn-primary btn-lg w-full disabled:opacity-60 disabled:cursor-not-allowed">
+        {submitting ? "Sending…" : "Tell Us Your Vibe"}
+      </button>
+      {error && (
+        <p className="text-sm text-copper-deep font-bold text-center">{error}</p>
+      )}
     </form>
   );
 }

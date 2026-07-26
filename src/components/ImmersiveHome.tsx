@@ -11,7 +11,26 @@ import { Marquee } from "@/components/motion/Marquee";
 import { ParallaxLayer } from "@/components/motion/ParallaxLayer";
 import { useScrollReveal } from "@/components/motion/useScrollReveal";
 import { PosterImage, MascotImage } from "@/components/MascotImage";
-import { CREW, CREW_NAMES_SHORT, CONTENT_LANES, HERO_BADGES } from "@/lib/crew-data";
+import { CONTENT_LANES, HERO_BADGES } from "@/lib/crew-data";
+
+export interface PublicCrewMember {
+  id: string;
+  name: string;
+  nickname: string | null;
+  public_bio: string | null;
+  slug: string | null;
+  display_order: number;
+  first_wave: boolean;
+  photo_url: string | null;
+  card_image: string | null;
+  gear_image: string | null;
+  favorite_content: string[] | null;
+}
+
+interface ImmersiveHomeProps {
+  crew?: PublicCrewMember[];
+  crewNames?: string;
+}
 
 /* Content lane card colors (cycle through brand palette) */
 const LANE_COLORS = [
@@ -59,7 +78,7 @@ const COLLAB_TYPES = [
   { title: "Debate It", desc: "Questions, games, products, scenarios.", icon: "main" as const },
 ];
 
-export function ImmersiveHome() {
+export function ImmersiveHome({ crew = [], crewNames = "" }: ImmersiveHomeProps = {}) {
   const heroRef = useRef<HTMLDivElement>(null);
   const vibeRef = useScrollReveal<HTMLDivElement>();
   const lanesRef = useScrollReveal<HTMLDivElement>();
@@ -140,8 +159,8 @@ export function ImmersiveHome() {
               <span className="kinetic-line"><span className="kinetic-line-inner text-sunburst-yellow">got a camera.</span></span>
             </h1>
             <p className="text-sandstone-cream/90 text-lg md:text-xl mt-6 max-w-xl leading-relaxed">
-              Real reactions, hot takes, group games, and local Arizona moments from the room nobody
-              can keep quiet.
+              Real reactions, hot takes, group games, and local Arizona moments from the room that
+              can&apos;t stay scripted.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <MagneticButton>
@@ -213,7 +232,7 @@ export function ImmersiveHome() {
             <div className="card p-5 sticker">
               <h3 className="font-display text-lg text-desert-night">The Room Decides</h3>
               <p className="text-sm text-smoked-charcoal/70 mt-2">
-                One question. Six personalities. Somebody is always confidently wrong.
+                One question. Different personalities. Somebody is always confidently wrong.
               </p>
             </div>
           </div>
@@ -339,9 +358,9 @@ export function ImmersiveHome() {
 
           {/* Cast cards — collectible card grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CREW.map((member, i) => (
+            {crew.map((member, i) => (
               <div
-                key={member.slug}
+                key={member.id}
                 className="cast-card card bg-sandstone-cream"
                 data-cursor="meet"
               >
@@ -357,15 +376,15 @@ export function ImmersiveHome() {
                       <h3 className="font-display text-3xl text-desert-night leading-none">
                         {member.name}
                       </h3>
-                      <p className="text-cactus-teal font-bold text-sm mt-2">{member.title}</p>
+                      <p className="text-cactus-teal font-bold text-sm mt-2">{member.nickname ?? ""}</p>
                     </div>
-                    <span className="chip chip-yellow !text-[9px]">First Wave</span>
+                    {member.first_wave && <span className="chip chip-yellow !text-[9px]">First Wave</span>}
                   </div>
 
-                  <p className="text-sm text-smoked-charcoal/70 mt-4">{member.description}</p>
+                  <p className="text-sm text-smoked-charcoal/70 mt-4">{member.public_bio ?? member.nickname ?? ""}</p>
 
                   <div className="flex flex-wrap gap-1 mt-4">
-                    {member.tags.slice(0, 3).map((tag) => (
+                    {(member.favorite_content ?? []).slice(0, 3).map((tag) => (
                       <span key={tag} className="chip chip-cream !text-[10px]">{tag}</span>
                     ))}
                   </div>
@@ -379,9 +398,16 @@ export function ImmersiveHome() {
             ))}
           </div>
 
-          <p className="text-sandstone-cream/50 text-center mt-10 max-w-2xl mx-auto text-sm">
-            {CREW_NAMES_SHORT}
-          </p>
+          {crewNames && (
+            <div className="text-center mt-10 max-w-2xl mx-auto space-y-2">
+              <p className="text-sandstone-cream/60 text-sm">
+                {crewNames}
+              </p>
+              <p className="text-sandstone-cream/50 text-sm">
+                They are the First Wave, not the limit of what AZ Off Script can become.
+              </p>
+            </div>
+          )}
 
           <div className="text-center mt-8">
             <MagneticButton>
@@ -499,7 +525,7 @@ export function ImmersiveHome() {
             </div>
             <nav className="flex flex-wrap items-center gap-4 text-sm">
               <Link href="/watch" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Watch</Link>
-              <Link href="/crew" className="text-sandstone-cream/60 hover:text-sunburst-yellow">The Crew</Link>
+              <Link href="/crew" className="text-sandstone-cream/60 hover:text-sunburst-yellow">The Room</Link>
               <Link href="/collabs" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Collabs</Link>
               <Link href="/join" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Join</Link>
               <Link href="/about" className="text-sandstone-cream/60 hover:text-sunburst-yellow">About</Link>

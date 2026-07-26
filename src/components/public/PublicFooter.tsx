@@ -21,7 +21,7 @@ export function PublicFooter() {
 
           <nav className="flex flex-wrap items-center gap-3 md:gap-4 text-sm">
             <Link href="/watch" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Watch</Link>
-            <Link href="/crew" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Crew</Link>
+            <Link href="/crew" className="text-sandstone-cream/60 hover:text-sunburst-yellow">The Room</Link>
             <Link href="/collabs" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Collabs</Link>
             <Link href="/join" className="text-sandstone-cream/60 hover:text-sunburst-yellow">Join</Link>
             <Link href="/about" className="text-sandstone-cream/60 hover:text-sunburst-yellow">About</Link>

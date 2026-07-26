@@ -7,6 +7,7 @@ import { PortalTopBar, PortalBottomNav } from "@/components/PortalNav";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MascotImage } from "@/components/MascotImage";
 import { TermsGate } from "@/components/TermsGate";
+import { QuickTermsBanner } from "@/components/QuickTermsBanner";
 
 function PortalShell({ children }: { children: React.ReactNode }) {
   const { user, member, loading } = useAuth();
@@ -37,6 +38,7 @@ function PortalShell({ children }: { children: React.ReactNode }) {
     <TermsGate>
       <div className="portal-shell">
         <PortalTopBar memberName={memberName} memberRole={memberRole} />
+        <QuickTermsBanner />
         <main className="max-w-7xl mx-auto w-full px-4 md:px-6 py-6 md:py-8">
           {children}
         </main>
