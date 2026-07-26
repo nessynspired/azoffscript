@@ -138,7 +138,7 @@ export function PortalTopBar({
       <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center gap-6">
         <Link href="/portal/lobby" className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/logos/logo-white.png" alt="AZ Off Script" className="h-8 w-auto" />
+          <img src="/assets/logos/logo-combined-white.png" alt="AZ Off Script" className="h-10 w-auto" />
         </Link>
 
         <nav className="flex items-center gap-1 flex-1">

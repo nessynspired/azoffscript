@@ -2,7 +2,7 @@
 // Caches the app shell for offline use. Network-first for pages and CSS,
 // stale-while-revalidate for images.
 
-const CACHE_VERSION = "azos-v9";
+const CACHE_VERSION = "azos-v10";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
