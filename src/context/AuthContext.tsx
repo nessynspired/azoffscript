@@ -72,6 +72,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Real-time: update member data when the member's row changes (e.g. admin
+  // grants or revokes can_plan_content). This lets planners see their new
+  // menu items immediately without logging out and back in.
+  useEffect(() => {
+    if (!member?.id) return;
+    const channel = supabase
+      .channel(`member:${member.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "members", filter: `id=eq.${member.id}` },
+        (payload) => {
+          setMember(payload.new as Member);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [member?.id]);
+
   async function loadMember(userId: string) {
     const { data } = await supabase
       .from("members")
