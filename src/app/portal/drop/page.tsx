@@ -54,6 +54,8 @@ export default function DropPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [dropped, setDropped] = useState(false);
+  const [plannedClipId, setPlannedClipId] = useState<string>("");
+  const [plannedClips, setPlannedClips] = useState<{ id: string; title: string; scheduled_date: string | null }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-fill from URL params (shared from TikTok/Instagram/etc via Web Share Target)
@@ -70,6 +72,16 @@ export default function DropPage() {
 
   useEffect(() => {
     supabase.from("members").select("*").order("name").then(({ data }) => setMembers(data ?? []));
+  }, [supabase]);
+
+  // Fetch planned clips (calendar items) for the "Connect to planned clip" dropdown
+  useEffect(() => {
+    supabase
+      .from("clips")
+      .select("id, title, scheduled_date")
+      .eq("status", "Planned")
+      .order("scheduled_date")
+      .then(({ data }) => setPlannedClips(data ?? []));
   }, [supabase]);
 
   // Auto-detect what type of drop this is
@@ -97,7 +109,7 @@ export default function DropPage() {
 
   async function submit() {
     if (!member || !user) { setError("You need to be signed in to drop something."); return; }
-    if (!text.trim() && !file) { setError("Drop something first — a link, an idea, anything."); return; }
+    if (!text.trim() && !file) { setError("Drop something first — a link or a clip."); return; }
 
     setSubmitting(true);
     setError(null);
@@ -137,6 +149,7 @@ export default function DropPage() {
         submitted_by: member.id,
         submitted_by_name: member.name,
         needs_review: false,
+        planned_clip_id: plannedClipId || null,
       };
 
       const { data: clip, error: clipErr } = await supabase
@@ -205,6 +218,7 @@ export default function DropPage() {
     setDestination("");
     setError(null);
     setDropped(false);
+    setPlannedClipId("");
   }
 
   // ===== SUCCESS STATE =====
@@ -236,7 +250,7 @@ export default function DropPage() {
   }
 
   // ===== DROP FORM — quick actions first, details after =====
-  const [dropMode, setDropMode] = useState<"link" | "clip" | "prompt" | "caption" | null>(null);
+  const [dropMode, setDropMode] = useState<"link" | "clip" | null>(null);
   const termsStatus = useTermsStatus();
   // Admins bypass all term locks — they're the brand owner, not bound by their own terms
   const isAdmin = member?.role === "admin";
@@ -249,7 +263,7 @@ export default function DropPage() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="font-display text-3xl md:text-4xl text-desert-night">Drop something.</h1>
-          <InfoTooltip text="Drop a video file, paste any social link (TikTok, Instagram, Facebook, YouTube, etc.), or type a text idea. Pick a lane (content category), choose where it's going, and tag anyone who's in it. It goes straight to the Run Sheet for planning." />
+          <InfoTooltip text="Drop a video file, paste any social link (TikTok, Instagram, Facebook, YouTube, etc.). Pick a lane (content category), choose where it's going, and tag anyone who's in it. It goes straight to the Run Sheet for planning." />
           <p className="text-smoked-charcoal/60 mt-2">
             One take is fine. No pressure to be perfect.
           </p>
@@ -290,7 +304,7 @@ export default function DropPage() {
             >
               <span className="text-3xl">🎬</span>
               <div className="flex-1">
-                <p className="font-display text-xl text-desert-night">Drop a Quick Clip</p>
+                <p className="font-display text-xl text-desert-night">Drop your clip</p>
                 <p className="text-sm text-smoked-charcoal/60">Record a video and send it.</p>
                 {clipLocked && (
                   <p className="text-xs text-copper-deep font-bold mt-2">
@@ -299,28 +313,6 @@ export default function DropPage() {
                 )}
               </div>
               {clipLocked && <span className="text-2xl">🔒</span>}
-            </button>
-
-            <button
-              onClick={() => setDropMode("prompt")}
-              className="card p-5 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center gap-4"
-            >
-              <span className="text-3xl">💬</span>
-              <div>
-                <p className="font-display text-xl text-desert-night">Answer the Prompt</p>
-                <p className="text-sm text-smoked-charcoal/60">Type your answer to this week&apos;s question.</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setDropMode("caption")}
-              className="card p-5 w-full text-left hover:-translate-y-0.5 transition-transform flex items-center gap-4"
-            >
-              <span className="text-3xl">✍️</span>
-              <div>
-                <p className="font-display text-xl text-desert-night">Send a Caption Idea</p>
-                <p className="text-sm text-smoked-charcoal/60">Got a funny caption? Drop it.</p>
-              </div>
             </button>
           </div>
         )}
@@ -409,59 +401,31 @@ export default function DropPage() {
           </div>
         )}
 
-        {/* ===== PROMPT / IDEA DROP ===== */}
-        {dropMode === "prompt" && (
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-xl text-desert-night">💬 Your answer</h2>
-              <button onClick={() => { setDropMode(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
-            </div>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Type your answer…"
-              className="field min-h-[120px] text-lg"
-              autoFocus
-            />
-            {error && <p className="mt-3 text-sm text-copper-deep font-bold">{error}</p>}
-            <button
-              onClick={submit}
-              disabled={submitting || !text.trim()}
-              className="btn btn-primary btn-lg w-full mt-4"
-            >
-              {submitting ? "Dropping…" : "Drop It"}
-            </button>
-          </div>
-        )}
-
-        {/* ===== CAPTION DROP ===== */}
-        {dropMode === "caption" && (
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-xl text-desert-night">✍️ Caption idea</h2>
-              <button onClick={() => { setDropMode(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
-            </div>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Drop your caption…"
-              className="field min-h-[80px] text-lg"
-              autoFocus
-            />
-            {error && <p className="mt-3 text-sm text-copper-deep font-bold">{error}</p>}
-            <button
-              onClick={submit}
-              disabled={submitting || !text.trim()}
-              className="btn btn-primary btn-lg w-full mt-4"
-            >
-              {submitting ? "Dropping…" : "Drop It"}
-            </button>
-          </div>
-        )}
-
         {/* ===== OPTIONAL EXTRAS — only after they've picked a mode ===== */}
         {dropMode && (text.trim() || file) && (
           <div className="mt-4 space-y-4">
+            {/* Connect to planned clip — optional */}
+            <div className="card p-4">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-desert-night/50 mb-1">
+                Connect to a planned clip
+              </p>
+              <p className="text-xs text-smoked-charcoal/50 mb-2">
+                (optional) — if this is for a specific content piece on the calendar
+              </p>
+              <select
+                value={plannedClipId}
+                onChange={(e) => setPlannedClipId(e.target.value)}
+                className="field text-sm"
+              >
+                <option value="">Not for a specific planned clip</option>
+                {plannedClips.map((clip) => (
+                  <option key={clip.id} value={clip.id}>
+                    {clip.title}{clip.scheduled_date ? ` — ${new Date(clip.scheduled_date).toLocaleDateString()}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Tag people — optional */}
             {members.length > 1 && (
               <div>

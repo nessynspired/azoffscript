@@ -294,6 +294,7 @@ export interface Database {
           thumbnail_url: string | null;
           theme_id: string | null;
           template_id: string | null;
+          planned_clip_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -323,6 +324,7 @@ export interface Database {
           thumbnail_url?: string | null;
           theme_id?: string | null;
           template_id?: string | null;
+          planned_clip_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -352,6 +354,7 @@ export interface Database {
           thumbnail_url?: string | null;
           theme_id?: string | null;
           template_id?: string | null;
+          planned_clip_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1227,6 +1230,7 @@ export interface Database {
           thumbnail_url: string | null;
           theme_id: string | null;
           template_id: string | null;
+          planned_clip_id: string | null;
           created_at: string;
           updated_at: string;
           people_count: number;

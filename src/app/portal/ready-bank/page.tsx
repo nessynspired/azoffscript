@@ -17,7 +17,7 @@ import {
   SCRIPT_LAYER_FILTERS,
   type OffScriptVersion,
 } from "@/lib/off-script-versions";
-import { calcDeadlinesFromLive, nextSunday } from "@/lib/plan-defaults";
+import { nextSunday } from "@/lib/plan-defaults";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database } from "@/lib/types/db";
 
@@ -57,6 +57,9 @@ export default function ReadyBankPage() {
   const [actionTemplate, setActionTemplate] = useState<QuickDropTemplate | null>(null);
   const [actionMode, setActionMode] = useState<"week" | "date" | "assign" | null>(null);
   const [liveDate, setLiveDate] = useState<string>("");
+  const [submittedBy, setSubmittedBy] = useState<string>("");
+  const [cutReadyBy, setCutReadyBy] = useState<string>("");
+  const [greenlightBy, setGreenlightBy] = useState<string>("");
   const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
 
@@ -100,28 +103,31 @@ export default function ReadyBankPage() {
     setActionTemplate(null);
     setActionMode(null);
     setSelectedCrew([]);
+    setSubmittedBy("");
+    setCutReadyBy("");
+    setGreenlightBy("");
   }
 
   async function createClip() {
     if (!actionTemplate || !member || !liveDate) return;
     setCreating(true);
-    const deadlines = calcDeadlinesFromLive(new Date(liveDate + "T12:00:00"));
 
-    const { data: clip, error } = await supabase.from("clips").insert({
+    const clipInsert = {
       title: actionTemplate.name,
-      type: "video",
-      status: "Planned",
+      type: "video" as const,
+      status: "Planned" as const,
       category: actionTemplate.bucket,
       submitted_by: member.id,
       submitted_by_name: member.name,
       template_id: actionTemplate.id,
       destination: actionTemplate.platforms[0] ?? null,
-      idea_due_date: deadlines.idea_due_date,
-      clip_due_date: deadlines.clip_due_date,
-      final_cut_due: deadlines.final_cut_due,
-      approval_due: deadlines.approval_due,
-      scheduled_date: deadlines.scheduled_date,
-    }).select().single();
+      clip_due_date: submittedBy || null,
+      final_cut_due: cutReadyBy || null,
+      approval_due: greenlightBy || null,
+      scheduled_date: liveDate || null,
+    };
+
+    const { data: clip, error } = await supabase.from("clips").insert(clipInsert).select().single();
 
     if (error || !clip) {
       alert(error?.message ?? "Could not create clip");
@@ -139,14 +145,14 @@ export default function ReadyBankPage() {
           member_name: crewMember?.name ?? "",
           role: "On-Camera",
           task_type: "Drop a Clip",
-          drop_by_date: deadlines.clip_due_date,
+          drop_by_date: submittedBy || null,
           is_required: true,
           created_by: member.id,
         };
       });
       await supabase.from("content_assignments").insert(assignmentInserts);
       await Promise.all(selectedCrew.map((id) =>
-        notifyMember(supabase, id, "assignment", `You're on "${actionTemplate.name}" — Drop-by ${new Date(deadlines.clip_due_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`, "/portal/drop")
+        notifyMember(supabase, id, "assignment", `You're on "${actionTemplate.name}" — Drop-by ${submittedBy ? new Date(submittedBy + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "TBD"}`, "/portal/drop")
       ));
     }
 
@@ -404,43 +410,49 @@ export default function ReadyBankPage() {
               <button onClick={closeAction} className="text-desert-night/40 hover:text-desert-night text-2xl">×</button>
             </div>
 
-            {actionMode === "week" && (
+            {(actionMode === "week" || actionMode === "date" || actionMode === "assign") && (
               <div className="space-y-3">
-                <p className="text-sm text-smoked-charcoal/70">
-                  This will create a Planned clip with deadlines auto-set for next Sunday.
-                </p>
-                <p className="text-xs text-smoked-charcoal/50">
-                  Drop-by 3 days before · Cut ready 2 days before · Greenlight 1 day before · Goes live Sunday
-                </p>
-              </div>
-            )}
-
-            {actionMode === "date" && (
-              <div className="space-y-3">
-                <p className="label">Goes live date</p>
-                <input
-                  type="date"
-                  value={liveDate}
-                  onChange={(e) => setLiveDate(e.target.value)}
-                  className="field !w-auto"
-                />
-                {liveDate && (
-                  <p className="text-xs text-smoked-charcoal/50">
-                    Drop-by {new Date(liveDate + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                  </p>
-                )}
+                <div>
+                  <p className="label">Submitted by</p>
+                  <input
+                    type="date"
+                    value={submittedBy}
+                    onChange={(e) => setSubmittedBy(e.target.value)}
+                    className="field !w-auto"
+                  />
+                </div>
+                <div>
+                  <p className="label">Cut ready by</p>
+                  <input
+                    type="date"
+                    value={cutReadyBy}
+                    onChange={(e) => setCutReadyBy(e.target.value)}
+                    className="field !w-auto"
+                  />
+                </div>
+                <div>
+                  <p className="label">Greenlight by</p>
+                  <input
+                    type="date"
+                    value={greenlightBy}
+                    onChange={(e) => setGreenlightBy(e.target.value)}
+                    className="field !w-auto"
+                  />
+                </div>
+                <div>
+                  <p className="label">Goes live by</p>
+                  <input
+                    type="date"
+                    value={liveDate}
+                    onChange={(e) => setLiveDate(e.target.value)}
+                    className="field !w-auto"
+                  />
+                </div>
               </div>
             )}
 
             {actionMode === "assign" && (
               <div className="space-y-3">
-                <p className="label">Goes live date</p>
-                <input
-                  type="date"
-                  value={liveDate}
-                  onChange={(e) => setLiveDate(e.target.value)}
-                  className="field !w-auto"
-                />
                 <p className="label">Assign crew</p>
                 <div className="flex flex-wrap gap-2">
                   {members.map((m) => (

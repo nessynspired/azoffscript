@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
-import { HEAT_VIBES, POST_COUNTS, EFFORT_LEVELS, generateWeekPlan, calcDeadlinesFromLive, nextSunday, type PlannedItem } from "@/lib/plan-defaults";
+import { nextSunday } from "@/lib/plan-defaults";
 import { QUICK_DROP_TEMPLATES, CONTENT_BUCKETS, getTemplate, getTemplatesByBucket, getExampleFor, type QuickDropTemplate, type EffortLabel } from "@/lib/quick-drop-templates";
 import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
@@ -16,7 +16,6 @@ import type { Database, ClipStatus, Platform } from "@/lib/types/db";
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
 type ClipPerson = Database["public"]["Tables"]["clip_people"]["Row"];
 type Approval = Database["public"]["Tables"]["approvals"]["Row"];
-type Theme = Database["public"]["Tables"]["content_themes"]["Row"];
 type TrendRef = Database["public"]["Tables"]["trend_references"]["Row"];
 type Assignment = Database["public"]["Tables"]["content_assignments"]["Row"];
 type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content" | "photo_url">;
@@ -133,20 +132,18 @@ export default function RunSheetPage() {
   const [clips, setClips] = useState<ClipMeta[]>([]);
   const [people, setPeople] = useState<Record<string, ClipPerson[]>>({});
   const [approvals, setApprovals] = useState<Record<string, Approval[]>>({});
-  const [themes, setThemes] = useState<Theme[]>([]);
   const [trends, setTrends] = useState<TrendRef[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "heat" | "watch" | "planner">("week");
+  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "watch" | "planner">("week");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [clipRes, themeRes, trendRes, asgnRes, memRes] = await Promise.all([
+    const [clipRes, trendRes, asgnRes, memRes] = await Promise.all([
       supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }),
-      supabase.from("content_themes").select("*").order("start_date", { ascending: false }),
       supabase.from("trend_references").select("*").order("created_at", { ascending: false }),
       supabase.from("content_assignments").select("*").order("drop_by_date", { ascending: true }),
       supabase.from("members").select("id, name, nickname, role, can_plan_content, photo_url").order("name"),
@@ -162,7 +159,6 @@ export default function RunSheetPage() {
 
     const clipData = clipRes.data ?? [];
     setClips(clipData);
-    setThemes(themeRes.data ?? []);
     setTrends(trendRes.data ?? []);
     setAssignments(asgnRes.data ?? []);
     setMembers(memRes.data ?? []);
@@ -196,7 +192,6 @@ export default function RunSheetPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "clips" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "approvals" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "clip_people" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "content_themes" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "trend_references" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "content_assignments" }, () => load())
       .subscribe();
@@ -266,7 +261,6 @@ export default function RunSheetPage() {
 
   // Split clips: production = actual videos being made, ideas = links/ideas/trends
   const productionClips = clips.filter((c) => c.type === "video" || c.type === "final_cut");
-  const themeMap = new Map(themes.map((t) => [t.id, t]));
 
   const TABS: { key: typeof tab; label: string; count?: number; info: string }[] = [
     { key: "week", label: "This Week", info: "Your default view — shows recent drops, your part (assignments), greenlights you need to give, deadlines this week, what's going live, and what's stuck. Good for a quick check-in." },
@@ -275,7 +269,6 @@ export default function RunSheetPage() {
     { key: "flow", label: "Studio Flow", count: productionClips.length, info: "Kanban pipeline showing videos moving through production: Dropped → Planned → Shot → Cutting → Review → Ready → Scheduled → Live → Vault. Only shows actual videos, not links or ideas." },
     { key: "board", label: "Assignment Board", count: assignments.length, info: "Shows who's been assigned to what. Planners can assign crew members to clips and track whether assignments are done, waiting, or overdue." },
     { key: "trends", label: "Trend Drops", count: trends.length, info: "TikTok trends and references the crew has dropped for inspiration. Planners can group trends into Weekly Heat themes and turn them into planned clips." },
-    { key: "heat", label: "Weekly Heat", count: themes.length, info: "The weekly content theme — what the room is focused on this week. Planners can create themes, attach trends and clips to them, and set the date range." },
     { key: "watch", label: "Watch", count: clips.filter((c) => c.status === "Live").length, info: "Clips that have gone live (posted to TikTok, Instagram, etc.). Filter by platform. Use this to watch what's already out there." },
   ];
 
@@ -329,9 +322,6 @@ export default function RunSheetPage() {
           clips={clips}
           people={people}
           approvals={approvals}
-          themes={themes}
-          trends={trends}
-          themeMap={themeMap}
           assignments={assignments}
           currentMemberId={member?.id}
           onSelectClip={(id) => setSelectedClip(id)}
@@ -342,8 +332,6 @@ export default function RunSheetPage() {
       {tab === "calendar" && (
         <CalendarView
           clips={clips}
-          themes={themes}
-          themeMap={themeMap}
           canPlanContent={canPlanContent}
           member={member ? { id: member.id, name: member.name } : undefined}
           members={members}
@@ -383,7 +371,6 @@ export default function RunSheetPage() {
                             people={people[clip.id] ?? []}
                             approvals={approvals[clip.id] ?? []}
                             isAdmin={isAdmin}
-                            themeName={clip.theme_id ? themeMap.get(clip.theme_id)?.name : undefined}
                             onSelect={() => setSelectedClip(clip.id)}
                           />
                         ))}
@@ -401,26 +388,10 @@ export default function RunSheetPage() {
       {tab === "trends" && (
         <TrendDropsTab
           trends={trends}
-          themes={themes}
           currentMemberId={member?.id}
           currentMemberName={member?.name}
           canPlanContent={canPlanContent}
           isAdmin={isAdmin}
-          onRefresh={load}
-        />
-      )}
-
-      {/* WEEKLY HEAT — theme management */}
-      {tab === "heat" && (
-        <WeeklyHeatTab
-          themes={themes}
-          clips={clips}
-          trends={trends}
-          members={members}
-          canPlanContent={canPlanContent}
-          isAdmin={isAdmin}
-          currentMemberId={member?.id}
-          currentMemberName={member?.name}
           onRefresh={load}
         />
       )}
@@ -431,8 +402,6 @@ export default function RunSheetPage() {
           clips={clips}
           assignments={assignments}
           members={members}
-          themes={themes}
-          themeMap={themeMap}
           canPlanContent={canPlanContent}
           currentMemberId={member?.id}
           currentMemberName={member?.name}
@@ -448,7 +417,6 @@ export default function RunSheetPage() {
           assignments={assignments}
           approvals={approvals}
           people={people}
-          themes={themes}
           trends={trends}
           members={members}
           isAdmin={isAdmin}
@@ -459,7 +427,7 @@ export default function RunSheetPage() {
 
       {/* WATCH — posted/live videos */}
       {tab === "watch" && (
-        <WatchTab clips={clips} themeMap={themeMap} onSelectClip={(id) => setSelectedClip(id)} />
+        <WatchTab clips={clips} onSelectClip={(id) => setSelectedClip(id)} />
       )}
 
       {selectedClip && (
@@ -469,7 +437,6 @@ export default function RunSheetPage() {
           approvals={approvals[selectedClip] ?? []}
           isAdmin={isAdmin}
           canPlanContent={canPlanContent}
-          themes={themes}
           currentMemberId={member?.id}
           currentMemberName={member?.name}
           onClose={() => setSelectedClip(null)}
@@ -483,13 +450,12 @@ export default function RunSheetPage() {
 }
 
 function ClipCard({
-  clip, people, approvals, isAdmin, themeName, onSelect,
+  clip, people, approvals, isAdmin, onSelect,
 }: {
   clip: ClipMeta;
   people: ClipPerson[];
   approvals: Approval[];
   isAdmin: boolean;
-  themeName?: string;
   onSelect: () => void;
 }) {
   const approved = approvals.filter((a) => a.status === "Approved" || a.status === "Approved With Edits").length;
@@ -539,13 +505,6 @@ function ClipCard({
       <div className="p-4">
         <h3 className="font-bold text-desert-night leading-tight">{clip.title}</h3>
         <p className="text-xs text-smoked-charcoal/60 mt-1">by {clip.submitted_by_name}</p>
-
-        {/* Weekly Heat badge */}
-        {themeName && (
-          <div className="mt-2">
-            <span className="chip chip-copper !text-[10px]">🔥 {themeName}</span>
-          </div>
-        )}
 
         {/* Destination badge — where is this video going? */}
         {clip.destination && (
@@ -655,6 +614,9 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
   const [effortFilter, setEffortFilter] = useState<string | null>(null);
   const [actionTemplate, setActionTemplate] = useState<QuickDropTemplate | null>(null);
   const [liveDate, setLiveDate] = useState<string>(() => nextSunday().toISOString().slice(0, 10));
+  const [submittedBy, setSubmittedBy] = useState<string>("");
+  const [cutReadyBy, setCutReadyBy] = useState<string>("");
+  const [greenlightBy, setGreenlightBy] = useState<string>("");
   const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
 
@@ -670,14 +632,12 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
   async function createClip(template: QuickDropTemplate) {
     if (!liveDate) return;
     setCreating(true);
-    const deadlines = calcDeadlinesFromLive(new Date(liveDate + "T12:00:00"));
     const { data: clip, error } = await supabase.from("clips").insert({
       title: template.name, type: "video", status: "Planned",
       category: template.bucket, submitted_by: member.id, submitted_by_name: member.name,
       template_id: template.id, destination: template.platforms[0] ?? null,
-      idea_due_date: deadlines.idea_due_date, clip_due_date: deadlines.clip_due_date,
-      final_cut_due: deadlines.final_cut_due, approval_due: deadlines.approval_due,
-      scheduled_date: deadlines.scheduled_date,
+      clip_due_date: submittedBy || null, final_cut_due: cutReadyBy || null,
+      approval_due: greenlightBy || null, scheduled_date: liveDate || null,
     }).select().single();
     if (error) { alert(error.message); setCreating(false); return; }
     if (selectedCrew.length > 0 && clip) {
@@ -687,18 +647,22 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
           return {
             clip_id: clip.id, member_id: crewId, member_name: cm?.name ?? "",
             role: "On-Camera", task_type: "Drop a Clip",
-            drop_by_date: deadlines.clip_due_date, is_required: true, created_by: member.id,
+            drop_by_date: submittedBy || null, is_required: true, created_by: member.id,
           };
         })
       );
+      const dropLabel = submittedBy
+        ? ` — Drop-by ${new Date(submittedBy + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`
+        : "";
       await Promise.all(selectedCrew.map((id) =>
-        notifyMember(supabase, id, "assignment", `You're on "${template.name}"`, "/portal/drop")
+        notifyMember(supabase, id, "assignment", `You're on "${template.name}"${dropLabel}`, "/portal/drop")
       ));
     }
     await onRefresh();
     setCreating(false);
     setActionTemplate(null);
     setSelectedCrew([]);
+    setSubmittedBy(""); setCutReadyBy(""); setGreenlightBy("");
   }
 
   return (
@@ -739,7 +703,7 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
             filtered.map((t) => (
               <button
                 key={t.id}
-                onClick={() => { setActionTemplate(t); setLiveDate(nextSunday().toISOString().slice(0, 10)); setSelectedCrew([]); }}
+                onClick={() => { setActionTemplate(t); setLiveDate(nextSunday().toISOString().slice(0, 10)); setSubmittedBy(""); setCutReadyBy(""); setGreenlightBy(""); setSelectedCrew([]); }}
                 className="w-full flex items-center gap-2 bg-sandstone-cream/40 hover:bg-copper-clay/15 rounded-lg px-3 md:px-2.5 py-3 md:py-1.5 text-left transition-colors group"
               >
                 <span className="text-copper-deep font-black text-base md:text-sm shrink-0 group-hover:scale-110 transition-transform">+</span>
@@ -764,9 +728,23 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
               <button onClick={() => setActionTemplate(null)} className="text-desert-night/40 text-2xl">×</button>
             </div>
             <p className="text-xs text-smoked-charcoal/60 bg-cactus-teal/10 rounded p-2">{actionTemplate.description}</p>
-            <div>
-              <p className="label">Goes live</p>
-              <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field !w-auto" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="label">Submitted by</p>
+                <input type="date" value={submittedBy} onChange={(e) => setSubmittedBy(e.target.value)} className="field w-full" />
+              </div>
+              <div>
+                <p className="label">Cut ready by</p>
+                <input type="date" value={cutReadyBy} onChange={(e) => setCutReadyBy(e.target.value)} className="field w-full" />
+              </div>
+              <div>
+                <p className="label">Greenlight by</p>
+                <input type="date" value={greenlightBy} onChange={(e) => setGreenlightBy(e.target.value)} className="field w-full" />
+              </div>
+              <div>
+                <p className="label">Goes live by</p>
+                <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field w-full" />
+              </div>
             </div>
             <div>
               <p className="label">Assign crew <span className="font-normal text-desert-night/40">(optional)</span></p>
@@ -786,16 +764,14 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
   );
 }
 
-function CalendarView({ clips, themes, themeMap, canPlanContent, member, members, onRefresh }: {
+function CalendarView({ clips, canPlanContent, member, members, onRefresh }: {
   clips: ClipMeta[];
-  themes: Theme[];
-  themeMap: Map<string, Theme>;
   canPlanContent?: boolean;
   member?: { id: string; name: string };
   members?: Member[];
   onRefresh?: () => Promise<void>;
 }) {
-  const [viewMode, setViewMode] = useState<"week" | "month">("week");
+  const [viewMode, setViewMode] = useState<"week" | "biweek" | "month">("week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
   const [showSidePanel, setShowSidePanel] = useState(false);
@@ -811,6 +787,15 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
     return d;
   });
 
+  // Bi-week view setup (14 days)
+  const biweekStart = new Date(today);
+  biweekStart.setDate(today.getDate() - today.getDay() + weekOffset * 14);
+  const biweekDays = Array.from({ length: 14 }).map((_, i) => {
+    const d = new Date(biweekStart);
+    d.setDate(biweekStart.getDate() + i);
+    return d;
+  });
+
   // Month view setup
   const monthDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
   const monthStart = new Date(monthDate);
@@ -819,18 +804,6 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
     const d = new Date(monthStart);
     d.setDate(monthStart.getDate() + i);
     return d;
-  });
-
-  // Active themes for current view range
-  const viewStart = viewMode === "week" ? weekStart : monthDays[0];
-  const viewEnd = viewMode === "week" ? weekDays[6] : monthDays[41];
-  const viewThemes = themes.filter((t) => {
-    if (!t.start_date && !t.end_date) return false;
-    const vs = viewStart.getTime();
-    const ve = viewEnd.getTime();
-    const ts = t.start_date ? new Date(t.start_date).getTime() : 0;
-    const te = t.end_date ? new Date(t.end_date).getTime() : Date.now();
-    return ts <= ve && te >= vs;
   });
 
   const DEADLINE_TYPES: { field: keyof ClipMeta; label: string; color: string }[] = [
@@ -842,21 +815,22 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
   ];
 
   const isMonth = viewMode === "month";
-  const days = isMonth ? monthDays : weekDays;
+  const isBiweek = viewMode === "biweek";
+  const days = isMonth ? monthDays : isBiweek ? biweekDays : weekDays;
   const offset = isMonth ? monthOffset : weekOffset;
   const setOffset = isMonth ? setMonthOffset : setWeekOffset;
+  const rangeLabel = isMonth
+    ? monthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : isBiweek
+      ? `${biweekDays[0].toLocaleDateString(undefined, { month: "short", day: "numeric" })} — ${biweekDays[13].toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+      : `${weekDays[0].toLocaleDateString(undefined, { month: "short", day: "numeric" })} — ${weekDays[6].toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 
   return (
     <div className="space-y-4">
       {/* Navigation + view toggle */}
       <div className="flex items-center gap-3 flex-wrap">
         <button onClick={() => setOffset(offset - 1)} className="btn btn-ghost btn-sm">← Prev</button>
-        <span className="font-display text-lg text-desert-night">
-          {isMonth
-            ? monthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })
-            : `${weekDays[0].toLocaleDateString(undefined, { month: "short", day: "numeric" })} — ${weekDays[6].toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-          }
-        </span>
+        <span className="font-display text-lg text-desert-night">{rangeLabel}</span>
         <button onClick={() => setOffset(offset + 1)} className="btn btn-ghost btn-sm">Next →</button>
         {offset !== 0 && (
           <button onClick={() => setOffset(0)} className="btn btn-secondary btn-sm ml-2">Today</button>
@@ -867,20 +841,15 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
             className={`px-3 py-1 text-xs font-bold rounded-md transition ${viewMode === "week" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
           >Week</button>
           <button
+            onClick={() => setViewMode("biweek")}
+            className={`px-3 py-1 text-xs font-bold rounded-md transition ${viewMode === "biweek" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+          >Bi-Week</button>
+          <button
             onClick={() => setViewMode("month")}
             className={`px-3 py-1 text-xs font-bold rounded-md transition ${viewMode === "month" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
           >Month</button>
         </div>
       </div>
-
-      {/* Active Weekly Heat for this range */}
-      {viewThemes.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {viewThemes.map((t) => (
-            <span key={t.id} className="chip chip-copper">🔥 {t.name}</span>
-          ))}
-        </div>
-      )}
 
       {/* Toggle for side panel (planners only) */}
       {canPlanContent && member && members && onRefresh && (
@@ -895,53 +864,61 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
       )}
 
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Calendar grid — always 7 columns so it doesn't stack vertically */}
-        <div className="flex-1 grid grid-cols-7 gap-1 md:gap-2 min-w-0">
-        {days.map((day) => {
-          const isToday = day.toDateString() === today.toDateString();
-          const isOtherMonth = isMonth && day.getMonth() !== monthDate.getMonth();
-          const dayClips = scheduled.filter((c) => {
-            const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
-            return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
-          });
-          return (
-            <div key={day.toISOString()} className={`card p-1 md:p-2 ${isMonth ? "min-h-[70px] md:min-h-[90px]" : "min-h-[90px] md:min-h-[120px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
-              <div className="flex items-center justify-between">
-                <p className={`font-display text-desert-night ${isMonth ? "text-[10px] md:text-xs" : "text-xs md:text-sm"}`}>
-                  {(isMonth || day.getDate() === 1 || isToday) ? day.toLocaleDateString(undefined, { weekday: "short" }) : ""}
-                </p>
-                <p className={`text-xs ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
-              </div>
-              <div className="space-y-1 mt-1">
-                {dayClips.map((c) => {
-                  const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
-                    const val = c[dt.field] as string | null;
-                    return val && new Date(val).toDateString() === day.toDateString();
-                  });
-                  const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
-                  return (
-                    <div key={c.id} className={`rounded-lg p-1.5 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
-                      <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"}`}>{c.title}</p>
-                      {matchingDeadlines.map((d) => (
-                        <span key={d.label} className={`font-black ${d.color} block ${isMonth ? "text-[9px]" : "text-[10px]"}`}>{d.label}</span>
-                      ))}
-                      <span className={`chip ${STATUS_CHIP[c.status]} ${isMonth ? "!text-[9px] !py-0" : "!text-[10px] !py-0.5"} mt-1`}>{c.status}</span>
-                      {c.theme_id && themeMap.get(c.theme_id) && !isMonth && (
-                        <span className="text-[10px] text-copper-deep block mt-1">🔥 {themeMap.get(c.theme_id)!.name}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+        {/* Calendar grid — always 7 columns.
+            Month view gets a scrollable container with taller cells so content isn't squished. */}
+        <div className="flex-1 min-w-0">
+          {/* Day-of-week header — only for week/bi-week (month shows weekday inside cells) */}
+          {!isMonth && (
+            <div className="grid grid-cols-7 gap-1 md:gap-2 mb-1">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <div key={d} className="text-center text-[10px] md:text-xs font-black uppercase text-desert-night/50 py-1">{d}</div>
+              ))}
             </div>
-          );
-        })}
-      </div>
-      {scheduled.length === 0 && (
-        <div className="card p-6 text-center text-smoked-charcoal/60">
-          Nothing scheduled yet. Set deadlines on a clip from Studio Flow, or create a Weekly Heat.
+          )}
+          <div className={`grid grid-cols-7 gap-1 md:gap-2 min-w-0 ${isMonth ? "max-h-[70vh] overflow-y-auto pr-1" : ""}`}>
+            {days.map((day) => {
+              const isToday = day.toDateString() === today.toDateString();
+              const isOtherMonth = isMonth && day.getMonth() !== monthDate.getMonth();
+              const dayClips = scheduled.filter((c) => {
+                const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
+                return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
+              });
+              return (
+                <div key={day.toISOString()} className={`card p-1 md:p-2 ${isMonth ? "min-h-[100px] md:min-h-[120px]" : isBiweek ? "min-h-[80px] md:min-h-[110px]" : "min-h-[100px] md:min-h-[140px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
+                  <div className="flex items-center justify-between">
+                    <p className={`font-display text-desert-night ${isMonth ? "text-[10px] md:text-xs" : "text-xs md:text-sm"}`}>
+                      {(isMonth || day.getDate() === 1 || isToday) ? day.toLocaleDateString(undefined, { weekday: "short" }) : ""}
+                    </p>
+                    <p className={`text-xs ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
+                  </div>
+                  <div className="space-y-1 mt-1">
+                    {dayClips.map((c) => {
+                      const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
+                        const val = c[dt.field] as string | null;
+                        return val && new Date(val).toDateString() === day.toDateString();
+                      });
+                      const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
+                      return (
+                        <div key={c.id} className={`rounded-lg p-1.5 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
+                          <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"} line-clamp-2`}>{c.title}</p>
+                          {matchingDeadlines.map((d) => (
+                            <span key={d.label} className={`font-black ${d.color} block ${isMonth ? "text-[9px]" : "text-[10px]"}`}>{d.label}</span>
+                          ))}
+                          <span className={`chip ${STATUS_CHIP[c.status]} ${isMonth ? "!text-[9px] !py-0" : "!text-[10px] !py-0.5"} mt-1`}>{c.status}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {scheduled.length === 0 && (
+            <div className="card p-6 text-center text-smoked-charcoal/60 mt-2">
+              Nothing scheduled yet. Set deadlines on a clip from Studio Flow.
+            </div>
+          )}
         </div>
-      )}
 
         {/* Ready to Schedule side panel — planner/admin only, toggleable */}
         {canPlanContent && member && members && onRefresh && showSidePanel && (
@@ -953,14 +930,13 @@ function CalendarView({ clips, themes, themeMap, canPlanContent, member, members
 }
 
 function ClipDetailModal({
-  clip, people, approvals, isAdmin, canPlanContent, themes, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
+  clip, people, approvals, isAdmin, canPlanContent, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
 }: {
   clip: ClipMeta;
   people: ClipPerson[];
   approvals: Approval[];
   isAdmin: boolean;
   canPlanContent: boolean;
-  themes: Theme[];
   currentMemberId?: string;
   currentMemberName?: string;
   onClose: () => void;
@@ -971,7 +947,6 @@ function ClipDetailModal({
   const supabase = createClient();
   const [editNote, setEditNote] = useState("");
   const [working, setWorking] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState<string>(clip.theme_id ?? "");
   const [deadlines, setDeadlines] = useState<Record<string, string>>({
     idea_due_date: clip.idea_due_date ?? "",
     clip_due_date: clip.clip_due_date ?? "",
@@ -989,7 +964,6 @@ function ClipDetailModal({
       final_cut_due: deadlines.final_cut_due || null,
       approval_due: deadlines.approval_due || null,
       scheduled_date: deadlines.scheduled_date || null,
-      theme_id: selectedTheme || null,
     }).eq("id", clip.id);
     if (error) alert(error.message);
     await onRefresh();
@@ -1205,25 +1179,9 @@ function ClipDetailModal({
                   <DeadlineRow label="Goes Live" value={clip.scheduled_date} canEdit={canPlanContent} fieldName="scheduled_date" deadlines={deadlines} setDeadlines={setDeadlines} />
                 </div>
                 {canPlanContent && (
-                  <>
-                    {/* Theme assignment */}
-                    <div className="mt-3 pt-3 border-t border-desert-night/10">
-                      <p className="label">Weekly Heat</p>
-                      <select
-                        className="field !w-auto"
-                        value={selectedTheme}
-                        onChange={(e) => setSelectedTheme(e.target.value)}
-                      >
-                        <option value="">No theme</option>
-                        {themes.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
-                      {savingDeadlines ? "Saving…" : "Save Timeline + Theme"}
-                    </button>
-                  </>
+                  <button onClick={saveDeadlines} className="btn btn-primary btn-sm mt-3" disabled={savingDeadlines}>
+                    {savingDeadlines ? "Saving…" : "Save Timeline"}
+                  </button>
                 )}
               </div>
             )}
@@ -1398,14 +1356,11 @@ function DeadlineRow({
 // THIS WEEK — everybody's quick overview
 // ===========================================================================
 function ThisWeekTab({
-  clips, people, approvals, themes, trends, themeMap, assignments, currentMemberId, onSelectClip,
+  clips, people, approvals, assignments, currentMemberId, onSelectClip,
 }: {
   clips: ClipMeta[];
   people: Record<string, ClipPerson[]>;
   approvals: Record<string, Approval[]>;
-  themes: Theme[];
-  trends: TrendRef[];
-  themeMap: Map<string, Theme>;
   assignments: Assignment[];
   currentMemberId?: string;
   onSelectClip: (id: string) => void;
@@ -1462,64 +1417,41 @@ function ThisWeekTab({
     .filter((c) => c.status === "Dropped")
     .slice(0, 6);
 
-  // Active themes
-  const activeThemes = themes.filter((t) => t.status === "Active" || t.status === "Planning");
-
   return (
     <div className="space-y-6">
-      {/* Recent Drops — fresh drops that haven't been planned yet */}
+      {/* Recent Drops — fresh drops that haven't been planned yet, with embedded videos */}
       {recentDrops.length > 0 && (
         <div className="card p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-2xl text-desert-night">📥 Recent Drops</h2>
             <span className="text-xs text-smoked-charcoal/50">{recentDrops.length} waiting to be planned</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recentDrops.map((clip) => (
               <button
                 key={clip.id}
                 onClick={() => onSelectClip(clip.id)}
-                className="text-left bg-sandstone-cream/50 rounded-xl p-3 hover:bg-sandstone-cream transition-colors border border-transparent hover:border-copper-clay/30"
+                className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`chip !text-[9px] ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>
-                  {clip.type === "tiktok_link" && <span className="chip chip-teal !text-[9px]">TikTok</span>}
-                  {clip.type === "video" && <span className="chip chip-copper !text-[9px]">Video</span>}
-                  {clip.type === "final_cut" && <span className="chip chip-copper !text-[9px]">Final Cut</span>}
-                  {clip.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
+                {/* Embedded video for link drops */}
+                {clip.type === "tiktok_link" && clip.link && (
+                  <div className="bg-desert-night/5">
+                    <SocialEmbed url={clip.link} title={clip.title} />
+                  </div>
+                )}
+                <div className="p-3">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className={`chip !text-[9px] ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>
+                    {clip.type === "tiktok_link" && <span className="chip chip-teal !text-[9px]">{clip.link ? (linkPlatform(clip.link) ?? "Link") : "Link"}</span>}
+                    {clip.type === "video" && <span className="chip chip-copper !text-[9px]">Video</span>}
+                    {clip.type === "final_cut" && <span className="chip chip-copper !text-[9px]">Final Cut</span>}
+                    {clip.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
+                  </div>
+                  <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2">{clip.title}</p>
+                  <p className="text-xs text-smoked-charcoal/50 mt-1">{droppedByLabel(clip)}</p>
                 </div>
-                <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2">{clip.title}</p>
-                <p className="text-xs text-smoked-charcoal/50 mt-1">{droppedByLabel(clip)}</p>
               </button>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Active Weekly Heat */}
-      {activeThemes.length > 0 && (
-        <div className="card-dark p-5">
-          <h2 className="font-display text-2xl text-sunburst-yellow mb-3">🔥 This Week&apos;s Heat</h2>
-          <div className="space-y-3">
-            {activeThemes.map((t) => {
-              const themeClips = clips.filter((c) => c.theme_id === t.id);
-              const themeTrends = trends.filter((tr) => tr.theme_id === t.id);
-              return (
-                <div key={t.id} className="bg-white/5 rounded-xl p-4">
-                  <p className="font-display text-lg text-sandstone-cream">{t.name}</p>
-                  {t.description && <p className="text-sm text-sandstone-cream/60 mt-1">{t.description}</p>}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="chip chip-copper !text-[10px]">{themeClips.length} clips</span>
-                    <span className="chip chip-teal !text-[10px]">{themeTrends.length} trend drops</span>
-                    {t.start_date && t.end_date && (
-                      <span className="chip chip-cream !text-[10px]">
-                        {new Date(t.start_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — {new Date(t.end_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}
@@ -1589,9 +1521,6 @@ function ThisWeekTab({
                 <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="min-w-0">
                     <p className="font-bold text-desert-night">{c.title}</p>
-                    {c.theme_id && themeMap.get(c.theme_id) && (
-                      <span className="text-xs text-copper-deep">🔥 {themeMap.get(c.theme_id)!.name}</span>
-                    )}
                   </div>
                   <div className="flex flex-wrap gap-2 md:justify-end shrink-0">
                     {deadlines.map((d) => (
@@ -1607,18 +1536,26 @@ function ThisWeekTab({
         </div>
       )}
 
-      {/* Going live */}
+      {/* Going live — with embedded videos for link drops */}
       {goingLive.length > 0 && (
         <div>
           <h2 className="font-display text-2xl text-desert-night mb-3">Going Live This Week</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {goingLive.map((c) => (
-              <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-4 text-left hover:-translate-y-0.5 transition-transform bg-cactus-teal/10">
-                <p className="font-bold text-desert-night">{c.title}</p>
-                <p className="text-xs text-cactus-teal font-black mt-1">
-                  📅 {new Date(c.scheduled_date!).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
-                </p>
-                {c.destination && <span className="chip chip-teal !text-[10px] mt-2">📍 {c.destination}</span>}
+              <button key={c.id} onClick={() => onSelectClip(c.id)} className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform bg-cactus-teal/10">
+                {/* Embedded video for link drops */}
+                {c.type === "tiktok_link" && c.link && (
+                  <div className="bg-desert-night/5">
+                    <SocialEmbed url={c.link} title={c.title} />
+                  </div>
+                )}
+                <div className="p-4">
+                  <p className="font-bold text-desert-night">{c.title}</p>
+                  <p className="text-xs text-cactus-teal font-black mt-1">
+                    📅 {new Date(c.scheduled_date!).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+                  </p>
+                  {c.destination && <span className="chip chip-teal !text-[10px] mt-2">📍 {c.destination}</span>}
+                </div>
               </button>
             ))}
           </div>
@@ -1646,7 +1583,7 @@ function ThisWeekTab({
       )}
 
       {/* Empty state */}
-      {upcomingDeadlines.length === 0 && goingLive.length === 0 && myApprovals.length === 0 && stuck.length === 0 && activeThemes.length === 0 && (
+      {upcomingDeadlines.length === 0 && goingLive.length === 0 && myApprovals.length === 0 && stuck.length === 0 && (
         <div className="card p-10 text-center">
           <div className="inline-block"><MascotImage pose="main" size={120} /></div>
           <p className="font-display text-2xl text-desert-night mt-4">All clear this week.</p>
@@ -1662,10 +1599,9 @@ function ThisWeekTab({
 // TREND DROPS — references and inspiration
 // ===========================================================================
 function TrendDropsTab({
-  trends, themes, currentMemberId, currentMemberName, canPlanContent, isAdmin, onRefresh,
+  trends, currentMemberId, currentMemberName, canPlanContent, isAdmin, onRefresh,
 }: {
   trends: TrendRef[];
-  themes: Theme[];
   currentMemberId?: string;
   currentMemberName?: string;
   canPlanContent: boolean;
@@ -1678,7 +1614,6 @@ function TrendDropsTab({
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [platform, setPlatform] = useState<Platform>("tiktok");
-  const [themeId, setThemeId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   async function addTrend() {
@@ -1691,10 +1626,9 @@ function TrendDropsTab({
       submitted_by: currentMemberId,
       submitted_by_name: currentMemberName,
       notes: notes.trim() || null,
-      theme_id: themeId || null,
     });
     if (error) alert(error.message);
-    setTitle(""); setUrl(""); setNotes(""); setThemeId(""); setPlatform("tiktok");
+    setTitle(""); setUrl(""); setNotes(""); setPlatform("tiktok");
     setShowForm(false);
     await onRefresh();
     setSaving(false);
@@ -1716,10 +1650,8 @@ function TrendDropsTab({
   // Turn a trend into a quick drop clip — auto-fills everything with defaults
   async function turnIntoQuickDrop(trend: TrendRef) {
     if (!currentMemberId || !currentMemberName) return;
-    // Auto-suggest: use the active Weekly Heat's end date, or next Sunday if none
-    const activeTheme = themes.find((t) => t.status === "Active" || t.status === "Planning");
-    const liveDate = activeTheme?.end_date ? new Date(activeTheme.end_date) : nextSunday();
-    const deadlines = calcDeadlinesFromLive(liveDate);
+    // Use next Sunday as the default live date; other deadlines left blank for manual entry
+    const liveDate = nextSunday();
 
     const { data: clip, error } = await supabase.from("clips").insert({
       title: `Quick Drop: ${trend.title}`,
@@ -1729,12 +1661,7 @@ function TrendDropsTab({
       category: "Trends",
       submitted_by: currentMemberId,
       submitted_by_name: currentMemberName,
-      theme_id: trend.theme_id ?? null,
-      idea_due_date: deadlines.idea_due_date,
-      clip_due_date: deadlines.clip_due_date,
-      final_cut_due: deadlines.final_cut_due,
-      approval_due: deadlines.approval_due,
-      scheduled_date: deadlines.scheduled_date,
+      scheduled_date: liveDate.toISOString(),
     }).select().single();
 
     if (error) { alert(error.message); return; }
@@ -1774,12 +1701,6 @@ function TrendDropsTab({
               <option value="facebook">Facebook</option>
               <option value="other">Other</option>
             </select>
-            {canPlanContent && (
-              <select className="field !w-auto" value={themeId} onChange={(e) => setThemeId(e.target.value)}>
-                <option value="">No Weekly Heat</option>
-                {themes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            )}
           </div>
           <textarea className="field min-h-[60px]" placeholder="How should we do this AZ style?" value={notes} onChange={(e) => setNotes(e.target.value)} />
           <button onClick={addTrend} className="btn btn-primary" disabled={saving || !title.trim() || !url.trim()}>
@@ -1797,7 +1718,6 @@ function TrendDropsTab({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {trends.map((t) => {
-            const theme = themes.find((th) => th.id === t.theme_id);
             const isMine = t.submitted_by === currentMemberId;
             return (
               <div key={t.id} className="card p-4">
@@ -1814,7 +1734,6 @@ function TrendDropsTab({
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <span className="chip chip-dark !text-[10px]">{t.platform}</span>
                   <span className="text-xs text-smoked-charcoal/50">by {t.submitted_by_name}</span>
-                  {theme && <span className="chip chip-copper !text-[10px]">🔥 {theme.name}</span>}
                 </div>
 
                 {/* Quick action buttons for planners */}
@@ -1854,421 +1773,14 @@ function TrendDropsTab({
 }
 
 // ===========================================================================
-// WEEKLY HEAT — theme management
-// ===========================================================================
-function WeeklyHeatTab({
-  themes, clips, trends, members, canPlanContent, isAdmin, currentMemberId, currentMemberName, onRefresh,
-}: {
-  themes: Theme[];
-  clips: ClipMeta[];
-  trends: TrendRef[];
-  members: Member[];
-  canPlanContent: boolean;
-  isAdmin: boolean;
-  currentMemberId?: string;
-  currentMemberName?: string;
-  onRefresh: () => Promise<void>;
-}) {
-  const supabase = createClient();
-  const [showForm, setShowForm] = useState(false);
-  const [showBuilder, setShowBuilder] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  // Heat Builder state
-  const [postCount, setPostCount] = useState(3);
-  const [vibe, setVibe] = useState("easy_week");
-  const [effort, setEffort] = useState("10min");
-  const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
-  const [generatedPlan, setGeneratedPlan] = useState<PlannedItem[] | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  // Week start date — auto-suggested to next Sunday, but user can change it
-  const [weekStartDate, setWeekStartDate] = useState<string>(() => {
-    const sun = nextSunday();
-    return sun.toISOString().slice(0, 10);
-  });
-
-  async function createTheme() {
-    if (!name.trim() || !currentMemberId) return;
-    setSaving(true);
-    const { error } = await supabase.from("content_themes").insert({
-      name: name.trim(),
-      description: description.trim() || null,
-      start_date: startDate || null,
-      end_date: endDate || null,
-      created_by: currentMemberId,
-    });
-    if (error) alert(error.message);
-    setName(""); setDescription(""); setStartDate(""); setEndDate("");
-    setShowForm(false);
-    await onRefresh();
-    setSaving(false);
-  }
-
-  async function updateThemeStatus(id: string, status: string) {
-    const { error } = await supabase.from("content_themes").update({ status }).eq("id", id);
-    if (error) alert(error.message);
-    await onRefresh();
-  }
-
-  async function deleteTheme(id: string) {
-    if (!confirm("Delete this Weekly Heat? Clips will keep their data but lose the theme link.")) return;
-    const { error } = await supabase.from("content_themes").delete().eq("id", id);
-    if (error) alert(error.message);
-    await onRefresh();
-  }
-
-  const STATUS_CHIP: Record<string, string> = {
-    Planning: "chip-yellow",
-    Active: "chip-copper",
-    Wrapped: "chip-cream",
-  };
-
-  // Generate week plan and create clips + theme in the database
-  async function generateAndCreateWeek() {
-    if (!currentMemberId || !currentMemberName || !weekStartDate) return;
-    setGenerating(true);
-
-    const startDate = new Date(weekStartDate + "T12:00:00");
-    const crewNames = selectedCrew.map((id) => members.find((m) => m.id === id)?.name ?? "").filter(Boolean);
-    const plan = generateWeekPlan(postCount, vibe, effort, crewNames, startDate);
-    setGeneratedPlan(plan);
-
-    // Create the Weekly Heat theme
-    const vibeLabel = HEAT_VIBES.find((v) => v.id === vibe)?.label ?? vibe;
-    const weekEnd = new Date(startDate);
-    weekEnd.setDate(startDate.getDate() + 6);
-
-    const { data: theme, error: themeErr } = await supabase.from("content_themes").insert({
-      name: `${vibeLabel} Week`,
-      description: `${EFFORT_LEVELS.find((e) => e.id === effort)?.label ?? "10-Min Drop"} · ${postCount} posts`,
-      start_date: startDate.toISOString(),
-      end_date: weekEnd.toISOString(),
-      status: "Planning",
-      created_by: currentMemberId,
-    }).select().single();
-
-    if (themeErr) { alert(themeErr.message); setGenerating(false); return; }
-
-    // Create clips for each planned item with auto-calculated deadlines
-    const clipInserts = plan.map((item) => ({
-      title: item.title,
-      type: "video" as const,
-      status: "Planned" as const,
-      category: vibeLabel,
-      submitted_by: currentMemberId,
-      submitted_by_name: currentMemberName,
-      theme_id: theme.id,
-      template_id: selectedTemplate || null,
-      idea_due_date: item.deadlines.idea_due_date,
-      clip_due_date: item.deadlines.clip_due_date,
-      final_cut_due: item.deadlines.final_cut_due,
-      approval_due: item.deadlines.approval_due,
-      scheduled_date: item.deadlines.scheduled_date,
-    }));
-
-    const { data: createdClips, error: clipsErr } = await supabase.from("clips").insert(clipInserts).select();
-    if (clipsErr) { alert(clipsErr.message); setGenerating(false); return; }
-
-    // Assign selected crew to each clip
-    if (createdClips && selectedCrew.length > 0) {
-      const assignmentInserts: Database["public"]["Tables"]["content_assignments"]["Insert"][] = [];
-      for (const clip of createdClips) {
-        for (const crewId of selectedCrew) {
-          const crewMember = members.find((m) => m.id === crewId);
-          if (!crewMember) continue;
-          assignmentInserts.push({
-            clip_id: clip.id,
-            member_id: crewId,
-            member_name: crewMember.name,
-            role: "On-Camera",
-            task_type: "Drop a Clip",
-            drop_by_date: plan[0]?.deadlines.clip_due_date ?? null,
-            is_required: true,
-            created_by: currentMemberId,
-          });
-        }
-      }
-      if (assignmentInserts.length > 0) {
-        await supabase.from("content_assignments").insert(assignmentInserts);
-        // Notify assigned crew
-        await Promise.all(selectedCrew.map((id) =>
-          notifyMember(supabase, id, "assignment", `You're on this week's ${vibeLabel} Heat — Drop-by ${new Date(plan[0].deadlines.clip_due_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`, "/portal/drop")
-        ));
-      }
-    }
-
-    await onRefresh();
-    setGenerating(false);
-    setShowBuilder(false);
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <p className="text-smoked-charcoal/70">
-          Weekly Heat is the big focus for the week. Build it in one tap, edit what you need.
-        </p>
-        {canPlanContent && (
-          <div className="flex gap-2">
-            <button onClick={() => { setShowBuilder(!showBuilder); setShowForm(false); }} className="btn btn-primary btn-sm">
-              {showBuilder ? "Cancel" : "🔥 Build the Heat"}
-            </button>
-            <button onClick={() => { setShowForm(!showForm); setShowBuilder(false); }} className="btn btn-secondary btn-sm">
-              {showForm ? "Cancel" : "+ Manual"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ===== HEAT BUILDER — one-tap planning ===== */}
-      {showBuilder && canPlanContent && (
-        <div className="card p-5 space-y-5">
-          <h2 className="font-display text-2xl text-desert-night">Build the Heat</h2>
-
-          {/* Week start date — auto-suggested, user can change */}
-          <div>
-            <p className="label">Week starts <span className="font-normal text-desert-night/40">(auto-set to next Sunday — change if needed)</span></p>
-            <input
-              type="date"
-              value={weekStartDate}
-              onChange={(e) => setWeekStartDate(e.target.value)}
-              className="field !w-auto"
-            />
-          </div>
-
-          {/* Post count */}
-          <div>
-            <p className="label">How many posts this week?</p>
-            <div className="flex gap-2">
-              {POST_COUNTS.map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPostCount(n)}
-                  className={`w-12 h-12 rounded-xl font-display text-xl ${postCount === n ? "bg-desert-night text-sunburst-yellow" : "bg-sandstone-cream/50 text-desert-night"}`}
-                >{n}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Vibe */}
-          <div>
-            <p className="label">What vibe?</p>
-            <div className="flex flex-wrap gap-2">
-              {HEAT_VIBES.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => setVibe(v.id)}
-                  className={`chip ${vibe === v.id ? "chip-copper" : "chip-cream"}`}
-                  title={v.desc}
-                >{v.label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Effort */}
-          <div>
-            <p className="label">Effort level</p>
-            <div className="flex flex-wrap gap-2">
-              {EFFORT_LEVELS.map((e) => (
-                <button
-                  key={e.id}
-                  onClick={() => setEffort(e.id)}
-                  className={`chip ${effort === e.id ? "chip-copper" : "chip-cream"}`}
-                  title={e.desc}
-                >{e.label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Drop Template — optional, organized by bucket */}
-          <div>
-            <p className="label">Format <span className="font-normal text-desert-night/40">(optional — adds instructions for crew)</span></p>
-            <div className="flex flex-wrap gap-2 mb-2">
-              <button
-                onClick={() => setSelectedTemplate("")}
-                className={`chip ${!selectedTemplate ? "chip-copper" : "chip-cream"}`}
-              >No template</button>
-            </div>
-            <div className="space-y-2">
-              {CONTENT_BUCKETS.map((bucket) => {
-                const templates = getTemplatesByBucket(bucket);
-                if (templates.length === 0) return null;
-                return (
-                  <div key={bucket}>
-                    <p className="text-xs font-bold text-desert-night/40 uppercase mb-1">{bucket}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {templates.map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => setSelectedTemplate(t.id)}
-                          className={`chip !text-xs ${selectedTemplate === t.id ? "chip-copper" : "chip-cream"}`}
-                          title={t.description}
-                        >{t.name}</button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Available crew */}
-          {members.length > 0 && (
-            <div>
-              <p className="label">Who&apos;s available?</p>
-              <div className="flex flex-wrap gap-2">
-                {members.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setSelectedCrew(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
-                    className={`chip ${selectedCrew.includes(m.id) ? "chip-copper" : "chip-cream"}`}
-                  >{m.name}</button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Generate button */}
-          <button
-            onClick={generateAndCreateWeek}
-            disabled={generating}
-            className="btn btn-primary btn-lg w-full"
-          >
-            {generating ? "Building…" : "Generate Week"}
-          </button>
-
-          {/* Preview of what will be created */}
-          {generatedPlan && (
-            <div className="bg-sandstone-cream/50 rounded-xl p-4 space-y-2">
-              <p className="font-bold text-desert-night text-sm">Here&apos;s what we&apos;re building:</p>
-              {generatedPlan.map((item, i) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <span className="font-bold text-desert-night">{item.title}</span>
-                  <span className="text-cactus-teal font-bold">{item.dayLabel}</span>
-                </div>
-              ))}
-              <p className="text-xs text-smoked-charcoal/60 mt-2">
-                Deadlines auto-set: Drop-by 3 days before, Cut ready 2 days before, Greenlight 1 day before.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {showForm && canPlanContent && (
-        <div className="card p-5 space-y-3">
-          <input className="field" placeholder="Theme name" value={name} onChange={(e) => setName(e.target.value)} />
-          <textarea className="field min-h-[60px]" placeholder="What's the vibe?" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <div className="flex gap-3">
-            <div>
-              <label className="label">Start date</label>
-              <input type="date" className="field !w-auto" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div>
-              <label className="label">End date</label>
-              <input type="date" className="field !w-auto" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </div>
-          </div>
-          <button onClick={createTheme} className="btn btn-primary" disabled={saving || !name.trim()}>
-            {saving ? "Creating…" : "Create Weekly Heat"}
-          </button>
-        </div>
-      )}
-
-      {themes.length === 0 ? (
-        <div className="card p-10 text-center">
-          <span className="text-5xl">🔥</span>
-          <p className="font-display text-2xl text-desert-night mt-4">No Weekly Heat yet.</p>
-          <p className="text-smoked-charcoal/70 mt-2">
-            {canPlanContent ? "Create one to start organizing your content by week." : "Ask a planner to create one."}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {themes.map((t) => {
-            const themeClips = clips.filter((c) => c.theme_id === t.id);
-            const themeTrends = trends.filter((tr) => tr.theme_id === t.id);
-            return (
-              <div key={t.id} className="card p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-display text-2xl text-desert-night">{t.name}</h3>
-                      <span className={`chip ${STATUS_CHIP[t.status] ?? "chip-cream"} !text-[10px]`}>{t.status}</span>
-                    </div>
-                    {t.description && <p className="text-sm text-smoked-charcoal/70 mt-1">{t.description}</p>}
-                    {t.start_date && t.end_date && (
-                      <p className="text-xs text-copper-deep font-bold mt-2">
-                        {new Date(t.start_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — {new Date(t.end_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                      </p>
-                    )}
-                  </div>
-                  {canPlanContent && (
-                    <div className="flex flex-col gap-1 shrink-0">
-                      {["Planning", "Active", "Wrapped"].map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => updateThemeStatus(t.id, s)}
-                          className={`chip !text-[9px] ${t.status === s ? STATUS_CHIP[s] : "chip-cream opacity-50 hover:opacity-100"}`}
-                        >{s}</button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Stats */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <span className="chip chip-copper !text-[10px]">{themeClips.length} clips</span>
-                  <span className="chip chip-teal !text-[10px]">{themeTrends.length} trend drops</span>
-                </div>
-
-                {/* Clips in this theme */}
-                {themeClips.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {themeClips.map((c) => (
-                      <div key={c.id} className="bg-sandstone-cream/50 rounded-xl p-3 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-bold text-desert-night truncate">{c.title}</p>
-                          <span className={`chip ${STATUS_CHIP[c.status] ?? "chip-cream"} !text-[9px]`}>{c.status}</span>
-                        </div>
-                        {c.scheduled_date && (
-                          <span className="text-xs text-cactus-teal font-bold shrink-0">
-                            📅 {new Date(c.scheduled_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {canPlanContent && (
-                  <button onClick={() => deleteTheme(t.id)} className="btn btn-danger btn-sm mt-4">Delete</button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ===========================================================================
 // ASSIGNMENT BOARD — admin/planner view of who's doing what
 // ===========================================================================
 function AssignmentBoardTab({
-  clips, assignments, members, themes, themeMap, canPlanContent, currentMemberId, currentMemberName, onSelectClip, onRefresh,
+  clips, assignments, members, canPlanContent, currentMemberId, currentMemberName, onSelectClip, onRefresh,
 }: {
   clips: ClipMeta[];
   assignments: Assignment[];
   members: Member[];
-  themes: Theme[];
-  themeMap: Map<string, Theme>;
   canPlanContent: boolean;
   currentMemberId?: string;
   currentMemberName?: string;
@@ -2369,7 +1881,6 @@ function AssignmentBoardTab({
             const lead = clipAssignments.find((a) => a.role === "Lead");
             const lateCount = clipAssignments.filter(isLate).length;
             const doneCount = clipAssignments.filter((a) => a.status === "Done" || a.status === "Greenlit" || a.status === "Dropped").length;
-            const theme = clip.theme_id ? themeMap.get(clip.theme_id) : null;
 
             return (
               <div key={clip.id} className="card p-5">
@@ -2380,7 +1891,6 @@ function AssignmentBoardTab({
                     </button>
                     <div className="flex flex-wrap gap-2 mt-2">
                       <span className={`chip ${STATUS_CHIP[clip.status]} !text-[10px]`}>{clip.status}</span>
-                      {theme && <span className="chip chip-copper !text-[10px]">🔥 {theme.name}</span>}
                       {lead && <span className="chip chip-yellow !text-[10px]">Lead: {lead.member_name}</span>}
                       {clipAssignments.length > 0 && (
                         <span className="chip chip-cream !text-[10px]">{doneCount}/{clipAssignments.length} done</span>
@@ -2494,10 +2004,9 @@ function AssignmentBoardTab({
 // WATCH — posted/live videos the crew can watch
 // ===========================================================================
 function WatchTab({
-  clips, themeMap, onSelectClip,
+  clips, onSelectClip,
 }: {
   clips: ClipMeta[];
-  themeMap: Map<string, Theme>;
   onSelectClip: (id: string) => void;
 }) {
   const liveClips = clips
@@ -2573,7 +2082,6 @@ function WatchTab({
         {filtered.map((clip) => {
           const watchUrl = getWatchUrl(clip);
           const hasUploadedVideo = !!clip.file_path && (clip.type === "video" || clip.type === "final_cut");
-          const theme = clip.theme_id ? themeMap.get(clip.theme_id) : null;
           const isSocialLink = watchUrl && (isYouTubeLink(watchUrl) || isTikTokLink(watchUrl) || isInstagramLink(watchUrl) || isFacebookLink(watchUrl));
           return (
             <div key={clip.id} className="card overflow-hidden flex flex-col">
@@ -2613,10 +2121,6 @@ function WatchTab({
                 </button>
                 <p className="text-xs text-smoked-charcoal/60 mt-1">by {clip.submitted_by_name}</p>
 
-                {theme && (
-                  <span className="chip chip-copper !text-[9px] mt-2 w-fit">🔥 {theme.name}</span>
-                )}
-
                 {clip.scheduled_date && (
                   <p className="text-xs text-cactus-teal font-bold mt-2">
                     📅 {new Date(clip.scheduled_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
@@ -2644,169 +2148,15 @@ function WatchTab({
 }
 
 // ===========================================================================
-// READY BANK TAB — vetted ideas/templates ready to schedule (inline in Run Sheet)
-// ===========================================================================
-function ReadyBankTab({ member, members, onRefresh }: {
-  member?: { id: string; name: string; role: string; can_plan_content: boolean };
-  members: Member[];
-  onRefresh: () => Promise<void>;
-}) {
-  const supabase = createClient();
-  const [effortFilter, setEffortFilter] = useState<string | null>(null);
-  const [tagFilters, setTagFilters] = useState<string[]>([]);
-  const [actionTemplate, setActionTemplate] = useState<QuickDropTemplate | null>(null);
-  const [liveDate, setLiveDate] = useState<string>(() => nextSunday().toISOString().slice(0, 10));
-  const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
-  const [creating, setCreating] = useState(false);
-
-  const TAG_FILTERS = [
-    { id: "homeFriendly", label: "Home-Friendly" },
-    { id: "noTalking", label: "No Talking" },
-    { id: "transition", label: "Transition" },
-    { id: "arizona", label: "Arizona" },
-    { id: "groupDay", label: "Group Day" },
-    { id: "editHeavy", label: "Edit Heavy" },
-  ];
-
-  const filtered = QUICK_DROP_TEMPLATES.filter((t) => {
-    if (effortFilter && t.effort !== effortFilter) return false;
-    if (tagFilters.includes("homeFriendly") && !t.homeFriendly) return false;
-    if (tagFilters.includes("noTalking") && t.needsTalking) return false;
-    if (tagFilters.includes("transition") && t.bucket !== "Transitions") return false;
-    if (tagFilters.includes("arizona") && !t.bucket.includes("Arizona")) return false;
-    if (tagFilters.includes("groupDay") && t.effort !== "Group Day") return false;
-    if (tagFilters.includes("editHeavy") && !t.needsEditing) return false;
-    return true;
-  });
-
-  async function createClip(template: QuickDropTemplate) {
-    if (!member || !liveDate) return;
-    setCreating(true);
-    const deadlines = calcDeadlinesFromLive(new Date(liveDate + "T12:00:00"));
-    const { data: clip, error } = await supabase.from("clips").insert({
-      title: template.name,
-      type: "video",
-      status: "Planned",
-      category: template.bucket,
-      submitted_by: member.id,
-      submitted_by_name: member.name,
-      template_id: template.id,
-      destination: template.platforms[0] ?? null,
-      idea_due_date: deadlines.idea_due_date,
-      clip_due_date: deadlines.clip_due_date,
-      final_cut_due: deadlines.final_cut_due,
-      approval_due: deadlines.approval_due,
-      scheduled_date: deadlines.scheduled_date,
-    }).select().single();
-    if (error) { alert(error.message); setCreating(false); return; }
-    if (selectedCrew.length > 0 && clip) {
-      await supabase.from("content_assignments").insert(
-        selectedCrew.map((crewId) => {
-          const cm = members.find((m) => m.id === crewId);
-          return {
-            clip_id: clip.id, member_id: crewId, member_name: cm?.name ?? "",
-            role: "On-Camera", task_type: "Drop a Clip",
-            drop_by_date: deadlines.clip_due_date, is_required: true, created_by: member.id,
-          };
-        })
-      );
-      await Promise.all(selectedCrew.map((id) =>
-        notifyMember(supabase, id, "assignment", `You're on "${template.name}"`, "/portal/drop")
-      ));
-    }
-    await onRefresh();
-    setCreating(false);
-    setActionTemplate(null);
-    setSelectedCrew([]);
-  }
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="font-display text-2xl text-desert-night">Ready Bank</h2>
-        <p className="text-sm text-smoked-charcoal/60 mt-1">Pull a format into the calendar instead of building from scratch.</p>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <button onClick={() => setEffortFilter(null)} className={`chip !text-xs ${!effortFilter ? "chip-copper" : "chip-cream"}`}>All efforts</button>
-        {(["2-Min Drop", "5-Min Drop", "10-Min Drop", "Group Day", "Edit Heavy"] as EffortLabel[]).map((e) => (
-          <button key={e} onClick={() => setEffortFilter(e === effortFilter ? null : e)} className={`chip !text-xs ${effortFilter === e ? "chip-copper" : "chip-cream"}`}>{e}</button>
-        ))}
-        <span className="w-px bg-desert-night/10 mx-1" />
-        {TAG_FILTERS.map((f) => (
-          <button key={f.id} onClick={() => setTagFilters(prev => prev.includes(f.id) ? prev.filter(x => x !== f.id) : [...prev, f.id])} className={`chip !text-xs ${tagFilters.includes(f.id) ? "chip-copper" : "chip-cream"}`}>{f.label}</button>
-        ))}
-      </div>
-
-      {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filtered.map((t) => (
-          <div key={t.id} className="card p-4 space-y-2">
-            <div>
-              <p className="font-display text-base text-desert-night">{t.name}</p>
-              <p className="text-xs text-smoked-charcoal/50">{t.bucket}</p>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <span className="chip chip-cream !text-[9px]">{t.effort}</span>
-              {t.homeFriendly && <span className="chip chip-cream !text-[9px]">🏠</span>}
-              {!t.needsTalking && <span className="chip chip-cream !text-[9px]">🤫</span>}
-              {t.adminStitches && <span className="chip chip-cream !text-[9px]">🔗</span>}
-            </div>
-            <p className="text-xs text-smoked-charcoal/70 line-clamp-2">{t.description}</p>
-            <div className="bg-cactus-teal/10 rounded p-1.5">
-              <p className="text-[10px] font-bold text-desert-night/50 uppercase">SEO</p>
-              <p className="text-xs text-desert-night font-bold">&ldquo;{t.seoPhrase}&rdquo;</p>
-            </div>
-            <button
-              onClick={() => { setActionTemplate(t); setLiveDate(nextSunday().toISOString().slice(0, 10)); setSelectedCrew([]); }}
-              className="btn btn-primary btn-sm !text-xs w-full"
-            >Add to Calendar</button>
-          </div>
-        ))}
-      </div>
-
-      {/* Action modal */}
-      {actionTemplate && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setActionTemplate(null)}>
-          <div className="bg-sandstone-cream rounded-2xl p-6 max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-display text-lg text-desert-night">{actionTemplate.name}</h3>
-              <button onClick={() => setActionTemplate(null)} className="text-desert-night/40 text-2xl">×</button>
-            </div>
-            <div>
-              <p className="label">Goes live <span className="font-normal text-desert-night/40">(auto-set to next Sunday)</span></p>
-              <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field !w-auto" />
-            </div>
-            <div>
-              <p className="label">Assign crew <span className="font-normal text-desert-night/40">(optional)</span></p>
-              <div className="flex flex-wrap gap-1.5">
-                {members.map((m) => (
-                  <button key={m.id} onClick={() => setSelectedCrew(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])} className={`chip !text-xs ${selectedCrew.includes(m.id) ? "chip-copper" : "chip-cream"}`}>{m.name}</button>
-                ))}
-              </div>
-            </div>
-            <button onClick={() => createClip(actionTemplate)} disabled={creating} className="btn btn-primary btn-lg w-full">
-              {creating ? "Creating…" : `Add to calendar`}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ===========================================================================
 // PLANNER DASHBOARD — What's Stuck, Ready for Vanessa, Needs Planning
 // ===========================================================================
 function PlannerDashboard({
-  clips, assignments, approvals, people, themes, trends, members, isAdmin, onSelectClip, onRefresh,
+  clips, assignments, approvals, people, trends, members, isAdmin, onSelectClip, onRefresh,
 }: {
   clips: ClipMeta[];
   assignments: Assignment[];
   approvals: Record<string, Approval[]>;
   people: Record<string, ClipPerson[]>;
-  themes: Theme[];
   trends: TrendRef[];
   members: Member[];
   isAdmin: boolean;
@@ -2815,9 +2165,6 @@ function PlannerDashboard({
 }) {
   const supabase = createClient();
   const now = new Date();
-
-  // Active theme
-  const activeTheme = themes.find((t) => t.status === "Active" || t.status === "Planning");
 
   // Needs planning: trend drops that are New or Watching
   const needsPlanningTrends = trends.filter((t) => t.status === "New" || t.status === "Watching");
@@ -2885,35 +2232,6 @@ function PlannerDashboard({
         </p>
       </div>
 
-      {/* Active theme */}
-      {activeTheme && (
-        <div className="card-dark p-5">
-          <p className="text-sunburst-yellow text-sm font-black uppercase">This Week&apos;s Heat</p>
-          <p className="font-display text-2xl text-sandstone-cream mt-1">{activeTheme.name}</p>
-          {activeTheme.description && <p className="text-sandstone-cream/60 text-sm mt-1">{activeTheme.description}</p>}
-        </div>
-      )}
-
-      {/* Summary counts */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="card p-4 text-center">
-          <p className="font-display text-3xl text-desert-night">{needsPlanningTrends.length}</p>
-          <p className="text-xs text-smoked-charcoal/60 mt-1">Trends to plan</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="font-display text-3xl text-desert-night">{stuckClips.length}</p>
-          <p className="text-xs text-smoked-charcoal/60 mt-1">Stuck / late</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="font-display text-3xl text-desert-night">{waitingOn.length}</p>
-          <p className="text-xs text-smoked-charcoal/60 mt-1">Waiting on crew</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="font-display text-3xl text-desert-night">{readyForVanessa.length}</p>
-          <p className="text-xs text-smoked-charcoal/60 mt-1">Ready for Review</p>
-        </div>
-      </div>
-
       {/* What's Moving — recent link drops with embedded videos */}
       {recentLinkDrops.length > 0 && (
         <section>
@@ -2960,17 +2278,23 @@ function PlannerDashboard({
         </section>
       )}
 
-      {/* What's Stuck — overdue clips */}
+      {/* What's Stuck — overdue clips as visual cards */}
       {stuckClips.length > 0 && (
         <section>
           <h3 className="font-display text-xl text-desert-night mb-3">⚠ What&apos;s Stuck</h3>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {stuckClips.map((clip) => (
               <button
                 key={clip.id}
                 onClick={() => onSelectClip(clip.id)}
-                className="card p-4 w-full text-left hover:-translate-y-0.5 transition-transform"
+                className="card p-4 w-full text-left hover:-translate-y-0.5 transition-transform border-2 border-heat-orange/30"
               >
+                {/* Thumbnail for link drops */}
+                {clip.type === "tiktok_link" && clip.link && (
+                  <div className="bg-desert-night/5 rounded-lg overflow-hidden mb-3">
+                    <SocialEmbed url={clip.link} title={clip.title} />
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-bold text-desert-night truncate">{clip.title}</p>
@@ -2990,28 +2314,40 @@ function PlannerDashboard({
       {waitingOn.length > 0 && (
         <section>
           <h3 className="font-display text-xl text-desert-night mb-3">Waiting on crew</h3>
-          <div className="space-y-2">
-            {overdueAssignments.length > 0 && (
-              <p className="text-sm text-heat-orange font-bold mb-2">
-                {overdueAssignments.length} overdue — send reminders:
-              </p>
-            )}
-            {waitingOn.slice(0, 10).map((a) => {
+          {overdueAssignments.length > 0 && (
+            <p className="text-sm text-heat-orange font-bold mb-2">
+              {overdueAssignments.length} overdue — send reminders:
+            </p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {waitingOn.slice(0, 12).map((a) => {
               const clip = clips.find((c) => c.id === a.clip_id);
+              const crewMember = members.find((m) => m.id === a.member_id);
               const isOverdue = a.drop_by_date && new Date(a.drop_by_date) < now;
               return (
-                <div key={a.id} className="card p-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
+                <div key={a.id} className={`card p-3 flex items-center gap-3 ${isOverdue ? "border-2 border-heat-orange/40" : ""}`}>
+                  {/* Crew avatar */}
+                  <span className="w-10 h-10 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-copper-clay/30">
+                    {crewMember?.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={crewMember.photo_url} alt={crewMember?.name ?? a.member_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-display text-xs text-sandstone-cream">
+                        {(crewMember?.name ?? a.member_name).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                  </span>
+                  <button onClick={() => onSelectClip(a.clip_id)} className="min-w-0 flex-1 text-left">
                     <p className="font-bold text-desert-night text-sm truncate">{clip?.title ?? "Content item"}</p>
-                    <p className="text-xs text-smoked-charcoal/60">
-                      {a.member_name} · {a.role}
+                    <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
+                      {crewMember?.name ?? a.member_name} · {a.role}
                       {a.drop_by_date && (
-                        <span className={isOverdue ? "text-heat-orange font-bold" : ""}>
-                          {" · "}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                        <span className={`ml-1 font-bold ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
+                          {isOverdue ? "⚠ Late — " : ""}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                         </span>
                       )}
                     </p>
-                  </div>
+                  </button>
                   <button
                     onClick={() => sendReminder(a)}
                     className="btn btn-secondary btn-sm !text-xs shrink-0"
@@ -3029,14 +2365,20 @@ function PlannerDashboard({
       {readyForVanessa.length > 0 && (
         <section>
           <h3 className="font-display text-xl text-desert-night mb-3">Ready for Review</h3>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {readyForVanessa.map((clip) => {
               const clipApprovals = approvals[clip.id] ?? [];
               const approved = clipApprovals.filter((a) => a.status === "Approved" || a.status === "Approved With Edits").length;
               const total = clipApprovals.length;
               const allApproved = total > 0 && approved === total;
               return (
-                <div key={clip.id} className="card p-4 flex items-center justify-between gap-3">
+                <div key={clip.id} className="card p-3 flex flex-col gap-2">
+                  {/* Thumbnail for link drops */}
+                  {clip.type === "tiktok_link" && clip.link && (
+                    <div className="bg-desert-night/5 rounded-lg overflow-hidden">
+                      <SocialEmbed url={clip.link} title={clip.title} />
+                    </div>
+                  )}
                   <button onClick={() => onSelectClip(clip.id)} className="text-left min-w-0 flex-1">
                     <p className="font-bold text-desert-night truncate">{clip.title}</p>
                     <p className="text-xs text-smoked-charcoal/60 mt-0.5">
@@ -3046,7 +2388,7 @@ function PlannerDashboard({
                   {allApproved && (
                     <button
                       onClick={() => moveToStatus(clip.id, "Scheduled")}
-                      className="btn btn-primary btn-sm !text-xs shrink-0"
+                      className="btn btn-primary btn-sm !text-xs shrink-0 w-full"
                     >
                       Schedule
                     </button>
@@ -3062,39 +2404,52 @@ function PlannerDashboard({
       {(needsPlanningTrends.length > 0 || clipsWithoutAssignments.length > 0) && (
         <section>
           <h3 className="font-display text-xl text-desert-night mb-3">Needs planning</h3>
-          <div className="space-y-2">
-            {needsPlanningTrends.length > 0 && (
-              <div className="card p-3 bg-sandstone-cream/50">
-                <p className="text-sm font-bold text-desert-night mb-2">
-                  {needsPlanningTrends.length} trend {needsPlanningTrends.length === 1 ? "drop" : "drops"} to review
-                </p>
-                <button
-                  onClick={() => onSelectClip(needsPlanningTrends[0].id)}
-                  className="btn btn-secondary btn-sm !text-xs"
-                >
-                  Go to Trend Drops →
-                </button>
-              </div>
-            )}
-            {clipsWithoutAssignments.length > 0 && (
-              <div className="card p-3 bg-sandstone-cream/50">
-                <p className="text-sm font-bold text-desert-night mb-2">
-                  {clipsWithoutAssignments.length} {clipsWithoutAssignments.length === 1 ? "clip" : "clips"} with no one assigned
-                </p>
-                <div className="space-y-1">
-                  {clipsWithoutAssignments.slice(0, 5).map((clip) => (
-                    <button
-                      key={clip.id}
-                      onClick={() => onSelectClip(clip.id)}
-                      className="text-sm text-copper-deep hover:underline block"
-                    >
-                      {clip.title}
-                    </button>
-                  ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Trends waiting for review — visual cards with embedded videos */}
+            {needsPlanningTrends.slice(0, 6).map((trend) => (
+              <button
+                key={trend.id}
+                onClick={() => onSelectClip(trend.id)}
+                className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
+              >
+                {trend.url && (
+                  <div className="bg-desert-night/5">
+                    <SocialEmbed url={trend.url} title={trend.title} />
+                  </div>
+                )}
+                <div className="p-3">
+                  <p className="font-bold text-desert-night text-sm truncate">{trend.title}</p>
+                  <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
+                    {trend.submitted_by_name}
+                    {trend.platform ? ` · ${trend.platform}` : ""}
+                  </p>
+                  <span className="chip chip-yellow !text-[9px] mt-2">Trend waiting for review</span>
                 </div>
-              </div>
-            )}
+              </button>
+            ))}
+            {/* No one assigned — visual cards */}
+            {clipsWithoutAssignments.slice(0, 6).map((clip) => (
+              <button
+                key={clip.id}
+                onClick={() => onSelectClip(clip.id)}
+                className="card p-4 text-left hover:-translate-y-0.5 transition-transform border-2 border-copper-clay/20"
+              >
+                <p className="font-bold text-desert-night text-sm truncate">{clip.title}</p>
+                <p className="text-xs text-smoked-charcoal/60 mt-1">
+                  {clip.category ? `${clip.category} · ` : ""}Status: {clip.status}
+                </p>
+                <span className="chip chip-cream !text-[9px] mt-2">No one assigned</span>
+              </button>
+            ))}
           </div>
+          {needsPlanningTrends.length > 6 && (
+            <button
+              onClick={() => onSelectClip(needsPlanningTrends[0].id)}
+              className="btn btn-secondary btn-sm !text-xs mt-3"
+            >
+              See all {needsPlanningTrends.length} trends →
+            </button>
+          )}
         </section>
       )}
 
@@ -3130,14 +2485,15 @@ function TemplatePicker({
     const sun = nextSunday();
     return sun.toISOString().slice(0, 10); // YYYY-MM-DD for date input
   });
+  const [submittedBy, setSubmittedBy] = useState<string>("");
+  const [cutReadyBy, setCutReadyBy] = useState<string>("");
+  const [greenlightBy, setGreenlightBy] = useState<string>("");
 
   const template = selectedId ? getTemplate(selectedId) : null;
 
   async function create() {
     if (!template || !member || !liveDate) return;
     setCreating(true);
-
-    const deadlines = calcDeadlinesFromLive(new Date(liveDate + "T12:00:00"));
 
     const { data: clip, error } = await supabase.from("clips").insert({
       title: template.name,
@@ -3148,11 +2504,10 @@ function TemplatePicker({
       submitted_by_name: member.name,
       template_id: template.id,
       destination: template.platforms[0] ?? null,
-      idea_due_date: deadlines.idea_due_date,
-      clip_due_date: deadlines.clip_due_date,
-      final_cut_due: deadlines.final_cut_due,
-      approval_due: deadlines.approval_due,
-      scheduled_date: deadlines.scheduled_date,
+      clip_due_date: submittedBy || null,
+      final_cut_due: cutReadyBy || null,
+      approval_due: greenlightBy || null,
+      scheduled_date: liveDate || null,
     }).select().single();
 
     if (error || !clip) {
@@ -3171,15 +2526,18 @@ function TemplatePicker({
           member_name: crewMember?.name ?? "",
           role: "On-Camera",
           task_type: "Drop a Clip",
-          drop_by_date: deadlines.clip_due_date,
+          drop_by_date: submittedBy || null,
           is_required: true,
           created_by: member.id,
         };
       });
       await supabase.from("content_assignments").insert(assignmentInserts);
       // Notify crew
+      const dropLabel = submittedBy
+        ? ` — Drop-by ${new Date(submittedBy + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`
+        : "";
       await Promise.all(selectedCrew.map((id) =>
-        notifyMember(supabase, id, "assignment", `You're on "${template.name}" — Drop-by ${new Date(deadlines.clip_due_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`, "/portal/drop")
+        notifyMember(supabase, id, "assignment", `You're on "${template.name}"${dropLabel}`, "/portal/drop")
       ));
     }
 
@@ -3276,23 +2634,25 @@ function TemplatePicker({
         </div>
       )}
 
-      {/* Goes-live date — auto-suggested, user can change */}
+      {/* Deadline dates — all manual, no auto-calculation */}
       {template && (
-        <div>
-          <p className="label">Goes live <span className="font-normal text-desert-night/40">(auto-set to next Sunday — change if needed)</span></p>
-          <input
-            type="date"
-            value={liveDate}
-            onChange={(e) => setLiveDate(e.target.value)}
-            className="field !w-auto"
-          />
-          {liveDate && (
-            <p className="text-xs text-smoked-charcoal/50 mt-1">
-              Drop-by {new Date(liveDate + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-              {" → "}Cut {new Date(new Date(liveDate + "T12:00:00").getTime() - 2 * 86400000).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-              {" → "}Greenlight {new Date(new Date(liveDate + "T12:00:00").getTime() - 1 * 86400000).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-            </p>
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <p className="label">Submitted by</p>
+            <input type="date" value={submittedBy} onChange={(e) => setSubmittedBy(e.target.value)} className="field w-full" />
+          </div>
+          <div>
+            <p className="label">Cut ready by</p>
+            <input type="date" value={cutReadyBy} onChange={(e) => setCutReadyBy(e.target.value)} className="field w-full" />
+          </div>
+          <div>
+            <p className="label">Greenlight by</p>
+            <input type="date" value={greenlightBy} onChange={(e) => setGreenlightBy(e.target.value)} className="field w-full" />
+          </div>
+          <div>
+            <p className="label">Goes live by <span className="font-normal text-desert-night/40">(auto-set to next Sunday — change if needed)</span></p>
+            <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field w-full" />
+          </div>
         </div>
       )}
 
