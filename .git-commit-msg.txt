@@ -1,0 +1,17 @@
+Show dropper's profile picture in What's Moving section
+
+The What's Moving section in the Planner dashboard now shows the
+profile picture of whoever dropped each link, next to their name
+and the platform.
+
+- If the member has a portal avatar (photo_url), it shows their
+  actual profile picture in a circular avatar
+- If not, it falls back to their initials on a copper-clay circle
+  (same pattern as the portal nav)
+
+Also added photo_url to the Member type and the members query in
+the Run Sheet so it's available throughout.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

@@ -19,7 +19,7 @@ type Approval = Database["public"]["Tables"]["approvals"]["Row"];
 type Theme = Database["public"]["Tables"]["content_themes"]["Row"];
 type TrendRef = Database["public"]["Tables"]["trend_references"]["Row"];
 type Assignment = Database["public"]["Tables"]["content_assignments"]["Row"];
-type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content">;
+type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content" | "photo_url">;
 
 const STUDIO_FLOW: ClipStatus[] = [
   "Dropped", "Planned", "Shot", "Cutting", "Review", "Ready", "Scheduled", "Live", "Vault",
@@ -149,7 +149,7 @@ export default function RunSheetPage() {
       supabase.from("content_themes").select("*").order("start_date", { ascending: false }),
       supabase.from("trend_references").select("*").order("created_at", { ascending: false }),
       supabase.from("content_assignments").select("*").order("drop_by_date", { ascending: true }),
-      supabase.from("members").select("id, name, nickname, role, can_plan_content").order("name"),
+      supabase.from("members").select("id, name, nickname, role, can_plan_content, photo_url").order("name"),
     ]);
 
     if (clipRes.error) {
@@ -2920,26 +2920,42 @@ function PlannerDashboard({
           <h3 className="font-display text-xl text-desert-night mb-3">🔥 What&apos;s Moving</h3>
           <p className="text-sm text-smoked-charcoal/60 mb-3">Recent trend drops from the crew. Tap to open the full clip.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recentLinkDrops.map((clip) => (
-              <button
-                key={clip.id}
-                onClick={() => onSelectClip(clip.id)}
-                className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
-              >
-                {/* Embed or thumbnail */}
-                <div className="bg-desert-night/5">
-                  <SocialEmbed url={clip.link!} title={clip.title} />
-                </div>
-                {/* Info */}
-                <div className="p-3">
-                  <p className="font-bold text-desert-night text-sm truncate">{clip.title}</p>
-                  <p className="text-xs text-smoked-charcoal/60 mt-0.5">
-                    {clip.submitted_by_name}
-                    {clip.link && linkPlatform(clip.link) ? ` · ${linkPlatform(clip.link)}` : ""}
-                  </p>
-                </div>
-              </button>
-            ))}
+            {recentLinkDrops.map((clip) => {
+              const dropper = members.find((m) => m.id === clip.submitted_by);
+              return (
+                <button
+                  key={clip.id}
+                  onClick={() => onSelectClip(clip.id)}
+                  className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
+                >
+                  {/* Embed or thumbnail */}
+                  <div className="bg-desert-night/5">
+                    <SocialEmbed url={clip.link!} title={clip.title} />
+                  </div>
+                  {/* Info — with dropper's profile picture */}
+                  <div className="p-3 flex items-center gap-2">
+                    {/* Profile picture or initials */}
+                    <span className="w-8 h-8 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-copper-clay/30">
+                      {dropper?.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={dropper.photo_url} alt={clip.submitted_by_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-display text-xs text-sandstone-cream">
+                          {clip.submitted_by_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-desert-night text-sm truncate">{clip.title}</p>
+                      <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
+                        {clip.submitted_by_name}
+                        {clip.link && linkPlatform(clip.link) ? ` · ${linkPlatform(clip.link)}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </section>
       )}
