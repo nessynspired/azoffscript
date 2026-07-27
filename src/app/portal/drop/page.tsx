@@ -17,6 +17,11 @@ const LINK_PATTERNS: { test: RegExp; platform: string }[] = [
   { test: /tiktok\.com/i, platform: "TikTok" },
   { test: /instagram\.com/i, platform: "Instagram" },
   { test: /youtube\.com|youtu\.be/i, platform: "YouTube" },
+  { test: /facebook\.com|fb\.watch|fb\.com/i, platform: "Facebook" },
+  { test: /twitter\.com|x\.com/i, platform: "X / Twitter" },
+  { test: /threads\.net/i, platform: "Threads" },
+  { test: /pinterest\.com|pin\.it/i, platform: "Pinterest" },
+  { test: /snapchat\.com/i, platform: "Snapchat" },
   { test: /drive\.google\.com/i, platform: "Google Drive" },
   { test: /dropbox\.com/i, platform: "Dropbox" },
 ];
@@ -51,7 +56,7 @@ export default function DropPage() {
   const [dropped, setDropped] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Pre-fill from URL params (shared from TikTok/etc via Web Share Target)
+  // Pre-fill from URL params (shared from TikTok/Instagram/etc via Web Share Target)
   // Or show success if the share auto-dropped (?shared=1)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -242,7 +247,7 @@ export default function DropPage() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="font-display text-3xl md:text-4xl text-desert-night">Drop something.</h1>
-          <InfoTooltip text="Drop a video file, paste a TikTok/Instagram/YouTube link, or type a text idea. Pick a lane (content category), choose where it's going, and tag anyone who's in it. It goes straight to the Run Sheet for planning." />
+          <InfoTooltip text="Drop a video file, paste any social link (TikTok, Instagram, Facebook, YouTube, etc.), or type a text idea. Pick a lane (content category), choose where it's going, and tag anyone who's in it. It goes straight to the Run Sheet for planning." />
           <p className="text-smoked-charcoal/60 mt-2">
             One take is fine. No pressure to be perfect.
           </p>
@@ -271,8 +276,8 @@ export default function DropPage() {
             >
               <span className="text-3xl">🔗</span>
               <div>
-                <p className="font-display text-xl text-desert-night">Drop a TikTok Link</p>
-                <p className="text-sm text-smoked-charcoal/60">Saw a trend? Paste the link.</p>
+                <p className="font-display text-xl text-desert-night">Drop a Link</p>
+                <p className="text-sm text-smoked-charcoal/60">TikTok, Instagram, Facebook, YouTube — paste any social link.</p>
               </div>
             </button>
 
@@ -328,7 +333,7 @@ export default function DropPage() {
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Paste TikTok / Reel link…"
+              placeholder="Paste any social link — TikTok, Instagram, Facebook, YouTube…"
               className="field text-lg"
               autoFocus
             />

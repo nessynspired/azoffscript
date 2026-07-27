@@ -1,0 +1,27 @@
+Drop page accepts any social link, not just TikTok
+
+The Drop page was branded as "Drop a TikTok Link" even though the
+underlying logic already accepted any valid URL. Now it's clear that
+any social platform works.
+
+Changes:
+- Button: "Drop a TikTok Link" -> "Drop a Link"
+- Button subtitle: "Saw a trend? Paste the link." -> "TikTok, Instagram,
+  Facebook, YouTube — paste any social link."
+- Placeholder: "Paste TikTok / Reel link…" -> "Paste any social link —
+  TikTok, Instagram, Facebook, YouTube…"
+- Tooltip updated to list multiple platforms
+- Share-target code comment updated
+
+Added platform detection for Facebook, X/Twitter, Threads, Pinterest,
+and Snapchat (previously only TikTok, Instagram, YouTube, Google Drive,
+Dropbox were detected). Now the activity feed shows the correct
+platform name ("dropped a Facebook clip" instead of just "dropped a
+link") for all major social platforms.
+
+The stored DB type stays "tiktok_link" for backward compatibility with
+existing rows — only the UI copy and detection changed.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
