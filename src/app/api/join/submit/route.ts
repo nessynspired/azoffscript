@@ -32,6 +32,46 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // ===== ANTI-SPAM CHECKS (server-side, invisible to real users) =====
+
+  // 1. Honeypot — if the hidden field is filled, it's a bot.
+  //    Return success so the bot thinks it worked and doesn't retry.
+  const honeypot = str(body._hp).trim();
+  if (honeypot) {
+    return NextResponse.json({ ok: true }, { status: 200 });
+  }
+
+  // 2. Time trap — if submitted in under 3 seconds, it's a bot auto-submitting.
+  //    Real humans take at least a few seconds to read + fill the form.
+  const formLoadTime = Number(body._t);
+  if (formLoadTime && Date.now() - formLoadTime < 3000) {
+    return NextResponse.json({ ok: true }, { status: 200 });
+  }
+
+  // 3. IP rate limiting — max 3 submissions per hour per IP.
+  //    Checks recent submissions from the same IP in the last hour.
+  const clientIp = getClientIp(request);
+  try {
+    const service = createServiceClient();
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await service
+      .from("join_submissions")
+      .select("*", { count: "exact", head: true })
+      .eq("ip_address", clientIp ?? "")
+      .gte("created_at", oneHourAgo);
+    if (count && count >= 3) {
+      return NextResponse.json(
+        { error: "Too many submissions from your location. Please try again later." },
+        { status: 429 }
+      );
+    }
+  } catch {
+    // If rate limit check fails (e.g., DB issue), don't block the submission.
+    // Better to let a real person through than block them.
+  }
+
+  // ===== VALIDATION =====
+
   const name = str(body.name).trim();
   const city = str(body.city).trim();
 
@@ -46,6 +86,10 @@ export async function POST(request: NextRequest) {
       { error: "Name and city must each be under 120 characters." },
       { status: 400 }
     );
+  }
+  // Basic name sanity — must contain at least one letter
+  if (!/[a-zA-Z]/.test(name)) {
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
 
   const roles = Array.isArray(body.roles)

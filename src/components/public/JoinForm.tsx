@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { MascotImage } from "@/components/MascotImage";
 
 // ===== JOIN FORM DROPDOWN OPTIONS =====
@@ -77,6 +77,10 @@ export function JoinForm() {
     anythingElse: "",
   });
 
+  // Anti-spam: honeypot (hidden field bots fill) + time trap (form load timestamp)
+  const [honeypot, setHoneypot] = useState("");
+  const formLoadedAt = useRef(Date.now());
+
   function update(key: string, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -94,11 +98,31 @@ export function JoinForm() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+
+    // Client-side anti-spam checks (server also checks)
+    // 1. Honeypot — if filled, a bot did it. Pretend success so they don't retry.
+    if (honeypot) {
+      setSubmitted(true);
+      setSubmitting(false);
+      return;
+    }
+    // 2. Time trap — if submitted in under 3 seconds, it's a bot auto-submitting
+    const timeOnForm = Date.now() - formLoadedAt.current;
+    if (timeOnForm < 3000) {
+      setSubmitted(true);
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/join/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          _hp: honeypot,           // honeypot field (server validates it's empty)
+          _t: formLoadedAt.current, // form load timestamp (server validates elapsed time)
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -211,6 +235,20 @@ export function JoinForm() {
           placeholder="Tell us your vibe, boundaries, questions, or anything that would help us know if you fit the room."
           value={form.anythingElse}
           onChange={(e) => update("anythingElse", e.target.value)}
+        />
+      </div>
+
+      {/* Honeypot — hidden from humans, bots fill it. Never visible. */}
+      <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", top: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}>
+        <label htmlFor="company-website">Company website (leave empty)</label>
+        <input
+          type="text"
+          id="company-website"
+          name="company-website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
         />
       </div>
 
