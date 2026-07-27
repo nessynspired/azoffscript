@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import { useTermsStatus } from "@/lib/hooks/use-terms-status";
 
 /**
@@ -10,11 +11,16 @@ import { useTermsStatus } from "@/lib/hooks/use-terms-status";
  * Dismissed TermsGate modals let the user into the portal; this banner keeps
  * the rules one tap away and makes it clear certain actions are locked until
  * they accept.
+ *
+ * Admins never see this banner — they're the brand owner, not bound by
+ * their own terms.
  */
 export function QuickTermsBanner() {
+  const { member } = useAuth();
   const { quickTermsAccepted, loading } = useTermsStatus();
 
-  if (loading || quickTermsAccepted) return null;
+  // Admins bypass — no banner, no lock
+  if (loading || quickTermsAccepted || member?.role === "admin") return null;
 
   return (
     <div className="bg-copper-clay text-sandstone-cream border-b-2 border-copper-deep">

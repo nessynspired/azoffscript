@@ -238,8 +238,10 @@ export default function DropPage() {
   // ===== DROP FORM — quick actions first, details after =====
   const [dropMode, setDropMode] = useState<"link" | "clip" | "prompt" | "caption" | null>(null);
   const termsStatus = useTermsStatus();
-  const clipLocked = !termsStatus.loading && !termsStatus.creatorReleaseSigned;
-  const termsLocked = !termsStatus.loading && !termsStatus.quickTermsAccepted;
+  // Admins bypass all term locks — they're the brand owner, not bound by their own terms
+  const isAdmin = member?.role === "admin";
+  const clipLocked = !isAdmin && !termsStatus.loading && !termsStatus.creatorReleaseSigned;
+  const termsLocked = !isAdmin && !termsStatus.loading && !termsStatus.quickTermsAccepted;
 
   return (
     <main className="portal-shell px-4 pt-6">

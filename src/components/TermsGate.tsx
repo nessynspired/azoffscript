@@ -26,6 +26,12 @@ export function TermsGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (loading || !member) return;
+    // Admins bypass the terms gate entirely — they're the brand owner,
+    // not bound by their own terms. No popup, no lock, no banner.
+    if (member.role === "admin") {
+      setPhase("done");
+      return;
+    }
     (async () => {
       const { data } = await supabase
         .from("quick_terms_acceptances")
