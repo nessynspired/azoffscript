@@ -746,6 +746,7 @@ export interface Database {
           id: string;
           name: string;
           city: string;
+          email: string | null;
           socials: string | null;
           comfortable_on_camera: string | null;
           content_type: string | null;
@@ -772,6 +773,7 @@ export interface Database {
           id?: string;
           name: string;
           city: string;
+          email?: string | null;
           socials?: string | null;
           comfortable_on_camera?: string | null;
           content_type?: string | null;
@@ -798,6 +800,7 @@ export interface Database {
           id?: string;
           name?: string;
           city?: string;
+          email?: string | null;
           socials?: string | null;
           comfortable_on_camera?: string | null;
           content_type?: string | null;

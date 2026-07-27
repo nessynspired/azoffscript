@@ -451,6 +451,7 @@ create table if not exists public.join_submissions (
   id                  uuid primary key default gen_random_uuid(),
   name                text not null,
   city                text not null,
+  email               text,                   -- required by new Join form; used to auto-send invite codes
   socials             text,
   comfortable_on_camera text,                -- 'yes' | 'somewhat' | 'no' | ''
   content_type        text,                  -- free text: what content they'd enjoy
@@ -477,9 +478,11 @@ alter table public.join_submissions add column if not exists content_interests t
 alter table public.join_submissions add column if not exists availability_slots text[] default '{}';
 alter table public.join_submissions add column if not exists willingness text;
 alter table public.join_submissions add column if not exists anything_else text;
+alter table public.join_submissions add column if not exists email text;
 
 create index if not exists idx_join_submissions_status on public.join_submissions(status);
 create index if not exists idx_join_submissions_created_at on public.join_submissions(created_at desc);
+create index if not exists idx_join_submissions_email on public.join_submissions(email);
 
 drop trigger if exists trg_join_submissions_updated on public.join_submissions;
 create trigger trg_join_submissions_updated before update on public.join_submissions

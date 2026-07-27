@@ -92,6 +92,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 
+  // Email — required so we can send the invite code if approved
+  const email = str(body.email).trim().toLowerCase();
+  if (!email) {
+    return NextResponse.json(
+      { error: "Email is required so we can send your invite if you're in." },
+      { status: 400 }
+    );
+  }
+  // Simple, intentionally-permissive email sanity check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) {
+    return NextResponse.json({ ok: true }, { status: 200 }); // fake success to bots
+  }
+
   const roles = Array.isArray(body.roles)
     ? body.roles.filter((r): r is string => typeof r === "string").slice(0, 12)
     : [];
@@ -107,6 +120,7 @@ export async function POST(request: NextRequest) {
   const submission = {
     name,
     city,
+    email,
     socials: cap(str(body.socials), 200),
     comfortable_on_camera: cap(str(body.comfortableOnCamera), 60),
     content_type: cap(str(body.contentType), 2000),
@@ -174,6 +188,7 @@ export async function POST(request: NextRequest) {
         id: inserted.id,
         name: submission.name,
         city: submission.city,
+        email: submission.email,
         socials: submission.socials,
         lane: submission.lane,
         roles: submission.roles,
@@ -211,6 +226,7 @@ async function emailAdminJoinAlert(info: {
   id: string;
   name: string;
   city: string;
+  email: string | null;
   socials: string | null;
   lane: string | null;
   roles: string[];
@@ -265,7 +281,7 @@ function yesMaybeNoLabel(v: string | null): string {
 }
 
 function buildJoinAlertText(i: {
-  name: string; city: string; socials: string | null; lane: string | null;
+  name: string; city: string; email: string | null; socials: string | null; lane: string | null;
   roles: string[]; comfortableOnCamera: string | null; contentType: string | null;
   availability: string | null; boundaries: string | null; why: string | null;
   guestOrRecurring: string | null; clipsNotGuaranteed: string | null;
@@ -276,6 +292,7 @@ function buildJoinAlertText(i: {
     ``,
     `Name: ${i.name}`,
     `City: ${i.city}`,
+    `Email: ${i.email ?? "—"}`,
     `Socials: ${i.socials ?? "—"}`,
     `Lane: ${i.lane ?? "—"}`,
     `Comfortable on camera: ${cameraLabel(i.comfortableOnCamera)}`,
@@ -295,7 +312,7 @@ function buildJoinAlertText(i: {
 }
 
 function buildJoinAlertHtml(i: {
-  name: string; city: string; socials: string | null; lane: string | null;
+  name: string; city: string; email: string | null; socials: string | null; lane: string | null;
   roles: string[]; comfortableOnCamera: string | null; contentType: string | null;
   availability: string | null; boundaries: string | null; why: string | null;
   guestOrRecurring: string | null; clipsNotGuaranteed: string | null;
@@ -320,6 +337,7 @@ function buildJoinAlertHtml(i: {
   <table>
     ${row("Name", i.name)}
     ${row("City", i.city)}
+    ${row("Email", i.email ?? "—")}
     ${row("Socials", i.socials ?? "—")}
     ${row("Lane", i.lane ?? "—")}
     ${row("On camera", cameraLabel(i.comfortableOnCamera))}

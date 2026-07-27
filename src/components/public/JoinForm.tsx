@@ -69,6 +69,7 @@ export function JoinForm() {
   const [form, setForm] = useState({
     name: "",
     city: "",
+    email: "",
     socials: "",
     comfortableOnCamera: "",
     contentInterests: [] as string[],
@@ -160,6 +161,24 @@ export function JoinForm() {
       <div>
         <label className="label" htmlFor="join-city">City</label>
         <input id="join-city" className="field" required placeholder="Phoenix, Tucson, Mesa…" value={form.city} onChange={(e) => update("city", e.target.value)} />
+      </div>
+
+      {/* Email — required so we can send the invite code if approved */}
+      <div>
+        <label className="label" htmlFor="join-email">
+          Email
+          <span className="text-xs text-smoked-charcoal/50 font-normal ml-2">(only used to send your invite if you&rsquo;re in)</span>
+        </label>
+        <input
+          id="join-email"
+          type="email"
+          className="field"
+          required
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={(e) => update("email", e.target.value)}
+          autoComplete="email"
+        />
       </div>
 
       {/* Social handles */}

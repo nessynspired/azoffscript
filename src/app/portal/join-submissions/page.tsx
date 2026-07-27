@@ -34,6 +34,7 @@ export default function JoinSubmissionsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [inviteStatus, setInviteStatus] = useState<Record<string, { kind: "sending" | "sent" | "error"; message?: string; email?: string }>>({});
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -79,6 +80,7 @@ export default function JoinSubmissionsPage() {
         ? `Interested in: ${sub.lane}`
         : "Joined via the public interest form.";
     setBusyId(sub.id);
+    setInviteStatus((prev) => ({ ...prev, [sub.id]: { kind: "sending" } }));
     const { data: invite, error: inviteErr } = await supabase
       .from("invite_codes")
       .insert({
@@ -92,6 +94,7 @@ export default function JoinSubmissionsPage() {
       .single();
     if (inviteErr || !invite) {
       setBusyId(null);
+      setInviteStatus((prev) => ({ ...prev, [sub.id]: { kind: "error", message: inviteErr?.message ?? "Failed to create invite code" } }));
       alert(inviteErr?.message ?? "Failed to create invite code");
       return;
     }
@@ -99,11 +102,63 @@ export default function JoinSubmissionsPage() {
       .from("join_submissions")
       .update({ status: "Approved", converted_invite_id: invite.id })
       .eq("id", sub.id);
+    if (updateErr) {
+      setBusyId(null);
+      setInviteStatus((prev) => ({ ...prev, [sub.id]: { kind: "error", message: updateErr.message } }));
+      alert(updateErr.message);
+      return;
+    }
+
+    // Invite created — now email the applicant their code automatically.
+    let emailResult: { kind: "sent"; email: string } | { kind: "error"; message: string } | null = null;
+    try {
+      const res = await fetch("/api/admin/send-invite-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionId: sub.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        emailResult = { kind: "sent", email: data.sentTo ?? sub.email ?? "" };
+      } else {
+        emailResult = { kind: "error", message: data.error ?? "Email send failed" };
+      }
+    } catch (err) {
+      emailResult = { kind: "error", message: err instanceof Error ? err.message : "Email send failed" };
+    }
+
     setBusyId(null);
-    if (updateErr) { alert(updateErr.message); return; }
     setCopiedCode(invite.code);
-    setTimeout(() => setCopiedCode(null), 4000);
+    setInviteStatus((prev) => ({
+      ...prev,
+      [sub.id]: emailResult?.kind === "sent"
+        ? { kind: "sent", email: emailResult.email }
+        : { kind: "error", message: emailResult?.kind === "error" ? emailResult.message : "Email send failed" },
+    }));
     load();
+  }
+
+  async function resendInviteEmail(sub: Submission) {
+    if (!sub.converted_invite_id) return;
+    setBusyId(sub.id);
+    setInviteStatus((prev) => ({ ...prev, [sub.id]: { kind: "sending" } }));
+    try {
+      const res = await fetch("/api/admin/send-invite-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionId: sub.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        setInviteStatus((prev) => ({ ...prev, [sub.id]: { kind: "sent", email: data.sentTo ?? sub.email ?? "" } }));
+      } else {
+        setInviteStatus((prev) => ({ ...prev, [sub.id]: { kind: "error", message: data.error ?? "Email send failed" } }));
+      }
+    } catch (err) {
+      setInviteStatus((prev) => ({ ...prev, [sub.id]: { kind: "error", message: err instanceof Error ? err.message : "Email send failed" } }));
+    } finally {
+      setBusyId(null);
+    }
   }
 
   function copyCode(code: string) {
@@ -211,6 +266,9 @@ export default function JoinSubmissionsPage() {
 
                 {expanded && (
                   <div className="mt-4 pt-4 border-t border-desert-night/10 space-y-3 text-sm">
+                    {sub.email && (
+                      <Field label="Email" value={sub.email} />
+                    )}
                     {sub.socials && (
                       <Field label="Socials" value={sub.socials} />
                     )}
@@ -341,6 +399,62 @@ export default function JoinSubmissionsPage() {
                         </button>
                       </div>
                     )}
+
+                    {/* Invite email status + resend */}
+                    {sub.converted_invite_id && (() => {
+                      const status = inviteStatus[sub.id];
+                      return (
+                        <div className="space-y-2">
+                          {status?.kind === "sending" && (
+                            <div className="rounded-xl p-3 bg-sandstone-cream/40 text-sm text-desert-night">
+                              Sending invite email…
+                            </div>
+                          )}
+                          {status?.kind === "sent" && (
+                            <div className="rounded-xl p-3 bg-teal-cyan/10 border border-teal-cyan/30 text-sm text-desert-night">
+                              <p className="font-bold">Invite emailed to {status.email}</p>
+                              <p className="text-xs text-smoked-charcoal/70 mt-1">They can use the code at /login → &ldquo;Need access?&rdquo;</p>
+                              <button
+                                onClick={() => resendInviteEmail(sub)}
+                                disabled={isBusy}
+                                className="btn btn-secondary btn-sm mt-2 disabled:opacity-50"
+                              >
+                                Resend email
+                              </button>
+                            </div>
+                          )}
+                          {status?.kind === "error" && (
+                            <div className="rounded-xl p-3 bg-red-50 border border-red-200 text-sm text-red-900 space-y-2">
+                              <p className="font-bold">Email didn&rsquo;t send.</p>
+                              <p className="text-xs">{status.message}</p>
+                              <p className="text-xs text-smoked-charcoal/70">Copy the code above and DM them manually — they still need it to get in.</p>
+                              <button
+                                onClick={() => resendInviteEmail(sub)}
+                                disabled={isBusy}
+                                className="btn btn-secondary btn-sm disabled:opacity-50"
+                              >
+                                Try sending again
+                              </button>
+                            </div>
+                          )}
+                          {!status && sub.email && (
+                            <button
+                              onClick={() => resendInviteEmail(sub)}
+                              disabled={isBusy}
+                              className="btn btn-secondary btn-sm disabled:opacity-50"
+                            >
+                              Resend invite email
+                            </button>
+                          )}
+                          {!status && !sub.email && (
+                            <div className="rounded-xl p-3 bg-red-50 border border-red-200 text-sm text-red-900">
+                              <p className="font-bold">No email on file.</p>
+                              <p className="text-xs mt-1">Copy the code above and DM them manually — they still need it to get in.</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
