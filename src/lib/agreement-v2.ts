@@ -135,7 +135,7 @@ If AZ Off Script later receives revenue, money will be handled only after revenu
 
 # 7. Role Understanding
 
-Vanessa/Admin controls final brand, posting, scheduling, archive, portal, business decisions, future waves, and expansion decisions. Ronnie or another planner may help organize content, but planner status does not create LLC ownership, sponsor authority, payout approval authority, or the right to override Do Not Post unless separately authorized in writing.
+Vanessa/Admin controls final brand, posting, scheduling, archive, portal, business decisions, future waves, and expansion decisions. A planner may help organize content, but planner status does not create LLC ownership, sponsor authority, payout approval authority, or the right to override Do Not Post unless separately authorized in writing.
 
 # 8. Order of Control
 
@@ -566,11 +566,11 @@ These split templates are not active unless AZ Off Script activates money-side t
 - 20% Promo Contributor Pool only if crew directly helped promote or sell that merch.
 - Personalized member gear given as a welcome kit, gift, sample, or filming prop is not a revenue split item.
 
-# C.6. Vanessa and Ronnie Role Understanding
+# C.6. Brand Owner and Planner Role Understanding
 
 Participant understands that Vanessa may receive or retain the Brand / Operations share because Vanessa is building, owning, funding, designing, organizing, and operating the AZ Off Script brand, website, portal, software systems, merch, content library, rules, and business infrastructure.
 
-Participant understands that Ronnie may receive Planner / Orchestration recognition or compensation if Ronnie materially helps research trends, plan the content calendar, organize Weekly Heat, structure Quick Drops, assign deadlines, or coordinate content that becomes monetized. Planner status does not give Ronnie LLC ownership, payout approval authority, legal authority, sponsor authority, or the right to override Do Not Post unless separately authorized in writing.
+Participant understands that a planner may receive Planner / Orchestration recognition or compensation if that planner materially helps research trends, plan the content calendar, organize Weekly Heat, structure Quick Drops, assign deadlines, or coordinate content that becomes monetized. Planner status does not give the planner LLC ownership, payout approval authority, legal authority, sponsor authority, or the right to override Do Not Post unless separately authorized in writing.
 
 # C.7. Tax and Payment Information
 

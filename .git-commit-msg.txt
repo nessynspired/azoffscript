@@ -1,0 +1,26 @@
+Remove Ronnie's name from legal agreements — use generic planner role
+
+The agreements hardcoded Ronnie's name as the planner role. This made
+the planner role feel like it was written in stone for one specific
+person rather than being a role anyone could hold.
+
+Replaced all Ronnie-specific planner references with generic "a planner"
+/ "the planner" phrasing in both agreement files:
+
+- agreement-v2.ts: Section 7 (Role Understanding) and C.6 (now
+  "Brand Owner and Planner Role Understanding" instead of
+  "Vanessa and Ronnie Role Understanding")
+- agreements.ts: Planner definition, Section 35 (now
+  "Brand Owner and Planner Role Understanding"), and the
+  acknowledgment checklist
+
+Vanessa's name stays because she is the actual brand owner/founder
+(Vanessa Williams). Only the planner role was genericized.
+
+Ronnie's name remains in crew-data.ts, off-script-versions.ts, and
+quick-drop-templates.ts because those are actual crew member data
+(Ronnie is a real person in the crew), not legal role definitions.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

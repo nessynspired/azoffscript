@@ -287,7 +287,7 @@ Admin controls final decisions for:
 
 A person authorized by Admin to help with content research, planning, organization, calendar building, Trend Drops, Quick Drops, Weekly Heat, and content coordination.
 
-Ronnie may be designated as a Planner.
+Any crew member may be designated as a Planner by Admin.
 
 Planner access does not create LLC ownership, legal authority, payout approval, sponsorship authority, or the right to override "Do Not Post" unless AZ Off Script gives separate written permission.
 
@@ -1000,13 +1000,13 @@ Personalized member gear given as a welcome kit, gift, sample, or filming prop i
 
 ---
 
-# 35. Vanessa and Ronnie Role Understanding
+# 35. Brand Owner and Planner Role Understanding
 
 Participant understands that Vanessa may receive or retain the Brand / Operations share because Vanessa is building, owning, funding, designing, organizing, and operating the AZ Off Script brand, website, portal, software systems, merch, content library, rules, and business infrastructure.
 
-Participant understands that Ronnie may receive Planner / Orchestration recognition or compensation if Ronnie materially helps research trends, plan the content calendar, organize Weekly Heat, structure Quick Drops, assign deadlines, or coordinate content that becomes monetized.
+Participant understands that a planner may receive Planner / Orchestration recognition or compensation if that planner materially helps research trends, plan the content calendar, organize Weekly Heat, structure Quick Drops, assign deadlines, or coordinate content that becomes monetized.
 
-Planner status does not give Ronnie LLC ownership, payout approval authority, legal authority, sponsor authority, or the right to override "Do Not Post" unless separately authorized in writing.
+Planner status does not give the planner LLC ownership, payout approval authority, legal authority, sponsor authority, or the right to override "Do Not Post" unless separately authorized in writing.
 
 ---
 
@@ -1270,7 +1270,7 @@ Participant acknowledges:
 - I understand any future money split requires revenue to be received, direct costs to be deducted, and written payout terms to be active.
 - I understand I am not entitled to revenue from content, waves, sponsors, merch, or campaigns I am not involved in unless a separate written agreement says otherwise.
 - I understand Vanessa/Admin controls final brand, posting, scheduling, archive, portal, business decisions, future waves, and expansion decisions.
-- I understand Ronnie or another planner may help organize content, but planner status does not create LLC ownership.
+- I understand a planner may help organize content, but planner status does not create LLC ownership.
 - I have had the opportunity to ask questions and seek independent legal advice before signing.
 
 ---
