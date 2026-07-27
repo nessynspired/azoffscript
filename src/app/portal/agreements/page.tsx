@@ -250,10 +250,10 @@ function AgreementScrollViewer({
       </div>
 
       {/* Main layout: TOC sidebar + scrollable content */}
-      <div className="flex gap-4 items-start">
-        {/* TOC sidebar — sticky on desktop */}
-        <div className={`lg:sticky lg:top-4 lg:w-64 shrink-0 ${mobileTocOpen ? "block" : "hidden lg:block"}`}>
-          <div className="card p-3 space-y-3 max-h-[70vh] overflow-y-auto">
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
+        {/* TOC sidebar — sticky on desktop, collapsible on mobile */}
+        <div className={`lg:sticky lg:top-4 lg:w-64 shrink-0 w-full ${mobileTocOpen ? "block" : "hidden lg:block"}`}>
+          <div className="card p-3 space-y-3 max-h-[50vh] lg:max-h-[70vh] overflow-y-auto">
             <p className="font-display text-sm text-desert-night uppercase tracking-wide">Table of Contents</p>
             {grouped.map((ex) => (
               <div key={ex.group.id}>
@@ -294,7 +294,7 @@ function AgreementScrollViewer({
               scrollToAnchor(link.dataset.anchor);
             }
           }}
-          className="flex-1 card p-4 md:p-8 max-h-[55vh] md:max-h-[70vh] overflow-y-auto scroll-smooth agreement-prose"
+          className="flex-1 min-w-0 card p-4 md:p-8 max-h-[60vh] md:max-h-[70vh] overflow-y-auto scroll-smooth agreement-prose"
         >
           {grouped.map((ex, exIdx) => (
             <div key={ex.group.id} className={exIdx > 0 ? "mt-10 pt-8 border-t-2 border-copper-clay/20" : ""}>
@@ -353,11 +353,11 @@ function IntroMessagePopup({
   const firstName = memberName?.split(" ")[0] ?? "hey";
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] mx-2 overflow-y-auto shadow-2xl"
+        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto overflow-x-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — branded */}
@@ -545,11 +545,11 @@ function MainAgreementPopup({
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-sandstone-cream rounded-3xl max-w-2xl w-full max-h-[92vh] mx-2 flex flex-col shadow-2xl overflow-hidden"
+        className="bg-sandstone-cream rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — same branded design */}
@@ -621,9 +621,9 @@ function MainAgreementPopup({
                 <div className="bg-desert-night/5 rounded-xl p-3 space-y-1">
                   <p className="text-[10px] font-black text-desert-night/60 uppercase tracking-wide">For your legal protection</p>
                   <div className="text-xs text-smoked-charcoal space-y-0.5">
-                    <p><span className="text-smoked-charcoal/50">Signed in as:</span> <strong>{whoami.name}</strong> ({whoami.email})</p>
-                    <p><span className="text-smoked-charcoal/50">IP address:</span> {whoami.ip ?? "recorded server-side"}</p>
-                    <p><span className="text-smoked-charcoal/50">Device:</span> {whoami.deviceSummary}</p>
+                    <p className="break-words"><span className="text-smoked-charcoal/50">Signed in as:</span> <strong>{whoami.name}</strong> ({whoami.email})</p>
+                    <p className="break-all"><span className="text-smoked-charcoal/50">IP address:</span> {whoami.ip ?? "recorded server-side"}</p>
+                    <p className="break-words"><span className="text-smoked-charcoal/50">Device:</span> {whoami.deviceSummary}</p>
                   </div>
                   <label className="flex items-start gap-2 pt-1.5 cursor-pointer">
                     <input type="checkbox" checked={acknowledgedDevice} onChange={(e) => setAcknowledgedDevice(e.target.checked)} disabled={!!emailBlocked} className="mt-0.5" />
@@ -636,11 +636,11 @@ function MainAgreementPopup({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <p className="label">Printed name</p>
-                  <input type="text" value={printedName} onChange={(e) => setPrintedName(e.target.value)} placeholder="Legal name" className="field" disabled={!!emailBlocked} />
+                  <input type="text" value={printedName} onChange={(e) => setPrintedName(e.target.value)} placeholder="Legal name" className="field w-full" disabled={!!emailBlocked} />
                 </div>
                 <div>
                   <p className="label">Date</p>
-                  <input type="date" value={signedDate} onChange={(e) => setSignedDate(e.target.value)} className="field !w-auto" disabled={!!emailBlocked} />
+                  <input type="date" value={signedDate} onChange={(e) => setSignedDate(e.target.value)} className="field w-full sm:w-auto" disabled={!!emailBlocked} />
                 </div>
               </div>
 
@@ -768,11 +768,11 @@ function AgreementPopup({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[90vh] mx-2 overflow-y-auto shadow-2xl"
+        className="bg-sandstone-cream rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto overflow-x-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — cute and branded */}
@@ -864,9 +864,9 @@ function AgreementPopup({
                     For your legal protection
                   </p>
                   <div className="text-xs text-smoked-charcoal space-y-0.5">
-                    <p><span className="text-smoked-charcoal/50">Signed in as:</span> <strong>{whoami.name}</strong> ({whoami.email})</p>
-                    <p><span className="text-smoked-charcoal/50">IP address:</span> {whoami.ip ?? "recorded server-side"}</p>
-                    <p><span className="text-smoked-charcoal/50">Device:</span> {whoami.deviceSummary}</p>
+                    <p className="break-words"><span className="text-smoked-charcoal/50">Signed in as:</span> <strong>{whoami.name}</strong> ({whoami.email})</p>
+                    <p className="break-all"><span className="text-smoked-charcoal/50">IP address:</span> {whoami.ip ?? "recorded server-side"}</p>
+                    <p className="break-words"><span className="text-smoked-charcoal/50">Device:</span> {whoami.deviceSummary}</p>
                   </div>
                   <p className="text-[10px] text-smoked-charcoal/50 pt-1">
                     This info is recorded in a tamper-evident audit log when you sign. It proves
@@ -899,7 +899,7 @@ function AgreementPopup({
                   value={printedName}
                   onChange={(e) => setPrintedName(e.target.value)}
                   placeholder="Your full legal name"
-                  className="field"
+                  className="field w-full"
                   disabled={!!emailBlocked}
                 />
               </div>
@@ -911,7 +911,7 @@ function AgreementPopup({
                   type="date"
                   value={signedDate}
                   onChange={(e) => setSignedDate(e.target.value)}
-                  className="field !w-auto"
+                  className="field w-full sm:w-auto"
                   disabled={!!emailBlocked}
                 />
               </div>
@@ -1179,12 +1179,12 @@ export default function AgreementsPage() {
                     Signed {new Date(sig.created_at).toLocaleString()}
                   </p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {sig.member_email && <span className="chip chip-cream !text-[10px]">{sig.member_email}</span>}
+                    {sig.member_email && <span className="chip chip-cream !text-[10px] break-all">{sig.member_email}</span>}
                     {sig.member_phone && <span className="chip chip-cream !text-[10px]">{sig.member_phone}</span>}
                     {sig.social_handles && <span className="chip chip-cream !text-[10px]">{sig.social_handles}</span>}
                     {sig.acknowledged_checklist && <span className="chip chip-approved !text-[10px]">✓ Checklist</span>}
                   </div>
-                  <p className="text-[10px] text-smoked-charcoal/40 mt-2">Signature ID: {sig.id}</p>
+                  <p className="text-[10px] text-smoked-charcoal/40 mt-2 break-all">Signature ID: {sig.id}</p>
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   <button onClick={() => downloadSignedCopy(sig, agreement)} className="btn btn-primary btn-sm !text-xs">
@@ -1323,7 +1323,7 @@ export default function AgreementsPage() {
                         {sigs.length} of {sigs.length + unsignedMembers.length} crew signed
                       </span>
                       {unsignedMembers.length > 0 && (
-                        <span className="text-smoked-charcoal/60">
+                        <span className="text-smoked-charcoal/60 break-words">
                           Waiting on: {unsignedMembers.map((m) => m.name).join(", ")}
                         </span>
                       )}

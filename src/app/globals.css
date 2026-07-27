@@ -224,6 +224,16 @@ body {
   text-decoration: none;
   white-space: nowrap;
   user-select: none;
+  /* Mobile: allow long button text to wrap instead of overflowing */
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+@media (max-width: 480px) {
+  .btn {
+    /* On very narrow screens, allow wrapping for buttons with long text */
+    white-space: normal;
+    padding: 0.6rem 1rem;
+  }
 }
 .btn:active {
   transform: translateY(1px);
@@ -869,6 +879,33 @@ a.chip {
   color: #1f2937;
   line-height: 1.65;
   font-size: 14px;
+  /* Mobile: prevent any horizontal overflow from long words/URLs */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+.agreement-prose * {
+  max-width: 100%;
+}
+.agreement-prose p,
+.agreement-prose li,
+.agreement-prose h1,
+.agreement-prose h2,
+.agreement-prose h3,
+.agreement-prose strong,
+.agreement-prose code {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.agreement-prose ul,
+.agreement-prose ol {
+  /* Mobile: reduce padding so list text doesn't push off screen */
+  padding-left: 18px;
+}
+.agreement-prose code {
+  /* Long code/IDs should wrap, not overflow */
+  white-space: pre-wrap;
 }
 .agreement-prose h1 {
   font-size: 22px;
@@ -897,7 +934,6 @@ a.chip {
 }
 .agreement-prose ul,
 .agreement-prose ol {
-  padding-left: 22px;
   margin: 8px 0 12px;
 }
 .agreement-prose li {
