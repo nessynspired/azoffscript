@@ -89,11 +89,11 @@ export default function ArizonaReactionVideosPage() {
         </div>
       </section>
 
-      {/* Meet the First Wave */}
+      {/* Meet the Crew */}
       <section className="py-12 px-4 bg-sandstone-cream/50">
         <div className="max-w-6xl mx-auto">
           <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-6">
-            Meet the First Wave
+            Meet the Crew
           </h2>
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {CREW.map((member) => (

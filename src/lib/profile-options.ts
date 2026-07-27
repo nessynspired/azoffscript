@@ -253,8 +253,8 @@ export const PUBLIC_TITLE_OPTIONS = [
 
 export const SECONDARY_ROLE_OPTIONS = [
   "Founder + Creative Lead",
-  "First Wave Creator",
-  "First Wave Creator + Calendar Planner",
+  "Creator",
+  "Creator + Calendar Planner",
   "Calendar Planner",
   "Creative Planner",
   "Room Participant",
@@ -309,7 +309,7 @@ export const PERSONALITY_LINE_OPTIONS = [
 
 export const WEBSITE_BIO_OPTIONS = [
   "A real-reaction creator in the AZ Off Script room, bringing natural timing, honest answers, and the kind of energy that makes a simple prompt turn into a moment.",
-  "A First Wave creator with a mix of humor, real reactions, and off-script honesty. She brings her own rhythm to the room and helps make the group chemistry feel real.",
+  "A creator with a mix of humor, real reactions, and off-script honesty. She brings her own rhythm to the room and helps make the group chemistry feel real.",
   "A calm but expressive voice in the room, bringing side-eye, soft truths, and reactions that say what words do not always need to.",
   "A funny, natural presence in the AZ Off Script room, bringing quick reactions, honest timing, and the kind of personality people recognize in their own group chat.",
   "A bold voice in the room, bringing hot takes, real answers, and the kind of reactions that make people choose a side in the comments.",

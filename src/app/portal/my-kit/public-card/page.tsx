@@ -344,7 +344,7 @@ export default function MyPublicCardPage() {
             value={secondaryRole}
             onChange={setSecondaryRole}
             options={SECONDARY_ROLE_OPTIONS}
-            placeholder="e.g. First Wave Creator"
+            placeholder="e.g. Creator"
           />
         </div>
 

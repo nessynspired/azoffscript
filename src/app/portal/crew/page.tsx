@@ -163,7 +163,7 @@ export default function CrewPage() {
         <div className="relative z-10">
           <h1 className="font-display text-3xl md:text-5xl text-sandstone-cream leading-none drop-shadow-lg">The Crew</h1>
           <div className="mt-1"><InfoTooltip dark text="The crew directory — everyone in the room with their roles, tags, and profiles. Admins can see terms status (who signed what), toggle planning access, and create member rows for people who signed up but didn't get a profile." /></div>
-          <p className="text-sandstone-cream/90 mt-2 text-lg drop-shadow">First Wave members of The Off Script Room.</p>
+          <p className="text-sandstone-cream/90 mt-2 text-lg drop-shadow">Members of The Off Script Room.</p>
         </div>
       </section>
 
@@ -370,7 +370,6 @@ export default function CrewPage() {
                   <div className="flex flex-wrap gap-1 mt-2">
                     {m.role === "admin" && <span className="chip chip-yellow !text-[10px]">Admin</span>}
                     {m.can_plan_content && m.role !== "admin" && <span className="chip chip-teal !text-[10px]">Planner</span>}
-                    {m.first_wave && <span className="chip chip-copper !text-[10px]">First Wave</span>}
                   </div>
                 </div>
               </div>
@@ -411,7 +410,6 @@ export default function CrewPage() {
             <div className="flex flex-wrap gap-2 mt-4">
               {selected.role === "admin" && <span className="chip chip-yellow">Admin</span>}
               {selected.can_plan_content && selected.role !== "admin" && <span className="chip chip-teal">Content Planner</span>}
-              {selected.first_wave && <span className="chip chip-copper">First Wave</span>}
               {selected.design_edition && <span className="chip chip-teal">Edition {selected.design_edition}</span>}
             </div>
 

@@ -51,7 +51,7 @@ export default function AboutPage() {
 
           <div className="card p-6">
             <p className="text-lg text-desert-night leading-relaxed">
-              The First Wave is our first women-led creator room — the group that showed up first,
+              AZ Off Script is a women-led creator room — the group that showed up first,
               shaped the vibe, and helped turn the idea into something real. Different
               personalities, different timing, same room.
             </p>

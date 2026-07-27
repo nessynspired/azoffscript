@@ -173,7 +173,6 @@ export default function LobbyPage() {
           <MascotImage pose="main" size={280} />
         </div>
         <div className="relative z-10 max-w-2xl pb-2">
-          <span className="chip chip-yellow mb-3">First Wave</span>
           <h1 className="font-display text-4xl md:text-6xl text-sandstone-cream leading-none drop-shadow-lg">
             Hey, {firstName} — what&apos;s moving today?
           </h1>

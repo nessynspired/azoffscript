@@ -1,7 +1,7 @@
 /**
  * Quick Drop Library — AZ Off Script content format library.
  *
- * POSITIONING: AZ Off Script is an Arizona creator brand. The First Wave
+ * POSITIONING: AZ Off Script is an Arizona creator brand. The crew
  * is the first women-led room. Not about one type of person — about what
  * happens when different Arizona personalities get the same prompt and
  * nobody answers the same way.
@@ -69,7 +69,7 @@ export const CONTENT_BUCKETS = [
   "Don't Overthink It",
   "Two-Second Opinion",
   "Different Women Different Answer",
-  "First Wave / Future Wave",
+  "Crew / Future Wave",
   "Black + Latina Lens",
 ] as const;
 
@@ -77,7 +77,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
   // ===== TRANSITIONS =====
   {
     id: "first_wave_intro",
-    name: "First Wave Intro Pass",
+    name: "Crew Intro Pass",
     bucket: "Transitions",
     description: "Each person records a short intro using a simple camera transition. Stitched together into one intro video.",
     effort: "10-Min Drop",
@@ -790,7 +790,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
       "Black shirt or white shirt?",
       "Tumbler check.",
       "Arizona, our way — outfit edition.",
-      "First Wave fit check.",
+      "Crew fit check.",
     ],
     makeItYours: "Your style, your fit. This can show merch without hard-selling.",
     seoPhrase: "Arizona creator outfit",
@@ -1069,12 +1069,12 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
   },
 
-  // ===== FIRST WAVE / FUTURE WAVE =====
+  // ===== CREW / FUTURE WAVE =====
   {
     id: "first_wave_vs_future",
-    name: "First Wave vs Future Wave",
-    bucket: "First Wave / Future Wave",
-    description: "First Wave reacts to future member questions. Helps attract new women.",
+    name: "Crew vs Future Wave",
+    bucket: "Crew / Future Wave",
+    description: "The crew reacts to future member questions. Helps attract new women.",
     effort: "10-Min Drop",
     timeEstimate: "5-10 min",
     homeFriendly: true,

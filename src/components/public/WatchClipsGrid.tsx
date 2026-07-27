@@ -44,7 +44,7 @@ export function WatchClipsGrid() {
         </div>
         <p className="font-display text-2xl text-desert-night mt-4">Clips dropping soon.</p>
         <p className="text-smoked-charcoal/70 mt-2">
-          The First Wave is filming. Check back or follow us on social.
+          The crew is filming. Check back or follow us on social.
         </p>
       </div>
     );

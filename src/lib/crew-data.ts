@@ -1,5 +1,5 @@
 /**
- * AZ Off Script — First Wave crew data.
+ * AZ Off Script — Crew data.
  * Real names + brand copy for public-facing pages.
  * Display order: Vanessa, Sholanda, Ronnie, Elaine, Latasha, Maria
  */
@@ -67,7 +67,7 @@ export const CREW_NAMES_SHORT =
   "Vanessa, Ronnie, Sholanda, Elaine, Latasha, and Maria are the first AZ Off Script room — a mix of real reactions, hot takes, calm energy, funny timing, and Arizona personality.";
 
 export const CREW_NAMES_FOLLOWUP =
-  "They are the First Wave, not the limit of what AZ Off Script can become.";
+  "They are the room, not the limit of what AZ Off Script can become.";
 
 /**
  * Member image paths — gear mockups and member cards.
@@ -145,7 +145,7 @@ export const CONTENT_LANES: ContentLane[] = [
   {
     number: 4,
     name: "Who's Most Likely To",
-    tagline: "First Wave edition. Somebody is getting exposed lightly.",
+    tagline: "Crew edition. Somebody is getting exposed lightly.",
     description:
       "Group game where the crew points to the person most likely to do something nobody wants to admit.",
     searchPhrases: ["who's most likely to game", "group game questions", "TikTok games for groups"],
@@ -209,7 +209,7 @@ export const LANE_META: Record<string, { tagline: string; color: string }> = {
   "Group Chat Court": { tagline: "We bring the question. The room decides.", color: "var(--color-heat-orange)" },
   "Dry Heat Hot Takes": { tagline: "Arizona opinions, served at 112 degrees.", color: "var(--color-cactus-teal)" },
   "Red Flag or Real Life?": { tagline: "The game where the room gets honest fast.", color: "var(--color-copper-clay)" },
-  "Who's Most Likely To": { tagline: "First Wave edition. Somebody is getting exposed lightly.", color: "var(--color-sunburst-yellow)" },
+  "Who's Most Likely To": { tagline: "Crew edition. Somebody is getting exposed lightly.", color: "var(--color-sunburst-yellow)" },
   "AZ Moments": { tagline: "Local things that only make sense here.", color: "var(--color-copper-deep)" },
   "Off Script Afterthoughts": { tagline: "The thing someone says after the camera was supposed to stop.", color: "var(--color-teal-deep)" },
 };

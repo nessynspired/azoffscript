@@ -9,7 +9,6 @@ import type { Database } from "@/lib/types/db";
 type Member = Database["public"]["Tables"]["members"]["Row"];
 
 const SORT_MODES = [
-  { value: "first_wave_first", label: "First Wave first, then by name" },
   { value: "manual", label: "Manual order (by display order number)" },
   { value: "alpha", label: "Alphabetical by name" },
 ];
@@ -19,7 +18,7 @@ export default function CrewProfilesPage() {
   const supabase = createClient();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortMode, setSortMode] = useState("first_wave_first");
+  const [sortMode, setSortMode] = useState("manual");
   const [savingSortMode, setSavingSortMode] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [editForm, setEditForm] = useState({
@@ -191,7 +190,6 @@ export default function CrewProfilesPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-desert-night truncate">{m.name}</p>
-                    {m.first_wave && <span className="chip chip-yellow !text-[9px]">First Wave</span>}
                     {m.public_visible && <span className="chip chip-approved !text-[9px]">Public</span>}
                   </div>
                   <p className="text-xs text-smoked-charcoal/50 truncate">

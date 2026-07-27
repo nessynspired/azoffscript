@@ -58,7 +58,7 @@ export function MascotImage({
  *
  *  - "primary"  → Public homepage hero, portal Lobby hero, My Wave Kit header
  *  - "shades"   → Ready to Post page, Greenlit approval area, public Watch section
- *  - "peace"    → Crew page, First Wave section, member welcome/kits
+ *  - "peace"    → Crew page, Crew section, member welcome/kits
  */
 export type PosterAsset = "primary" | "shades" | "peace";
 

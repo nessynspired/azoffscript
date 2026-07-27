@@ -1,0 +1,51 @@
+Remove First Wave branding from website and portal
+
+Removed all "First Wave" text, labels, chips, and sort options from
+the public website and portal UI. The crew is now just "the crew"
+or "the room" everywhere in the user-facing experience.
+
+What changed (22 files):
+
+PUBLIC WEBSITE:
+- Home page: removed "First Wave" from meta descriptions
+- Crew page: "Meet the First Wave" → "Meet the Crew", removed
+  First Wave chip, updated copy and alt text
+- About page: "The First Wave is our first..." → "AZ Off Script is
+  a women-led creator room..."
+- ImmersiveHome: removed First Wave chips, status labels, and copy
+- Arizona reaction videos page: "Meet the First Wave" → "Meet the Crew"
+- StructuredData: removed First Wave from org description
+- WatchClipsGrid: "The First Wave is filming" → "The crew is filming"
+- Public crew API: default sort changed from first_wave_first to manual
+
+PORTAL:
+- Lobby: removed First Wave chip
+- Crew page: removed First Wave chips from cards and detail view
+- Crew profiles: removed "First Wave first" sort option, default
+  sort now "manual"
+- My Kit: "First Wave Member" → "Crew Member", removed chip
+- My Kit public card: placeholder updated
+- Brand locker: all "First Wave" merch/card copy → "Crew"
+- Gear board: placeholder updated
+- Agreements page: two display strings updated
+
+DATA/LIB:
+- crew-data.ts: taglines and followup copy updated
+- profile-options.ts: role titles and bio options updated
+- off-script-versions.ts: script titles and descriptions updated
+  (template IDs left as-is to avoid breaking references)
+- quick-drop-templates.ts: bucket names, template names, and
+  descriptions updated (template IDs left as-is)
+- terms.ts: welcome copy updated
+
+WHAT WAS NOT CHANGED:
+- Legal documents (agreements.ts, agreement-v2.ts) — these are
+  signed contracts. "First Wave" stays in the legal text.
+- Database schema — the first_wave boolean field stays in the
+  members table and all queries. No migration needed.
+- Template IDs (first_wave_intro, first_wave_vs_future) — left
+  as-is to avoid breaking references.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

@@ -50,12 +50,12 @@ export const SCRIPT_LAYER_FILTERS = [
 export const OFF_SCRIPT_VERSIONS: OffScriptVersion[] = [
   {
     templateId: "first_wave_intro",
-    scriptTitle: "First Wave Script Break Intro",
+    scriptTitle: "Script Break Intro",
     scriptDescription: "Each person introduces themselves by naming the social script they are not reading anymore. Still simple, still stitched, but deeper than a basic intro.",
     socialScript: "People introduce themselves by sounding polished, agreeable, and easy to place.",
     scriptBreak: "Each woman introduces herself by what she is done pretending, shrinking, or editing.",
     audienceMirror: "Which one of these women says the thing you wish you could say?",
-    scriptCaptionStarter: "Meet the First Wave. Same room. Different scripts. Nobody reads them the same.",
+    scriptCaptionStarter: "Meet the crew. Same room. Different scripts. Nobody reads them the same.",
     promptExamples: [
       "I'm Vanessa, and I'm done making big ideas small so people feel comfortable.",
       "I'm Sholanda, and I'm done pretending I didn't peep it.",
@@ -613,8 +613,8 @@ export const OFF_SCRIPT_VERSIONS: OffScriptVersion[] = [
   },
   {
     templateId: "first_wave_vs_future",
-    scriptTitle: "First Wave, New Scripts",
-    scriptDescription: "First Wave reacts to the kind of energy, boundaries, humor, and honesty future members should bring.",
+    scriptTitle: "Crew, New Scripts",
+    scriptDescription: "The crew reacts to the kind of energy, boundaries, humor, and honesty future members should bring.",
     socialScript: "New people should fit in by copying the room.",
     scriptBreak: "Future waves can bring new scripts, not just repeat the first one.",
     audienceMirror: "What kind of energy should enter the room next?",

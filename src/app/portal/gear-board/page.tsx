@@ -182,7 +182,7 @@ export default function AdminGearBoardPage() {
                     </div>
                     <div>
                       <label className="label">Title/Edition</label>
-                      <input className="field" value={newTitleEdition} onChange={(e) => setNewTitleEdition(e.target.value)} placeholder={m.nickname ?? "First Wave"} />
+                      <input className="field" value={newTitleEdition} onChange={(e) => setNewTitleEdition(e.target.value)} placeholder={m.nickname ?? "Crew"} />
                     </div>
                   </div>
                   <div>

@@ -13,7 +13,7 @@ const CAPTIONS = [
   { text: "When he says 'we'll see'… 🚩", tag: "Red Flag or Real Life" },
   { text: "Arizona, our way.", tag: "Brand" },
   { text: "We don't script this. We just hit record.", tag: "BTS" },
-  { text: "First Wave only. You had to be there.", tag: "Crew" },
+  { text: "Crew only. You had to be there.", tag: "Crew" },
   { text: "Hot take: [blank] is overrated.", tag: "Hot Takes" },
   { text: "POV: you're in the Off Script Room", tag: "Skits" },
 ];
@@ -33,18 +33,18 @@ const CONTENT_FORMATS = [
   { name: "Group Chat Court", desc: "We bring the question. The room decides." },
   { name: "Dry Heat Hot Takes", desc: "Arizona opinions, served at 112 degrees." },
   { name: "Red Flag or Real Life?", desc: "The game where the room gets honest fast." },
-  { name: "Who's Most Likely To", desc: "First Wave edition. Somebody is getting exposed lightly." },
+  { name: "Who's Most Likely To", desc: "Crew edition. Somebody is getting exposed lightly." },
   { name: "AZ Moments", desc: "Local things that only make sense here." },
   { name: "Off Script Afterthoughts", desc: "The thing someone says after the camera was supposed to stop." },
 ];
 
 const GEAR_TEMPLATES = [
   { name: "Blank Tumbler Template", desc: "Personalized tumbler — add member name" },
-  { name: "Blank Shirt Template", desc: "AZ Off Script logo + First Wave sleeve" },
+  { name: "Blank Shirt Template", desc: "AZ Off Script logo + crew sleeve" },
   { name: "Blank Mug Template", desc: "Personalized mug — add member name" },
   { name: "Blank Badge Template", desc: "Member name + title" },
   { name: "Blank Sticker Template", desc: "Title/edition sticker" },
-  { name: "Blank Member Card Template", desc: "Digital member card — name, title, First Wave" },
+  { name: "Blank Member Card Template", desc: "Digital member card — name, title, crew" },
   { name: "Blank Invite Template", desc: "Welcome to the room invite" },
 ];
 

@@ -27,7 +27,7 @@ export function OrganizationSchema() {
         "@id": `${SITE_URL}/#organization`,
         name: "AZ Off Script",
         description:
-          "AZ Off Script is an Arizona-based creator brand making reaction videos, hot takes, group games, local humor, quick trend remixes, and short-form social content. The First Wave is the first women-led room.",
+          "AZ Off Script is an Arizona-based creator brand making reaction videos, hot takes, group games, local humor, quick trend remixes, and short-form social content.",
         url: SITE_URL,
         logo: `${SITE_URL}/assets/az-off-script-poster-primary-cactus-purse-desert.png`,
         sameAs: [

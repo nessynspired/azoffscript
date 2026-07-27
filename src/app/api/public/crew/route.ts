@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
  *     first_wave, photo_url, card_image, gear_image,
  *     favorite_content (used as tags)
  *   }],
- *   sortMode: 'manual' | 'alpha' | 'first_wave_first',
+ *   sortMode: 'manual' | 'alpha',
  *   crewNames: string  // comma-separated names for the "Vanessa, Ronnie, ..." line
  * }
  */
@@ -36,7 +36,7 @@ export async function GET() {
         .single(),
     ]);
 
-    const sortMode = settingsRes.data?.value ?? "first_wave_first";
+    const sortMode = settingsRes.data?.value ?? "manual";
     let crew = crewRes.data ?? [];
 
     // Sort based on the mode
@@ -45,13 +45,8 @@ export async function GET() {
     } else if (sortMode === "alpha") {
       crew = [...crew].sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      // first_wave_first: First Wave members first (by display_order), then others (by name)
-      crew = [...crew].sort((a, b) => {
-        if (a.first_wave && !b.first_wave) return -1;
-        if (!a.first_wave && b.first_wave) return 1;
-        if (a.first_wave && b.first_wave) return a.display_order - b.display_order;
-        return a.name.localeCompare(b.name);
-      });
+      // Default: sort by display_order for all members
+      crew = [...crew].sort((a, b) => a.display_order - b.display_order);
     }
 
     // Build the "Vanessa, Ronnie, Sholanda..." names line

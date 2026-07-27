@@ -188,7 +188,7 @@ export default function MyWaveKitPage() {
   }
 
   const firstName = profile.name?.split(" ")[0] ?? "Crew";
-  const title = profile.nickname ?? "First Wave Member";
+  const title = profile.nickname ?? "Crew Member";
   const tags = profile.favorite_content ?? [];
   const cardImg = getMemberCard(profile.name);
   const gearImg = getMemberGear(profile.name);
@@ -204,7 +204,7 @@ export default function MyWaveKitPage() {
       <section className="bg-desert-night p-6 md:p-8 rounded-2xl">
         <p className="text-sandstone-cream/70 text-sm font-bold uppercase tracking-wide">Welcome, {firstName}.</p>
         <h1 className="font-display text-3xl md:text-4xl text-sandstone-cream mt-1">
-          You&apos;re part of the First Wave.
+          You&apos;re part of the crew.
         </h1>
         <div className="mt-1">
           <InfoTooltip dark text="Your personal hub — edit your profile, comfort settings, and social links. See your gear status, your drops, approvals waiting on you, and your assignments. Everything here is private to you (and admins)." />
@@ -224,7 +224,7 @@ export default function MyWaveKitPage() {
         </div>
       )}
 
-      {/* ===== FIRST WAVE CARD ===== */}
+      {/* ===== CREW CARD ===== */}
       <div className="card p-6 ticket-stub">
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
@@ -254,7 +254,6 @@ export default function MyWaveKitPage() {
               <p className="font-script text-lg text-desert-night/70 mt-1">&ldquo;{profile.plot_twist}&rdquo;</p>
             )}
             <div className="flex flex-wrap gap-2 mt-3">
-              {profile.first_wave && <span className="chip chip-copper">First Wave</span>}
               {profile.role === "admin" && <span className="chip chip-yellow">Admin</span>}
               {tags.map((t) => <span key={t} className="chip chip-teal !text-[10px]">{t}</span>)}
             </div>

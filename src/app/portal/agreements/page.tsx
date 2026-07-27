@@ -386,7 +386,7 @@ function IntroMessagePopup({
 
           <p>The same idea still stands: we are building one shared AZ Off Script page first — fun, local, personality-driven, and not forced. But once people are filming, being tagged, sharing clips, wearing gear, or maybe later dealing with sponsors/money, we need clear rules around approvals, posting, raw footage, comfort, kids, and what happens if someone leaves.</p>
 
-          <p>One thing I also want to make clear: AZ Off Script is the main brand, and this First Wave is the first women-led room under it. That does not change what we are doing right now. It just gives the brand room to grow later into other waves, other Arizona areas, couples content, mixed groups, or other versions if it makes sense.</p>
+          <p>One thing I also want to make clear: AZ Off Script is the main brand, and this crew is the first women-led room under it. That does not change what we are doing right now. It just gives the brand room to grow later into other waves, other Arizona areas, couples content, mixed groups, or other versions if it makes sense.</p>
 
           <p>Nothing is paid or promised right now. Nobody is being asked to pay anything. If AZ Off Script ever becomes monetized, sponsored, or paid later, money conversations will happen privately and in writing before anything is owed or split.</p>
 
@@ -791,7 +791,7 @@ function AgreementPopup({
               Let's get on the same page
             </h2>
             <p className="text-sandstone-cream/60 text-sm mt-1">
-              First Wave Participation Rules + Media Release
+              Participation Rules + Media Release
             </p>
             {previewMode && (
               <p className="text-sandstone-cream/40 text-[10px] mt-1 uppercase tracking-wide">

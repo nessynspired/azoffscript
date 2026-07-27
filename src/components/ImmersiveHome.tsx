@@ -65,7 +65,7 @@ const COMING_SOON = [
   {
     format: "Who's Most Likely To",
     hook: "Point to the person most likely to start drama and leave.",
-    status: "First Wave",
+    status: "The Crew",
     platform: "YouTube Shorts",
   },
 ];
@@ -281,7 +281,7 @@ export function ImmersiveHome({ crew = [], crewNames = "" }: ImmersiveHomeProps 
 
               <div className="flex items-center justify-between mt-4">
                 <span className="chip chip-dark !text-[10px]">
-                  {i < 3 ? "First Wave" : "Coming Soon"}
+                  The Crew
                 </span>
                 <span className="text-xs font-bold text-heat-orange">Watch this lane →</span>
               </div>
@@ -302,7 +302,7 @@ export function ImmersiveHome({ crew = [], crewNames = "" }: ImmersiveHomeProps 
             The first clips<br />are loading.
           </h2>
           <p className="text-lg text-smoked-charcoal/70 mt-4 max-w-xl">
-            The First Wave is filming soon. Until then, the questions are getting messy, the room is
+            The crew is filming soon. Until then, the questions are getting messy, the room is
             getting built, and the cactus is judging quietly.
           </p>
 
@@ -342,14 +342,13 @@ export function ImmersiveHome({ crew = [], crewNames = "" }: ImmersiveHomeProps 
       {/* ===== 5. MEET THE FIRST WAVE — cast-card reveal ===== */}
       <section ref={crewRef} data-scene="dark" className="py-24 md:py-32 relative overflow-hidden reveal">
         <div className="absolute inset-0 opacity-15">
-          <PosterImage poster="peace" fill alt="AZ Off Script First Wave cast poster" />
+          <PosterImage poster="peace" fill alt="AZ Off Script cast poster" />
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto px-4">
           <div className="mb-12">
-            <span className="chip chip-yellow mb-4">First Wave</span>
             <h2 className="font-display text-4xl md:text-6xl text-sandstone-cream leading-tight">
-              Meet the First Wave.
+              Meet the Crew.
             </h2>
             <p className="text-sandstone-cream/70 text-lg mt-3 max-w-xl">
               Different personalities. Same room. No script needed.
@@ -378,7 +377,6 @@ export function ImmersiveHome({ crew = [], crewNames = "" }: ImmersiveHomeProps 
                       </h3>
                       <p className="text-cactus-teal font-bold text-sm mt-2">{member.nickname ?? ""}</p>
                     </div>
-                    {member.first_wave && <span className="chip chip-yellow !text-[9px]">First Wave</span>}
                   </div>
 
                   <p className="text-sm text-smoked-charcoal/70 mt-4">{member.public_bio ?? member.nickname ?? ""}</p>
@@ -404,7 +402,7 @@ export function ImmersiveHome({ crew = [], crewNames = "" }: ImmersiveHomeProps 
                 {crewNames}
               </p>
               <p className="text-sandstone-cream/50 text-sm">
-                They are the First Wave, not the limit of what AZ Off Script can become.
+                They are the room, not the limit of what AZ Off Script can become.
               </p>
             </div>
           )}

@@ -7,15 +7,15 @@ import { PosterImage, MascotImage } from "@/components/MascotImage";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Meet the AZ Off Script First Wave",
+  title: "Meet the AZ Off Script Crew",
   description:
-    "Meet the First Wave behind AZ Off Script, a women-led Arizona creator crew built around real reactions, personality, and group chemistry.",
+    "Meet the crew behind AZ Off Script, a women-led Arizona creator crew built around real reactions, personality, and group chemistry.",
   alternates: { canonical: "/crew" },
   openGraph: {
-    title: "Meet the AZ Off Script First Wave",
+    title: "Meet the AZ Off Script Crew",
     description:
-      "Meet the First Wave behind AZ Off Script, a women-led Arizona creator crew built around real reactions, personality, and group chemistry.",
-    images: [{ url: "/assets/az-off-script-poster-peace-sign-desert.png", width: 1024, height: 1024, alt: "AZ Off Script First Wave crew" }],
+      "Meet the crew behind AZ Off Script, a women-led Arizona creator crew built around real reactions, personality, and group chemistry.",
+    images: [{ url: "/assets/az-off-script-poster-peace-sign-desert.png", width: 1024, height: 1024, alt: "AZ Off Script crew" }],
   },
 };
 
@@ -51,7 +51,7 @@ async function getPublicCrew(): Promise<{ crew: PublicCrewMember[]; crewNames: s
         .single(),
     ]);
 
-    const sortMode = settingsRes.data?.value ?? "first_wave_first";
+    const sortMode = settingsRes.data?.value ?? "manual";
     let crew = (crewRes.data ?? []) as PublicCrewMember[];
 
     if (sortMode === "manual") {
@@ -59,12 +59,7 @@ async function getPublicCrew(): Promise<{ crew: PublicCrewMember[]; crewNames: s
     } else if (sortMode === "alpha") {
       crew = [...crew].sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      crew = [...crew].sort((a, b) => {
-        if (a.first_wave && !b.first_wave) return -1;
-        if (!a.first_wave && b.first_wave) return 1;
-        if (a.first_wave && b.first_wave) return a.display_order - b.display_order;
-        return a.name.localeCompare(b.name);
-      });
+      crew = [...crew].sort((a, b) => a.display_order - b.display_order);
     }
 
     const names = crew.map((m) => m.name);
@@ -92,15 +87,14 @@ export default async function CrewPage() {
       {/* Header with peace poster */}
       <section className="relative pt-32 md:pt-24 pb-12 overflow-hidden bg-desert-night">
         <div className="absolute inset-0 opacity-25">
-          <PosterImage poster="peace" fill alt="AZ Off Script First Wave crew poster" />
+          <PosterImage poster="peace" fill alt="AZ Off Script crew poster" />
         </div>
         <div className="relative z-10 max-w-6xl mx-auto px-4">
-          <span className="chip chip-yellow mb-4">First Wave</span>
           <h1 className="font-display text-3xl md:text-6xl text-sandstone-cream leading-tight">
-            Meet the First Wave
+            Meet the Crew
           </h1>
           <p className="text-lg md:text-xl text-sandstone-cream/80 mt-4 max-w-2xl">
-            The First Wave is the original women-led AZ Off Script room — different personalities,
+            The AZ Off Script crew is a women-led Arizona creator room — different personalities,
             different timing, same brand. Some bring the hot take. Some bring the calm. Some catch
             the face everyone else missed. That&apos;s the point.
           </p>
@@ -157,7 +151,7 @@ export default async function CrewPage() {
               {crewNames && (
                 <div className="text-center mt-10 max-w-2xl mx-auto space-y-2">
                   <p className="text-smoked-charcoal/70">{crewNames}</p>
-                  <p className="text-smoked-charcoal/60">They are the First Wave, not the limit of what AZ Off Script can become.</p>
+                  <p className="text-smoked-charcoal/60">They are the room, not the limit of what AZ Off Script can become.</p>
                 </div>
               )}
             </>

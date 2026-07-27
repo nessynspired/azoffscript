@@ -9,7 +9,7 @@ export const QUICK_TERMS_VERSION = "v2";
 
 export const WELCOME_COPY = {
   title: "Welcome to the Room 🌵",
-  body: `You're inside AZ Off Script — the place where the First Wave can see what's coming, drop clips, share ideas, approve content, and keep everything organized.
+  body: `You're inside AZ Off Script — the place where the crew can see what's coming, drop clips, share ideas, approve content, and keep everything organized.
 
 This is still meant to be fun, simple, and not forced.
 
