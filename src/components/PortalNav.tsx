@@ -177,7 +177,7 @@ export function PortalTopBar({
               </svg>
             </button>
             {moreOpen && (
-              <div className="absolute top-full left-0 mt-2 bg-desert-night border border-copper-clay/40 rounded-2xl py-2 min-w-[260px] shadow-[var(--shadow-lift)] animate-pop">
+              <div className="absolute top-full left-0 mt-2 bg-desert-night border border-copper-clay/40 rounded-2xl py-2 min-w-[260px] shadow-[var(--shadow-lift)] animate-pop max-h-[calc(100vh-100px)] overflow-y-auto">
                 {moreNav.map((item) => (
                   <Link
                     key={item.href}
@@ -339,7 +339,7 @@ export function PortalBottomNav() {
           onClick={() => setMoreOpen(false)}
         >
           <div
-            className="absolute bottom-0 inset-x-0 bg-desert-night border-t-2 border-copper-clay/40 rounded-t-3xl p-6 pb-8 animate-slide-up"
+            className="absolute bottom-0 inset-x-0 bg-desert-night border-t-2 border-copper-clay/40 rounded-t-3xl p-6 pb-8 animate-slide-up max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">

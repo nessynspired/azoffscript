@@ -1,7 +1,7 @@
 // ===========================================================================
 // AZ OFF SCRIPT — Agreement v2
 // ===========================================================================
-// Restructured version: short friendly Main Agreement + separate Exhibits A-E
+// Restructured version: short friendly Main Agreement + separate Exhibits A-F
 // with letter-prefixed sections (A.1, B.1, etc.)
 // ===========================================================================
 
@@ -11,7 +11,7 @@ export const AGREEMENT_V2: AgreementDoc = {
   version: "v2",
   title: "First Wave Participation Rules + Media Release",
   summary:
-    "Friendly main agreement with linked exhibits A-E. Short, readable main document with detailed rules in separate exhibits.",
+    "Friendly main agreement with linked exhibits A-F. Short, readable main document with detailed rules in separate exhibits.",
   exhibits: [
     {
       id: "main",
@@ -55,6 +55,13 @@ export const AGREEMENT_V2: AgreementDoc = {
       sectionPrefix: "E.",
       sections: [1, 2, 3, 4, 5, 6, 7, 8],
     },
+    {
+      id: "exhibit-f",
+      label: "Exhibit F",
+      title: "Prompting Your Personal Brand",
+      sectionPrefix: "F.",
+      sections: [1, 2, 3, 4, 5],
+    },
   ],
   bodyMarkdown: `# AZ OFF SCRIPT LLC
 # First Wave Participation Rules + Media Release
@@ -63,7 +70,7 @@ export const AGREEMENT_V2: AgreementDoc = {
 **Prepared by:** AZ Off Script LLC
 **Brand owner / administrator:** Vanessa Williams
 **Current lane:** AZ Off Script First Wave / women-led room
-**Linked exhibits:** A-E, kept as separate PDF files in this packet
+**Linked exhibits:** A-F, kept as separate PDF files in this packet
 **Status:** Business draft for attorney review and electronic signature
 
 > **Important Review Notice:** This document is a business draft for discussion and legal review. It is intended to explain the AZ Off Script participation structure before filming begins. It is not a substitute for advice from an Arizona-licensed attorney or any participant's own legal advisor.
@@ -108,6 +115,7 @@ The following exhibits are part of this Agreement. They are separate documents s
 - **Exhibit C — Money Not Active / Future Revenue Rules** — No money promise, future written payout terms, revenue categories, default future split templates, taxes, and sponsor disclosures.
 - **Exhibit D — Leaving, Removal, Existing Clips, and Disputes** — Leaving, removal, prior approved clips, access loss, confidentiality, disputes, emergency relief, and no public drama rules.
 - **Exhibit E — Brand Architecture, Future Waves, and Expansion Rights** — AZ Off Script as the umbrella brand, First Wave as the current women-led room, and future waves such as couples, men, mixed casts, cities, and sub-brands.
+- **Exhibit F — Prompting Your Personal Brand** — Brand awareness through AZ Off Script, tagging personal pages, growing audience together, and what is and is not promised.
 
 # 5. Core Participation Rules
 
@@ -139,6 +147,7 @@ If documents or communications conflict, the following order controls:
 - Exhibit C — Money Not Active / Future Revenue Rules.
 - Exhibit D — Leaving, Removal, Existing Clips, and Disputes.
 - Exhibit E — Brand Architecture, Future Waves, and Expansion Rights.
+- Exhibit F — Prompting Your Personal Brand.
 - Later written amendments signed or electronically accepted by AZ Off Script and Participant.
 - Portal settings, My Kit selections, Run Sheet records, and Greenlight records.
 - Texts, DMs, calls, meetings, and informal conversations, only to the extent they do not contradict the signed documents.
@@ -167,7 +176,7 @@ If documents or communications conflict, the following order controls:
 
 # 10. Signature Page
 
-By signing, Participant agrees to the Main Agreement and incorporated Exhibits A-E. Electronic signatures and electronic acceptance are accepted where legally allowed.
+By signing, Participant agrees to the Main Agreement and incorporated Exhibits A-F. Electronic signatures and electronic acceptance are accepted where legally allowed.
 
 **AZ OFF SCRIPT LLC**
 By: ________________________________
@@ -792,5 +801,56 @@ Participant is not entitled to revenue from AZ Off Script content, pages, shows,
 # E.8. Brand Sentence
 
 AZ Off Script is the umbrella brand. The First Wave is the current women-led room. Future waves may include other women, men, couples, mixed casts, locations, and new content lanes across Arizona.
+
+# Exhibit F — Prompting Your Personal Brand
+
+Detailed rules for how AZ Off Script may help grow awareness of Participant's personal brand through the shared page, tags, mentions, and cross-promotion — and what is and is not promised. Incorporated into Main Agreement.
+
+> **Important Review Notice:** This document is a business draft for discussion and legal review. It is not a substitute for advice from an Arizona-licensed attorney or any participant's own legal advisor.
+
+# F.1. Goal — Growing Your Brand Through the Room
+
+A core goal of AZ Off Script is to create real awareness for each participant's personal brand, page, and identity — not just the AZ Off Script brand alone. As the AZ Off Script page grows, the audience is introduced to the people behind the content. This means the room is designed to lift everyone in it, not just the brand name on the door.
+
+# F.2. Tagging and Mentions
+
+As the AZ Off Script page grows, AZ Off Script may tag, mention, credit, or link Participant's personal page, handle, or identity in posts, captions, descriptions, comments, stories, bios, directories, or other content where it fits naturally. This includes:
+
+- tagging Participant's personal social media page in posted clips
+- mentioning Participant by name, nickname, or handle in captions or descriptions
+- listing Participant on the AZ Off Script website crew page with a link to their personal page
+- crediting Participant in cross-posts, reposts, or shared content
+
+Participant understands that tagging, mentions, and credits are done at AZ Off Script's discretion based on what fits the post, the platform, the moment, and the brand. Not every post will include a tag, and AZ Off Script does not guarantee a specific number of tags, mentions, or credits per month, quarter, or year.
+
+# F.3. What Is Promised
+
+AZ Off Script promises to:
+
+- include Participant in the crew directory on the AZ Off Script website while Participant is an active member
+- credit Participant by name or handle in official posted clips where Participant is clearly seen, heard, or featured (unless Participant requests otherwise or a "Do Not Post" applies)
+- consider Participant's personal brand, page, and goals when planning content, captions, and cross-promotion
+- not intentionally suppress, hide, or exclude Participant's personal page from reasonable credit opportunities
+
+# F.4. What Is Not Promised
+
+AZ Off Script does not promise or guarantee:
+
+- a specific number of followers, views, likes, shares, saves, or engagement on Participant's personal page
+- a specific number of tags, mentions, features, or credits per period
+- paid promotions, sponsorships, or brand deals for Participant's personal page
+- that Participant's personal page will grow at any specific rate or to any specific size
+- that AZ Off Script will cross-post, repost, or share Participant's personal content on the AZ Off Script page
+- exclusive promotion — AZ Off Script promotes the room and the brand, and individual promotion is shared across the crew
+
+Participant understands that audience growth, page growth, and personal brand results depend on many factors outside AZ Off Script's control, including platform algorithms, content quality, posting frequency, audience response, and market conditions.
+
+# F.5. Working Together — Not a Management Deal
+
+This Exhibit is not a talent management agreement, influencer management contract, agency agreement, or guarantee of personal representation. AZ Off Script is a shared creator brand and content system. The goal is to grow the room together — and as the room grows, each person in it gets more visible too.
+
+Participant keeps full control of their personal page, personal content, personal brand decisions, and personal partnerships. AZ Off Script does not manage Participant's personal page, does not control Participant's personal content, and does not take a percentage of Participant's personal page revenue, personal sponsorships, or personal partnerships unless a separate written agreement says otherwise.
+
+If Participant and AZ Off Script later want a formal management, sponsorship, or revenue-sharing relationship for Participant's personal brand, that requires a separate written agreement.
 `,
 };

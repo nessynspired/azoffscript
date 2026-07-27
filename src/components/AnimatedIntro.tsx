@@ -6,13 +6,10 @@ import { MascotImage } from "@/components/MascotImage";
 /**
  * AnimatedIntro — full-screen branded intro that plays once on first load.
  *
- * Time-of-day aware:
- *  - Morning (5am–12pm):   warm sunrise — sandstone cream → copper clay → sunburst yellow
- *  - Afternoon (12pm–5pm): bright desert — heat orange → sunburst yellow → copper clay
- *  - Evening (5pm–9pm):    warm sunset — copper-deep → copper-clay → desert-night
- *  - Night (9pm–5am):      dark desert sky — night-deep → desert-night → teal-deep
+ * Uses a consistent warm desert gradient (copper → sunburst) regardless of
+ * time of day. Previously switched to a dark navy gradient at night, which
+ * made the whole page appear navy — now always warm and on-brand.
  *
- * All colors are from the AZ Off Script brand palette.
  * Plays once per session (sessionStorage).
  */
 export function AnimatedIntro() {
@@ -24,14 +21,6 @@ export function AnimatedIntro() {
     return !sessionStorage.getItem("azos-intro-played");
   });
   const [exiting, setExiting] = useState(false);
-  const [theme, setTheme] = useState<"morning" | "afternoon" | "evening" | "night">(() => {
-    if (typeof window === "undefined") return "night";
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return "morning";
-    if (hour >= 12 && hour < 17) return "afternoon";
-    if (hour >= 17 && hour < 21) return "evening";
-    return "night";
-  });
 
   useEffect(() => {
     if (!visible) return;
@@ -45,32 +34,11 @@ export function AnimatedIntro() {
 
   if (!visible) return null;
 
-  const greeting =
-    theme === "morning" ? "Good morning" :
-    theme === "afternoon" ? "Good afternoon" :
-    theme === "evening" ? "Good evening" :
-    "Good night";
-
-  // Time-of-day gradients (all brand colors)
-  const gradients: Record<typeof theme, string> = {
-    morning:   "linear-gradient(135deg, #07111c 0%, #8f4226 35%, #c96a3a 65%, #ffd23f 100%)",
-    afternoon: "linear-gradient(135deg, #8f4226 0%, #ff6a3d 30%, #ffd23f 60%, #c96a3a 100%)",
-    evening:   "linear-gradient(135deg, #07111c 0%, #0d1b2a 30%, #8f4226 65%, #c96a3a 100%)",
-    night:     "linear-gradient(135deg, #07111c 0%, #0d1b2a 50%, #2a6b5b 100%)",
-  };
-
-  // Grain overlay colors per theme
-  const grainColors: Record<typeof theme, string> = {
-    morning:   "rgba(255,210,63,0.35), rgba(201,106,58,0.25), rgba(143,66,38,0.3)",
-    afternoon: "rgba(255,210,63,0.4), rgba(255,106,61,0.3), rgba(201,106,58,0.25)",
-    evening:   "rgba(201,106,58,0.3), rgba(255,106,61,0.25), rgba(255,210,63,0.2)",
-    night:     "rgba(255,210,63,0.3), rgba(201,106,58,0.25), rgba(59,145,125,0.3)",
-  };
-
-  // Text color — light text on dark themes, dark text on bright themes
-  const isLight = theme === "afternoon";
-  const textColor = isLight ? "#0d1b2a" : "#faf7f0";
-  const subColor = isLight ? "#8f4226" : "#ffd23f";
+  // Consistent warm desert gradient — always on-brand, never navy
+  const gradient = "linear-gradient(135deg, #8f4226 0%, #c96a3a 35%, #ff6a3d 65%, #ffd23f 100%)";
+  const grainColor = "rgba(255,210,63,0.4), rgba(201,106,58,0.3), rgba(143,66,38,0.25)";
+  const textColor = "#faf7f0";
+  const subColor = "#ffd23f";
   const logoSrc = "/assets/logos/logo-official.png";
 
   return (
@@ -80,7 +48,7 @@ export function AnimatedIntro() {
         exiting ? "-translate-y-full" : "translate-y-0"
       }`}
       style={{
-        background: gradients[theme],
+        background: gradient,
         backgroundSize: "200% 200%",
         animation: "introGradientShift 3s ease-in-out",
       }}
@@ -89,7 +57,7 @@ export function AnimatedIntro() {
       <div
         className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage: `radial-gradient(circle at 20% 30%, ${grainColors[theme].split(",")[0]} 0%, transparent 3%), radial-gradient(circle at 70% 60%, ${grainColors[theme].split(",")[1]} 0%, transparent 3%), radial-gradient(circle at 40% 80%, ${grainColors[theme].split(",")[2]} 0%, transparent 3%), radial-gradient(circle at 85% 25%, ${grainColors[theme].split(",")[0]} 0%, transparent 3%)`,
+          backgroundImage: `radial-gradient(circle at 20% 30%, ${grainColor.split(",")[0]} 0%, transparent 3%), radial-gradient(circle at 70% 60%, ${grainColor.split(",")[1]} 0%, transparent 3%), radial-gradient(circle at 40% 80%, ${grainColor.split(",")[2]} 0%, transparent 3%), radial-gradient(circle at 85% 25%, ${grainColor.split(",")[0]} 0%, transparent 3%)`,
           backgroundSize: "300px 300px, 250px 250px, 200px 200px, 350px 350px",
           animation: "introGrainFloat 4s ease-in-out infinite alternate",
         }}
@@ -110,9 +78,9 @@ export function AnimatedIntro() {
       >
         <h1
           className="font-display text-4xl md:text-6xl leading-tight"
-          style={{ color: textColor, textShadow: isLight ? "none" : "0 2px 20px rgba(0,0,0,0.3)" }}
+          style={{ color: textColor, textShadow: "0 2px 20px rgba(0,0,0,0.3)" }}
         >
-          {greeting}
+          Welcome to the room
         </h1>
         <p
           className="font-display text-lg md:text-2xl mt-2 tracking-wide"
@@ -141,11 +109,11 @@ export function AnimatedIntro() {
         className="absolute right-6 text-xs font-bold uppercase tracking-wide transition z-20"
         style={{
           top: "calc(1.5rem + env(safe-area-inset-top, 0px))",
-          color: isLight ? "rgba(13,27,42,0.4)" : "rgba(250,247,240,0.4)",
+          color: "rgba(250,247,240,0.5)",
           animation: "introFadeIn 0.4s ease-out 0.6s both",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = isLight ? "#0d1b2a" : "#faf7f0"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = isLight ? "rgba(13,27,42,0.4)" : "rgba(250,247,240,0.4)"; }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "#faf7f0"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(250,247,240,0.5)"; }}
       >
         Skip →
       </button>

@@ -5,7 +5,7 @@
  * The app checks the user's latest accepted version against this constant.
  */
 
-export const QUICK_TERMS_VERSION = "v1";
+export const QUICK_TERMS_VERSION = "v2";
 
 export const WELCOME_COPY = {
   title: "Welcome to the Room 🌵",
@@ -24,6 +24,8 @@ A few things before you start:
 • No kids are posted by default.
 • Nothing is paid or promised right now.
 • If money ever becomes involved, written terms will come first.
+• A goal of this room is to grow your personal brand too — as the page grows, we tag and credit you. But specific results aren't promised.
+• Keep it professional on and off camera. No public drama.
 
 We give the idea. You bring the moment.`,
   button: "Enter the Room",
@@ -44,6 +46,8 @@ export const QUICK_TERMS_COPY = {
     "I understand nothing is paid or promised right now.",
     "I understand future money, sponsors, merch, platform revenue, or paid opportunities require written terms before anything is owed or split.",
     "I understand I may need to sign the full Creator Participation + Media Release before uploading clips, filming official content, or appearing in posted videos.",
+    "I understand that a goal of AZ Off Script is to grow awareness for my personal brand and page alongside the shared brand — and that tagging, mentions, and credits happen as the page grows, but specific results, follower counts, or promotion frequency are not promised or guaranteed.",
+    "I agree to represent the room professionally — on and off camera — and to keep personal disputes, unapproved content, and public drama out of the AZ Off Script space.",
   ],
   button: "I Agree — Enter the Room",
   footer:
