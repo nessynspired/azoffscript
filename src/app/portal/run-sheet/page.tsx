@@ -9,6 +9,7 @@ import { HEAT_VIBES, POST_COUNTS, EFFORT_LEVELS, generateWeekPlan, calcDeadlines
 import { QUICK_DROP_TEMPLATES, CONTENT_BUCKETS, getTemplate, getTemplatesByBucket, getExampleFor, type QuickDropTemplate, type EffortLabel } from "@/lib/quick-drop-templates";
 import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { SocialEmbed } from "@/components/SocialEmbed";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database, ClipStatus, Platform } from "@/lib/types/db";
 
@@ -88,6 +89,34 @@ function isYouTubeLink(url: string): boolean {
 function getYouTubeEmbed(url: string): string | null {
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+}
+
+// TikTok helpers — TikTok supports oembed-style embed via their embed platform
+function isTikTokLink(url: string): boolean {
+  return /tiktok\.com/i.test(url);
+}
+
+// Instagram helpers — Instagram posts/reels can be embedded via their embed platform
+function isInstagramLink(url: string): boolean {
+  return /instagram\.com/i.test(url);
+}
+
+// Facebook helpers — Facebook video posts can be embedded via their embed platform
+function isFacebookLink(url: string): boolean {
+  return /facebook\.com|fb\.watch|fb\.com/i.test(url);
+}
+
+/**
+ * Detect the platform of a link for display purposes.
+ * Returns "YouTube" | "TikTok" | "Instagram" | "Facebook" | "X" | null
+ */
+function linkPlatform(url: string): string | null {
+  if (isYouTubeLink(url)) return "YouTube";
+  if (isTikTokLink(url)) return "TikTok";
+  if (isInstagramLink(url)) return "Instagram";
+  if (isFacebookLink(url)) return "Facebook";
+  if (/twitter\.com|x\.com/i.test(url)) return "X";
+  return null;
 }
 
 // "Idea dropped by" vs "Clip dropped by" — based on what was actually submitted
@@ -564,8 +593,9 @@ function ClipCard({
 }
 
 /**
- * Fetches a thumbnail from TikTok/Instagram oEmbed for link-based clips.
- * Falls back to a gradient placeholder if the fetch fails (CORS, rate limit, etc).
+ * Fetches a thumbnail from oEmbed for link-based clips.
+ * Supports TikTok, YouTube, and Instagram (when CORS allows).
+ * Falls back to a gradient placeholder with the platform name.
  */
 function ClipThumbnail({ link }: { link: string }) {
   const [thumb, setThumb] = useState<string | null>(null);
@@ -575,9 +605,19 @@ function ClipThumbnail({ link }: { link: string }) {
     if (tried) return;
     setTried(true);
 
-    // Try TikTok oEmbed (returns thumbnail_url)
-    if (link.includes("tiktok.com")) {
+    // TikTok oEmbed (returns thumbnail_url)
+    if (/tiktok\.com/i.test(link)) {
       fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(link)}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data?.thumbnail_url) setThumb(data.thumbnail_url);
+        })
+        .catch(() => {});
+    }
+
+    // YouTube oEmbed (returns thumbnail_url)
+    if (/youtube\.com|youtu\.be/i.test(link)) {
+      fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(link)}&format=json`)
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
           if (data?.thumbnail_url) setThumb(data.thumbnail_url);
@@ -592,10 +632,11 @@ function ClipThumbnail({ link }: { link: string }) {
   }
 
   // Gradient placeholder with platform label
+  const platform = linkPlatform(link);
   return (
     <div className="w-full h-full flex items-center justify-center">
       <span className="text-sandstone-cream/40 font-display text-lg">
-        {link.includes("tiktok.com") ? "TikTok" : link.includes("instagram.com") ? "Reel" : "Link"}
+        {platform ?? "Link"}
       </span>
     </div>
   );
@@ -1009,16 +1050,10 @@ function ClipDetailModal({
           </div>
         )}
 
-        {/* YouTube embed for link clips */}
-        {clip.link && isYouTubeLink(clip.link) && getYouTubeEmbed(clip.link) && (
-          <div className="mt-4 aspect-video rounded-xl overflow-hidden">
-            <iframe
-              src={getYouTubeEmbed(clip.link)!}
-              title={clip.title}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+        {/* Social embed for link clips — TikTok, Instagram, Facebook, YouTube */}
+        {clip.link && !clip.file_path && (
+          <div className="mt-4">
+            <SocialEmbed url={clip.link} title={clip.title} />
           </div>
         )}
 
@@ -2537,24 +2572,18 @@ function WatchTab({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((clip) => {
           const watchUrl = getWatchUrl(clip);
-          const ytEmbed = watchUrl && isYouTube(watchUrl) ? getYouTubeEmbedLocal(watchUrl) : null;
           const hasUploadedVideo = !!clip.file_path && (clip.type === "video" || clip.type === "final_cut");
           const theme = clip.theme_id ? themeMap.get(clip.theme_id) : null;
+          const isSocialLink = watchUrl && (isYouTubeLink(watchUrl) || isTikTokLink(watchUrl) || isInstagramLink(watchUrl) || isFacebookLink(watchUrl));
           return (
             <div key={clip.id} className="card overflow-hidden flex flex-col">
-              {/* Video / thumbnail area */}
+              {/* Video / embed area */}
               <div className="bg-desert-night/10 relative">
                 {hasUploadedVideo ? (
                   <VideoPlayer filePath={clip.file_path!} title={clip.title} className="aspect-[9/16]" />
-                ) : ytEmbed ? (
-                  <div className="aspect-[9/16]">
-                    <iframe
-                      src={ytEmbed}
-                      title={clip.title}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                ) : isSocialLink && watchUrl ? (
+                  <div className="aspect-[9/16] overflow-hidden">
+                    <SocialEmbed url={watchUrl} title={clip.title} />
                   </div>
                 ) : watchUrl ? (
                   <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="aspect-[9/16] flex items-center justify-center group block">
@@ -2594,7 +2623,7 @@ function WatchTab({
                   </p>
                 )}
 
-                {watchUrl && !ytEmbed && !hasUploadedVideo && (
+                {watchUrl && !hasUploadedVideo && !isSocialLink && (
                   <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm mt-3 w-full">
                     Watch on {PLATFORM_LABEL[(clip.destination ?? "").toLowerCase()] ?? "platform"} →
                   </a>
@@ -2820,6 +2849,12 @@ function PlannerDashboard({
   // Missing assignments: clips with no one assigned
   const clipsWithoutAssignments = planningClips.filter((c) => !assignments.some((a) => a.clip_id === c.id));
 
+  // What's Moving — recent link drops (TikTok, Instagram, Facebook, YouTube)
+  // Shows the crew's latest trend/reference drops so the planner can see them at a glance
+  const recentLinkDrops = clips
+    .filter((c) => c.type === "tiktok_link" && c.link && c.status === "Dropped")
+    .slice(0, 6);
+
   async function sendReminder(assignment: Assignment) {
     const clip = clips.find((c) => c.id === assignment.clip_id);
     const member = members.find((m) => m.id === assignment.member_id);
@@ -2878,6 +2913,36 @@ function PlannerDashboard({
           <p className="text-xs text-smoked-charcoal/60 mt-1">Ready for Review</p>
         </div>
       </div>
+
+      {/* What's Moving — recent link drops with embedded videos */}
+      {recentLinkDrops.length > 0 && (
+        <section>
+          <h3 className="font-display text-xl text-desert-night mb-3">🔥 What&apos;s Moving</h3>
+          <p className="text-sm text-smoked-charcoal/60 mb-3">Recent trend drops from the crew. Tap to open the full clip.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recentLinkDrops.map((clip) => (
+              <button
+                key={clip.id}
+                onClick={() => onSelectClip(clip.id)}
+                className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
+              >
+                {/* Embed or thumbnail */}
+                <div className="bg-desert-night/5">
+                  <SocialEmbed url={clip.link!} title={clip.title} />
+                </div>
+                {/* Info */}
+                <div className="p-3">
+                  <p className="font-bold text-desert-night text-sm truncate">{clip.title}</p>
+                  <p className="text-xs text-smoked-charcoal/60 mt-0.5">
+                    {clip.submitted_by_name}
+                    {clip.link && linkPlatform(clip.link) ? ` · ${linkPlatform(clip.link)}` : ""}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* What's Stuck — overdue clips */}
       {stuckClips.length > 0 && (
@@ -3018,7 +3083,7 @@ function PlannerDashboard({
       )}
 
       {/* Nothing to plan */}
-      {stuckClips.length === 0 && waitingOn.length === 0 && readyForVanessa.length === 0 && needsPlanningTrends.length === 0 && clipsWithoutAssignments.length === 0 && (
+      {stuckClips.length === 0 && waitingOn.length === 0 && readyForVanessa.length === 0 && needsPlanningTrends.length === 0 && clipsWithoutAssignments.length === 0 && recentLinkDrops.length === 0 && (
         <div className="card p-10 text-center">
           <p className="font-display text-2xl text-desert-night">Everything&apos;s moving.</p>
           <p className="text-smoked-charcoal/70 mt-2">Nothing stuck. Nothing waiting. You&apos;re all caught up.</p>

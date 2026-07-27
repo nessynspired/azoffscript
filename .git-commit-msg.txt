@@ -1,0 +1,38 @@
+Show embedded videos for all social links — TikTok, Instagram, Facebook, YouTube
+
+Before: only YouTube links got embedded in the Run Sheet. TikTok,
+Instagram, and Facebook links just showed an "Open link" button.
+The Planner dashboard didn't show link drops at all.
+
+Now:
+
+1. NEW SocialEmbed component — handles all major platforms:
+   - YouTube: iframe embed (no script needed)
+   - TikTok: blockquote + tiktok.com/embed.js
+   - Instagram: blockquote + instagram.com/embed.js
+   - Facebook: fb-post + connect.facebook.net SDK
+   - Other links: "Open link" fallback button
+
+2. Clip detail modal — replaced YouTube-only embed with SocialEmbed
+   for all link clips. TikTok/Instagram/Facebook videos now play
+   inline in the modal.
+
+3. Watch tab — replaced YouTube-only embed with SocialEmbed. All
+   social link clips now show embedded videos in the grid.
+
+4. Planner dashboard — new "What's Moving" section at the top showing
+   recent link drops (up to 6) with embedded videos. Planners can see
+   the crew's latest trend drops at a glance without clicking into
+   each one.
+
+5. ClipThumbnail — now fetches YouTube oEmbed thumbnails too (not just
+   TikTok). Falls back to platform name label (TikTok, Instagram,
+   Facebook, YouTube, X) instead of generic "Link".
+
+6. Platform detection helpers — added isTikTokLink, isInstagramLink,
+   isFacebookLink, linkPlatform() for consistent platform detection
+   across the Run Sheet.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
