@@ -2323,7 +2323,7 @@ function PlannerDashboard({
         </section>
       )}
 
-      {/* Waiting on crew — assignments not yet dropped */}
+      {/* Waiting on crew — assignments not yet dropped (visual cards) */}
       {waitingOn.length > 0 && (
         <section>
           <h3 className="font-display text-xl text-desert-night mb-3">Waiting on crew</h3>
@@ -2332,41 +2332,92 @@ function PlannerDashboard({
               {overdueAssignments.length} overdue — send reminders:
             </p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {waitingOn.slice(0, 12).map((a) => {
               const clip = clips.find((c) => c.id === a.clip_id);
               const crewMember = members.find((m) => m.id === a.member_id);
               const isOverdue = a.drop_by_date && new Date(a.drop_by_date) < now;
+              const crewInitials = (crewMember?.name ?? a.member_name).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+              // Mini timeline — only show deadlines that exist on the clip
+              const miniDeadlines: { label: string; date: string }[] = [];
+              if (clip?.clip_due_date) miniDeadlines.push({ label: "Drop-by", date: clip.clip_due_date });
+              if (clip?.final_cut_due) miniDeadlines.push({ label: "Cut Ready", date: clip.final_cut_due });
+              if (clip?.approval_due) miniDeadlines.push({ label: "Greenlight", date: clip.approval_due });
+              if (clip?.scheduled_date) miniDeadlines.push({ label: "Goes Live", date: clip.scheduled_date });
               return (
-                <div key={a.id} className={`card p-3 flex items-center gap-3 ${isOverdue ? "border-2 border-heat-orange/40" : ""}`}>
-                  {/* Crew avatar */}
-                  <span className="w-10 h-10 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-copper-clay/30">
-                    {crewMember?.photo_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={crewMember.photo_url} alt={crewMember?.name ?? a.member_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="font-display text-xs text-sandstone-cream">
-                        {(crewMember?.name ?? a.member_name).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                      </span>
-                    )}
-                  </span>
-                  <button onClick={() => onSelectClip(a.clip_id)} className="min-w-0 flex-1 text-left">
-                    <p className="font-bold text-desert-night text-sm truncate">{clip ? displayTitle(clip) : "Content item"}</p>
-                    <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
-                      {crewMember?.name ?? a.member_name} · {a.role}
-                      {a.drop_by_date && (
-                        <span className={`ml-1 font-bold ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
-                          {isOverdue ? "⚠ Late — " : ""}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                        </span>
+                <div
+                  key={a.id}
+                  className={`card overflow-hidden flex flex-col ${isOverdue ? "border-2 border-heat-orange/40" : ""}`}
+                >
+                  {/* Embedded video / link preview (if the clip has one) */}
+                  {clip?.type === "tiktok_link" && clip.link && (
+                    <div className="bg-desert-night/5">
+                      <SocialEmbed url={clip.link} title={clip.title} />
+                    </div>
+                  )}
+
+                  <div className="p-3 flex flex-col gap-2 flex-1">
+                    {/* Status + platform chips */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {clip && <span className={`chip !text-[9px] ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>}
+                      {clip?.type === "tiktok_link" && (
+                        <span className="chip chip-teal !text-[9px]">{clip.link ? (linkPlatform(clip.link) ?? "Link") : "Link"}</span>
                       )}
-                    </p>
-                  </button>
-                  <button
-                    onClick={() => sendReminder(a)}
-                    className="btn btn-secondary btn-sm !text-xs shrink-0"
-                  >
-                    Remind
-                  </button>
+                      {clip?.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
+                    </div>
+
+                    {/* Title — tap to open clip detail */}
+                    <button onClick={() => onSelectClip(a.clip_id)} className="text-left min-w-0 group">
+                      <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2 group-hover:text-copper-deep">
+                        {clip ? displayTitle(clip) : "Content item"}
+                      </p>
+                    </button>
+
+                    {/* Mini timeline — compact deadline rows */}
+                    {miniDeadlines.length > 0 && (
+                      <div className="bg-sandstone-cream/40 rounded-lg p-2 space-y-1">
+                        {miniDeadlines.map((d) => {
+                          const past = new Date(d.date) < now;
+                          return (
+                            <div key={d.label} className="flex items-center justify-between text-[10px]">
+                              <span className="text-smoked-charcoal/60 font-bold uppercase tracking-wide">{d.label}</span>
+                              <span className={`font-bold ${past ? "text-heat-orange" : "text-copper-deep"}`}>
+                                {past ? "⚠ " : ""}{new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Crew member waiting + remind button */}
+                    <div className="flex items-center gap-2 mt-auto pt-1">
+                      <span className="w-8 h-8 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-copper-clay/30">
+                        {crewMember?.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={crewMember.photo_url} alt={crewMember?.name ?? a.member_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-display text-[10px] text-sandstone-cream">{crewInitials}</span>
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-desert-night truncate">{crewMember?.name ?? a.member_name}</p>
+                        <p className="text-[10px] text-smoked-charcoal/60 truncate">
+                          {a.role}{a.drop_by_date && (
+                            <span className={`ml-1 font-bold ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
+                              {isOverdue ? "⚠ Late — " : ""}Drop-by {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => sendReminder(a)}
+                        className="btn btn-secondary btn-sm !text-xs shrink-0"
+                      >
+                        Remind
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             })}
