@@ -6,11 +6,29 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { MascotImage } from "@/components/MascotImage";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { SocialEmbed } from "@/components/SocialEmbed";
 import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from "@/lib/notify";
 import type { Database } from "@/lib/types/db";
 
 type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 type Activity = Database["public"]["Tables"]["activity"]["Row"];
+
+// Extract a URL from an activity body string
+function extractUrlFromBody(body: string): string | null {
+  const m = body.match(/https?:\/\/[^\s"']+/i);
+  return m ? m[0] : null;
+}
+
+// Clean the activity body — replace raw URLs with a clean platform label
+function cleanActivityBody(body: string): string {
+  return body.replace(/(https?:\/\/[^\s"']+)/gi, (url) => {
+    if (/tiktok\.com/i.test(url)) return "TikTok drop";
+    if (/instagram\.com/i.test(url)) return "Instagram drop";
+    if (/youtube\.com|youtu\.be/i.test(url)) return "YouTube drop";
+    if (/facebook\.com|fb\.watch|fb\.com/i.test(url)) return "Facebook drop";
+    return "link drop";
+  });
+}
 
 export default function NotificationsPage() {
   const { member } = useAuth();
@@ -170,7 +188,7 @@ export default function NotificationsPage() {
               >
                 <span className="text-2xl shrink-0">{iconForKind(item.kind)}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-desert-night font-bold leading-snug">{item.body}</p>
+                  <p className="text-sm text-desert-night font-bold leading-snug">{cleanActivityBody(item.body)}</p>
                   <p className="text-xs text-desert-night/40 mt-1">{timeAgo(item.created_at)}</p>
                 </div>
                 {!item.read && <span className="w-2 h-2 rounded-full bg-heat-orange shrink-0 mt-2" />}
@@ -183,16 +201,26 @@ export default function NotificationsPage() {
         {activity.length > 0 && (
           <div>
             <h2 className="font-display text-2xl text-desert-night mb-3">What&apos;s happening in the room</h2>
-            <div className="space-y-2">
-              {activity.map((item) => (
-                <div key={item.id} className="card p-3 flex items-start gap-3 opacity-80">
-                  <span className="text-xl shrink-0">{iconForKind(item.kind)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-desert-night leading-snug">{item.body}</p>
-                    <p className="text-xs text-desert-night/40 mt-0.5">{timeAgo(item.created_at)}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {activity.map((item) => {
+                const url = extractUrlFromBody(item.body);
+                return (
+                  <div key={item.id} className="card overflow-hidden opacity-90">
+                    {url && (
+                      <div className="bg-desert-night/5">
+                        <SocialEmbed url={url} title={item.body} />
+                      </div>
+                    )}
+                    <div className="p-3 flex items-start gap-3">
+                      <span className="text-xl shrink-0">{iconForKind(item.kind)}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-desert-night leading-snug">{cleanActivityBody(item.body)}</p>
+                        <p className="text-xs text-desert-night/40 mt-0.5">{timeAgo(item.created_at)}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

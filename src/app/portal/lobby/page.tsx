@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
 import { AnimatedIntro } from "@/components/AnimatedIntro";
+import { SocialEmbed } from "@/components/SocialEmbed";
 import { getTemplate, getExampleFor } from "@/lib/quick-drop-templates";
 import type { Database } from "@/lib/types/db";
 
@@ -13,6 +14,23 @@ type Activity = Database["public"]["Tables"]["activity"]["Row"];
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
 type Theme = Database["public"]["Tables"]["content_themes"]["Row"];
 type Assignment = Database["public"]["Tables"]["content_assignments"]["Row"];
+
+// Extract a URL from an activity body string (e.g. 'Ronnie moved "https://..." to Review')
+function extractUrlFromBody(body: string): string | null {
+  const m = body.match(/https?:\/\/[^\s"']+/i);
+  return m ? m[0] : null;
+}
+
+// Clean the activity body — replace raw URLs with a clean platform label
+function cleanActivityBody(body: string): string {
+  return body.replace(/(https?:\/\/[^\s"']+)/gi, (url) => {
+    if (/tiktok\.com/i.test(url)) return "TikTok drop";
+    if (/instagram\.com/i.test(url)) return "Instagram drop";
+    if (/youtube\.com|youtu\.be/i.test(url)) return "YouTube drop";
+    if (/facebook\.com|fb\.watch|fb\.com/i.test(url)) return "Facebook drop";
+    return "link drop";
+  });
+}
 
 interface Heat {
   needsReview: number;
@@ -412,12 +430,22 @@ export default function LobbyPage() {
           </div>
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
-            {activity.map((a) => (
-              <div key={a.id} className="card p-4 min-w-[260px] shrink-0 sticker">
-                <p className="text-sm text-desert-night font-bold">{a.body}</p>
-                <p className="text-xs text-smoked-charcoal/60 mt-1">{a.actor_name}</p>
-              </div>
-            ))}
+            {activity.map((a) => {
+              const url = extractUrlFromBody(a.body);
+              return (
+                <div key={a.id} className="card overflow-hidden min-w-[220px] max-w-[260px] shrink-0 sticker">
+                  {url && (
+                    <div className="bg-desert-night/5">
+                      <SocialEmbed url={url} title={a.body} />
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <p className="text-sm text-desert-night font-bold leading-snug">{cleanActivityBody(a.body)}</p>
+                    <p className="text-xs text-smoked-charcoal/60 mt-1">{a.actor_name}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getMemberCard, getMemberGear } from "@/lib/crew-data";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { DropdownOrOther } from "@/components/DropdownOrOther";
+import { SocialEmbed } from "@/components/SocialEmbed";
 import {
   NICKNAME_TITLE_OPTIONS,
   AVAILABILITY_OPTIONS,
@@ -27,6 +28,26 @@ type Gear = Database["public"]["Tables"]["gear"]["Row"];
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
 type Approval = Database["public"]["Tables"]["approvals"]["Row"];
 type Assignment = Database["public"]["Tables"]["content_assignments"]["Row"];
+
+// Clean display title — if the title is a raw URL, show a clean platform label instead
+function cleanTitle(title: string, link?: string | null): string {
+  if (title && /^https?:\/\//i.test(title)) {
+    if (link) {
+      const p = linkPlatform(link);
+      if (p) return `${p} drop`;
+    }
+    return "Link drop";
+  }
+  return title;
+}
+
+function linkPlatform(url: string): string | null {
+  if (/tiktok\.com/i.test(url)) return "TikTok";
+  if (/instagram\.com/i.test(url)) return "Instagram";
+  if (/youtube\.com|youtu\.be/i.test(url)) return "YouTube";
+  if (/facebook\.com|fb\.watch|fb\.com/i.test(url)) return "Facebook";
+  return null;
+}
 
 const GEAR_STATUS_LABELS: Record<GearStatus, string> = {
   not_started: "Not started",
@@ -408,18 +429,26 @@ export default function MyWaveKitPage() {
             <Link href="/portal/drop" className="btn btn-primary mt-3">Drop something</Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {myClips.map((clip) => (
-              <Link key={clip.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-bold text-desert-night leading-tight">{clip.title}</p>
-                  <span className={`chip ${clip.type === "tiktok_link" ? "chip-cream" : "chip-teal"} !text-[10px] shrink-0`}>
-                    {clip.type === "tiktok_link" ? "Link" : clip.type === "idea" ? "Idea" : clip.type === "video" ? "Video" : clip.type}
-                  </span>
+              <Link key={clip.id} href="/portal/run-sheet" className="card overflow-hidden block hover:-translate-y-0.5 transition-transform">
+                {/* Embedded video for link drops */}
+                {clip.type === "tiktok_link" && clip.link && (
+                  <div className="bg-desert-night/5">
+                    <SocialEmbed url={clip.link} title={clip.title} />
+                  </div>
+                )}
+                <div className="p-3">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2">{cleanTitle(clip.title, clip.link)}</p>
+                    <span className={`chip ${clip.type === "tiktok_link" ? "chip-cream" : "chip-teal"} !text-[9px] shrink-0`}>
+                      {clip.type === "tiktok_link" ? "Link" : clip.type === "idea" ? "Idea" : clip.type === "video" ? "Video" : clip.type}
+                    </span>
+                  </div>
+                  <p className="text-xs text-smoked-charcoal/60 mt-1">
+                    {clip.status} · {new Date(clip.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </p>
                 </div>
-                <p className="text-xs text-smoked-charcoal/60 mt-1">
-                  {clip.status} · {new Date(clip.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </p>
               </Link>
             ))}
           </div>
@@ -434,20 +463,28 @@ export default function MyWaveKitPage() {
             <p className="text-smoked-charcoal/70">Nothing waiting on you right now.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {myApprovals.map((app) => {
               const clip = assignedClips.find((c) => c.id === app.clip_id) ?? myClips.find((c) => c.id === app.clip_id);
               return (
-                <Link key={app.id} href="/portal/run-sheet" className="card p-4 block hover:-translate-y-0.5 transition-transform">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold text-desert-night">{clip?.title ?? "A clip needs your greenlight"}</p>
-                    <span className="chip chip-waiting !text-[10px] shrink-0">{app.status}</span>
-                  </div>
-                  {clip?.approval_due && (
-                    <p className="text-xs text-heat-orange font-bold mt-1">
-                      Greenlight by: {new Date(clip.approval_due).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                    </p>
+                <Link key={app.id} href="/portal/run-sheet" className="card overflow-hidden block hover:-translate-y-0.5 transition-transform">
+                  {/* Embedded video for link drops */}
+                  {clip?.type === "tiktok_link" && clip.link && (
+                    <div className="bg-desert-night/5">
+                      <SocialEmbed url={clip.link} title={clip.title} />
+                    </div>
                   )}
+                  <div className="p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2">{clip ? cleanTitle(clip.title, clip.link) : "A clip needs your greenlight"}</p>
+                      <span className="chip chip-waiting !text-[9px] shrink-0">{app.status}</span>
+                    </div>
+                    {clip?.approval_due && (
+                      <p className="text-xs text-heat-orange font-bold mt-1">
+                        Greenlight by: {new Date(clip.approval_due).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                      </p>
+                    )}
+                  </div>
                 </Link>
               );
             })}
