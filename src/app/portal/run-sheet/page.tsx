@@ -1469,33 +1469,90 @@ function ThisWeekTab({
         </div>
       )}
 
-      {/* Your Part — assigned tasks */}
+      {/* Your Part — assigned tasks (visual cards) */}
       {myAssignments.length > 0 && (
-        <div className="card p-5 border-2 border-copper-clay/30">
+        <div>
           <h2 className="font-display text-2xl text-desert-night mb-1">Your Part</h2>
           <p className="text-sm text-smoked-charcoal/60 mb-3">{myAssignments.length} thing{myAssignments.length > 1 ? "s" : ""} you&apos;re on</p>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {myAssignments.map((a) => {
               const clip = clips.find((c) => c.id === a.clip_id);
               const isOverdue = a.drop_by_date && new Date(a.drop_by_date) < now && a.status !== "Done" && a.status !== "Greenlit" && a.status !== "Dropped";
+              // Mini timeline — only show deadlines that exist on the clip
+              const miniDeadlines: { label: string; date: string }[] = [];
+              if (clip?.clip_due_date) miniDeadlines.push({ label: "Drop-by", date: clip.clip_due_date });
+              if (clip?.final_cut_due) miniDeadlines.push({ label: "Cut Ready", date: clip.final_cut_due });
+              if (clip?.approval_due) miniDeadlines.push({ label: "Greenlight", date: clip.approval_due });
+              if (clip?.scheduled_date) miniDeadlines.push({ label: "Goes Live", date: clip.scheduled_date });
               return (
-                <button key={a.id} onClick={() => onSelectClip(a.clip_id)} className="card p-4 w-full text-left hover:-translate-y-0.5 transition-transform">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-bold text-desert-night truncate">{clip ? displayTitle(clip) : "Content item"}</p>
-                      <p className="text-xs text-smoked-charcoal/60 mt-0.5">Role: {a.role}</p>
+                <div
+                  key={a.id}
+                  className={`card overflow-hidden flex flex-col ${isOverdue ? "border-2 border-heat-orange/40" : "border-2 border-copper-clay/30"}`}
+                >
+                  {/* Embedded video / link preview (if the clip has one) */}
+                  {clip?.type === "tiktok_link" && clip.link && (
+                    <div className="bg-desert-night/5">
+                      <SocialEmbed url={clip.link} title={clip.title} />
                     </div>
-                    <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[10px] shrink-0`}>{assignmentStatusLabel(a.status)}</span>
-                  </div>
-                  {a.task_title && <p className="text-sm text-desert-night mt-2">{a.task_title}</p>}
-                  {a.task_notes && <p className="text-xs text-smoked-charcoal/60 mt-1">{a.task_notes}</p>}
-                  {a.drop_by_date && (
-                    <p className={`text-xs font-bold mt-2 ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
-                      {isOverdue ? "⚠ Late — " : ""}Drop-by: {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                    </p>
                   )}
-                  {!a.is_required && <span className="chip chip-cream !text-[9px] mt-2">Optional</span>}
-                </button>
+                  {/* Video player for uploaded videos — play without tapping in */}
+                  {clip?.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+                    <div className="bg-desert-night/5">
+                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="aspect-video" />
+                    </div>
+                  )}
+
+                  <div className="p-3 flex flex-col gap-2 flex-1">
+                    {/* Status + platform chips */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`chip !text-[9px] ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"}`}>{assignmentStatusLabel(a.status)}</span>
+                      {clip && <span className={`chip !text-[9px] ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>}
+                      {clip?.type === "tiktok_link" && (
+                        <span className="chip chip-teal !text-[9px]">{clip.link ? (linkPlatform(clip.link) ?? "Link") : "Link"}</span>
+                      )}
+                      {clip?.type === "video" && <span className="chip chip-copper !text-[9px]">Video</span>}
+                      {clip?.type === "final_cut" && <span className="chip chip-copper !text-[9px]">Final Cut</span>}
+                      {clip?.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
+                      {!a.is_required && <span className="chip chip-cream !text-[9px]">Optional</span>}
+                    </div>
+
+                    {/* Title — tap to open clip detail */}
+                    <button onClick={() => onSelectClip(a.clip_id)} className="text-left min-w-0 group">
+                      <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2 group-hover:text-copper-deep">
+                        {clip ? displayTitle(clip) : "Content item"}
+                      </p>
+                      <p className="text-xs text-smoked-charcoal/60 mt-0.5">Your role: {a.role}</p>
+                    </button>
+
+                    {/* Task title + notes */}
+                    {a.task_title && <p className="text-sm text-desert-night">{a.task_title}</p>}
+                    {a.task_notes && <p className="text-xs text-smoked-charcoal/60">{a.task_notes}</p>}
+
+                    {/* Mini timeline — compact deadline rows */}
+                    {miniDeadlines.length > 0 && (
+                      <div className="bg-sandstone-cream/40 rounded-lg p-2 space-y-1">
+                        {miniDeadlines.map((d) => {
+                          const past = new Date(d.date) < now;
+                          return (
+                            <div key={d.label} className="flex items-center justify-between text-[10px]">
+                              <span className="text-smoked-charcoal/60 font-bold uppercase tracking-wide">{d.label}</span>
+                              <span className={`font-bold ${past ? "text-heat-orange" : "text-copper-deep"}`}>
+                                {past ? "⚠ " : ""}{new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Your drop-by date */}
+                    {a.drop_by_date && (
+                      <p className={`text-xs font-bold ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
+                        {isOverdue ? "⚠ Late — " : ""}Your drop-by: {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                      </p>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
