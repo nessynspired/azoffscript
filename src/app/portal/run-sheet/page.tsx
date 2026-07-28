@@ -300,14 +300,14 @@ export default function RunSheetPage() {
             onClick={() => setShowTemplatePicker(!showTemplatePicker)}
             className="btn btn-primary btn-sm"
           >
-            + Create from Template
+            + Add Content
           </button>
         )}
       </div>
 
-      {/* Template picker — quick create from a template */}
+      {/* Add Content form — free-form, no templates */}
       {showTemplatePicker && canPlanContent && (
-        <TemplatePicker
+        <AddContentForm
           member={member}
           members={members}
           onCreated={async () => { setShowTemplatePicker(false); await load(); }}
@@ -2480,7 +2480,7 @@ function PlannerDashboard({
 // ===========================================================================
 // TEMPLATE PICKER — quick create a clip from a Quick Drop Template
 // ===========================================================================
-function TemplatePicker({
+function AddContentForm({
   member,
   members,
   onCreated,
@@ -2490,33 +2490,28 @@ function TemplatePicker({
   onCreated: () => Promise<void>;
 }) {
   const supabase = createClient();
-  const [selectedId, setSelectedId] = useState<string>("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [exampleLink, setExampleLink] = useState("");
   const [selectedCrew, setSelectedCrew] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
-  // Goes-live date — auto-suggested to next Sunday, but user can change it
-  const [liveDate, setLiveDate] = useState<string>(() => {
-    const sun = nextSunday();
-    return sun.toISOString().slice(0, 10); // YYYY-MM-DD for date input
-  });
+  const [liveDate, setLiveDate] = useState<string>(() => nextSunday().toISOString().slice(0, 10));
   const [submittedBy, setSubmittedBy] = useState<string>("");
   const [cutReadyBy, setCutReadyBy] = useState<string>("");
   const [greenlightBy, setGreenlightBy] = useState<string>("");
 
-  const template = selectedId ? getTemplate(selectedId) : null;
-
   async function create() {
-    if (!template || !member || !liveDate) return;
+    if (!member || !title.trim()) return;
     setCreating(true);
 
     const { data: clip, error } = await supabase.from("clips").insert({
-      title: template.name,
-      type: "video",
+      title: title.trim(),
+      type: exampleLink.trim() && /^https?:\/\//i.test(exampleLink.trim()) ? "tiktok_link" : "video",
       status: "Planned",
-      category: template.bucket,
+      link: exampleLink.trim() || null,
+      idea_text: description.trim() || null,
       submitted_by: member.id,
       submitted_by_name: member.name,
-      template_id: template.id,
-      destination: template.platforms[0] ?? null,
       clip_due_date: submittedBy || null,
       final_cut_due: cutReadyBy || null,
       approval_due: greenlightBy || null,
@@ -2524,7 +2519,7 @@ function TemplatePicker({
     }).select().single();
 
     if (error || !clip) {
-      alert(error?.message ?? "Could not create clip");
+      alert(error?.message ?? "Could not create content");
       setCreating(false);
       return;
     }
@@ -2545,12 +2540,11 @@ function TemplatePicker({
         };
       });
       await supabase.from("content_assignments").insert(assignmentInserts);
-      // Notify crew
       const dropLabel = submittedBy
         ? ` — Drop-by ${new Date(submittedBy + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`
         : "";
       await Promise.all(selectedCrew.map((id) =>
-        notifyMember(supabase, id, "assignment", `You're on "${template.name}"${dropLabel}`, "/portal/drop")
+        notifyMember(supabase, id, "assignment", `You're on "${title.trim()}"${dropLabel}`, "/portal/drop")
       ));
     }
 
@@ -2560,119 +2554,76 @@ function TemplatePicker({
 
   return (
     <div className="card p-5 space-y-4">
-      <h2 className="font-display text-2xl text-desert-night">Create from Template</h2>
+      <h2 className="font-display text-2xl text-desert-night">Add Content</h2>
 
-      {/* Template selection — organized by bucket */}
+      {/* Title */}
       <div>
-        <p className="label">Pick a format</p>
-        <div className="space-y-3 mt-2">
-          {CONTENT_BUCKETS.map((bucket) => {
-            const templates = getTemplatesByBucket(bucket);
-            if (templates.length === 0) return null;
-            return (
-              <div key={bucket}>
-                <p className="text-xs font-bold text-desert-night/40 uppercase mb-1.5">{bucket}</p>
-                <div className="flex flex-wrap gap-2">
-                  {templates.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setSelectedId(t.id)}
-                      className={`chip ${selectedId === t.id ? "chip-copper" : "chip-cream"}`}
-                      title={t.description}
-                    >{t.name}</button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <p className="label">Title <span className="font-normal text-desert-night/40">(what&apos;s the content?)</span></p>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. React to this TikTok trend"
+          className="field w-full"
+          autoFocus
+        />
       </div>
 
-      {/* Template preview */}
-      {template && (
-        <div className="bg-sandstone-cream/50 rounded-xl p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <p className="font-display text-lg text-desert-night">{template.name}</p>
-            <span className="chip chip-cream !text-[9px]">{template.effort}</span>
-          </div>
-          <p className="text-sm text-smoked-charcoal/70">{template.description}</p>
-          <p className="text-xs text-smoked-charcoal/50">⏱ {template.timeEstimate} · 🏠 {template.homeFriendly ? "Home-friendly" : "Needs setup"} · ✂️ {template.adminStitches ? "Admin stitches" : "No stitching"}</p>
-          {template.maxSeconds && <p className="text-xs text-smoked-charcoal/50">Max {template.maxSeconds}s per person</p>}
-          <div className="bg-white/50 rounded-lg p-3 mt-2">
-            <p className="text-xs font-bold text-desert-night/50 uppercase">Idea</p>
-            <p className="text-sm text-desert-night mt-1">{template.idea}</p>
-          </div>
-          <div className="bg-white/50 rounded-lg p-3">
-            <p className="text-xs font-bold text-desert-night/50 uppercase">Vibe</p>
-            <p className="text-sm text-desert-night mt-1">{template.vibe}</p>
-          </div>
-          {template.transitions && template.transitions.length > 0 && (
-            <div className="bg-white/50 rounded-lg p-3">
-              <p className="text-xs font-bold text-desert-night/50 uppercase">Transition ideas</p>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {template.transitions.map((tr) => <span key={tr} className="chip chip-cream !text-[10px]">{tr}</span>)}
-              </div>
-            </div>
-          )}
-          {template.examples && (
-            <div className="bg-white/50 rounded-lg p-3">
-              <p className="text-xs font-bold text-desert-night/50 uppercase">Examples (not scripts)</p>
-              <ul className="text-sm text-desert-night mt-1 space-y-1">
-                {template.examples.map((line, i) => <li key={i} className="font-script text-base">&ldquo;{line}&rdquo;</li>)}
-              </ul>
-              <p className="text-xs text-smoked-charcoal/50 mt-2">Use these or make it their own.</p>
-            </div>
-          )}
+      {/* Description / brief */}
+      <div>
+        <p className="label">Brief <span className="font-normal text-desert-night/40">(what they need to do, how long, any instructions)</span></p>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="e.g. Each person records a 15-second reaction. Keep it under 2 minutes total. Be expressive — don't hold back."
+          className="field w-full min-h-[100px]"
+        />
+      </div>
 
-          {/* SEO + caption + hashtags — admin/planner only */}
-          <div className="bg-cactus-teal/10 rounded-lg p-3 space-y-2">
-            <div>
-              <p className="text-xs font-bold text-desert-night/50 uppercase">Search phrase</p>
-              <p className="text-sm text-desert-night mt-0.5 font-bold">&ldquo;{template.seoPhrase}&rdquo;</p>
-              <p className="text-xs text-smoked-charcoal/50">Use in on-screen text, caption, hashtags, and website recap.</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-desert-night/50 uppercase">Caption starter</p>
-              <p className="text-sm text-desert-night mt-0.5">{template.captionStarter}</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-desert-night/50 uppercase">Hashtags</p>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {template.hashtagStarter.map((tag) => (
-                  <span key={tag} className="chip chip-cream !text-[9px]">{tag}</span>
-                ))}
-              </div>
-            </div>
+      {/* Example clip link */}
+      <div>
+        <p className="label">Example clip link <span className="font-normal text-desert-night/40">(optional — paste a TikTok, Instagram, YouTube, etc.)</span></p>
+        <input
+          type="text"
+          value={exampleLink}
+          onChange={(e) => setExampleLink(e.target.value)}
+          placeholder="https://www.tiktok.com/@user/video/123..."
+          className="field w-full"
+        />
+        {exampleLink.trim() && /^https?:\/\//i.test(exampleLink.trim()) && (
+          <div className="mt-2 bg-desert-night/5 rounded-lg overflow-hidden">
+            <SocialEmbed url={exampleLink.trim()} title={title || "Example"} />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Deadline dates — all manual, no auto-calculation */}
-      {template && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Deadline dates — all manual */}
+      <div>
+        <p className="label">Deadlines <span className="font-normal text-desert-night/40">(set the dates you want)</span></p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
           <div>
-            <p className="label">Submitted by</p>
+            <p className="text-xs font-bold text-desert-night/50 mb-1">Submitted by</p>
             <input type="date" value={submittedBy} onChange={(e) => setSubmittedBy(e.target.value)} className="field w-full" />
           </div>
           <div>
-            <p className="label">Cut ready by</p>
+            <p className="text-xs font-bold text-desert-night/50 mb-1">Cut ready by</p>
             <input type="date" value={cutReadyBy} onChange={(e) => setCutReadyBy(e.target.value)} className="field w-full" />
           </div>
           <div>
-            <p className="label">Greenlight by</p>
+            <p className="text-xs font-bold text-desert-night/50 mb-1">Greenlight by</p>
             <input type="date" value={greenlightBy} onChange={(e) => setGreenlightBy(e.target.value)} className="field w-full" />
           </div>
           <div>
-            <p className="label">Goes live by <span className="font-normal text-desert-night/40">(auto-set to next Sunday — change if needed)</span></p>
+            <p className="text-xs font-bold text-desert-night/50 mb-1">Goes live by</p>
             <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field w-full" />
           </div>
         </div>
-      )}
+      </div>
 
       {/* Crew assignment */}
-      {template && members.length > 0 && (
+      {members.length > 0 && (
         <div>
-          <p className="label">Assign crew <span className="font-normal text-desert-night/40">(optional)</span></p>
+          <p className="label">Assign crew <span className="font-normal text-desert-night/40">(optional — tap to select)</span></p>
           <div className="flex flex-wrap gap-2">
             {members.map((m) => (
               <button
@@ -2686,15 +2637,9 @@ function TemplatePicker({
       )}
 
       {/* Create button */}
-      {template && (
-        <button onClick={create} disabled={creating} className="btn btn-primary btn-lg w-full">
-          {creating ? "Creating…" : `Create "${template.name}"`}
-        </button>
-      )}
-
-      <p className="text-xs text-desert-night/40 text-center">
-        Deadlines auto-set: Drop-by 3 days before, Cut ready 2 days before, Greenlight 1 day before, Goes live Sunday.
-      </p>
+      <button onClick={create} disabled={creating || !title.trim()} className="btn btn-primary btn-lg w-full">
+        {creating ? "Posting…" : "Post it"}
+      </button>
     </div>
   );
 }
