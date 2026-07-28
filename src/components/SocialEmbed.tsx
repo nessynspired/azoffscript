@@ -15,10 +15,20 @@ import { useEffect, useRef, useState } from "react";
  * Usage:
  *   <SocialEmbed url="https://www.tiktok.com/@user/video/123" />
  */
-export function SocialEmbed({ url, title }: { url: string; title?: string }) {
+export function SocialEmbed({ url, title, compact = false }: { url: string; title?: string; compact?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+
+  // In compact mode, scale the embed down and clip it to a small preview area
+  const scale = compact ? 0.42 : 1;
+  // Wrapper clips the scaled embed to a small fixed-height preview
+  const compactWrapper = compact
+    ? { height: "130px", overflow: "hidden" as const, position: "relative" as const }
+    : {};
+  const compactInner = compact
+    ? { transform: `scale(${scale})`, transformOrigin: "top center" as const, width: `${100 / scale}%`, marginLeft: `${(1 - 1 / scale) * 50}%` }
+    : {};
 
   // Detect platform
   const isYouTube = /youtube\.com|youtu\.be/i.test(url);
@@ -95,14 +105,16 @@ export function SocialEmbed({ url, title }: { url: string; title?: string }) {
   // YouTube — iframe
   if (ytEmbedUrl) {
     return (
-      <div className="aspect-video rounded-xl overflow-hidden bg-desert-night">
-        <iframe
-          src={ytEmbedUrl}
-          title={title ?? "YouTube video"}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+      <div className="rounded-xl overflow-hidden bg-desert-night" style={compactWrapper}>
+        <div className="aspect-video" style={compactInner}>
+          <iframe
+            src={ytEmbedUrl}
+            title={title ?? "YouTube video"}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
       </div>
     );
   }
@@ -110,15 +122,17 @@ export function SocialEmbed({ url, title }: { url: string; title?: string }) {
   // TikTok — blockquote embed
   if (isTikTok) {
     return (
-      <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5">
-        <blockquote
-          className="tiktok-embed"
-          data-video-id={extractTikTokId(url)}
-          cite={url}
-          style={{ maxWidth: "380px", minWidth: "325px" }}
-        >
-          <a href={url} target="_blank" rel="noopener noreferrer">Loading TikTok…</a>
-        </blockquote>
+      <div style={compactWrapper}>
+        <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5" style={compactInner}>
+          <blockquote
+            className="tiktok-embed"
+            data-video-id={extractTikTokId(url)}
+            cite={url}
+            style={{ maxWidth: "380px", minWidth: "325px" }}
+          >
+            <a href={url} target="_blank" rel="noopener noreferrer">Loading TikTok…</a>
+          </blockquote>
+        </div>
       </div>
     );
   }
@@ -126,15 +140,17 @@ export function SocialEmbed({ url, title }: { url: string; title?: string }) {
   // Instagram — blockquote embed
   if (isInstagram) {
     return (
-      <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5">
-        <blockquote
-          className="instagram-media"
-          data-instgrm-permalink={url}
-          data-instgrm-version="14"
-          style={{ maxWidth: "420px", minWidth: "326px", width: "calc(100% - 2px)" }}
-        >
-          <a href={url} target="_blank" rel="noopener noreferrer">Loading Instagram post…</a>
-        </blockquote>
+      <div style={compactWrapper}>
+        <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5" style={compactInner}>
+          <blockquote
+            className="instagram-media"
+            data-instgrm-permalink={url}
+            data-instgrm-version="14"
+            style={{ maxWidth: "420px", minWidth: "326px", width: "calc(100% - 2px)" }}
+          >
+            <a href={url} target="_blank" rel="noopener noreferrer">Loading Instagram post…</a>
+          </blockquote>
+        </div>
       </div>
     );
   }
@@ -142,14 +158,16 @@ export function SocialEmbed({ url, title }: { url: string; title?: string }) {
   // Facebook — fb-post embed
   if (isFacebook) {
     return (
-      <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5">
-        <div
-          className="fb-post"
-          data-href={url}
-          data-width="500"
-          data-show-text="true"
-        >
-          <a href={url} target="_blank" rel="noopener noreferrer">Loading Facebook post…</a>
+      <div style={compactWrapper}>
+        <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5" style={compactInner}>
+          <div
+            className="fb-post"
+            data-href={url}
+            data-width="500"
+            data-show-text="true"
+          >
+            <a href={url} target="_blank" rel="noopener noreferrer">Loading Facebook post…</a>
+          </div>
         </div>
       </div>
     );

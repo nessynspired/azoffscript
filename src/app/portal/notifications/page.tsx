@@ -208,7 +208,7 @@ export default function NotificationsPage() {
                   <div key={item.id} className="card overflow-hidden opacity-90">
                     {url && (
                       <div className="bg-desert-night/5">
-                        <SocialEmbed url={url} title={item.body} />
+                        <SocialEmbed url={url} title={item.body} compact />
                       </div>
                     )}
                     <div className="p-3 flex items-start gap-3">

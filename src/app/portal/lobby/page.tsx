@@ -436,7 +436,7 @@ export default function LobbyPage() {
                 <div key={a.id} className="card overflow-hidden min-w-[220px] max-w-[260px] shrink-0 sticker">
                   {url && (
                     <div className="bg-desert-night/5">
-                      <SocialEmbed url={url} title={a.body} />
+                      <SocialEmbed url={url} title={a.body} compact />
                     </div>
                   )}
                   <div className="p-3">
