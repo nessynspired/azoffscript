@@ -2302,6 +2302,108 @@ function PlannerDashboard({
         </p>
       </div>
 
+      {/* In the Pipeline — ALL planned content with embedded videos */}
+      {planningClips.length > 0 && (
+        <section>
+          <h3 className="font-display text-xl text-desert-night mb-3">📋 In the Pipeline</h3>
+          <p className="text-sm text-smoked-charcoal/60 mb-3">Everything you&apos;ve planned. Tap any card to open the full detail.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {planningClips.map((clip) => {
+              const clipAssignments = assignments.filter((a) => a.clip_id === clip.id);
+              const hasCrew = clipAssignments.length > 0;
+              return (
+                <div
+                  key={clip.id}
+                  className="card overflow-hidden flex flex-col hover:-translate-y-0.5 transition-transform"
+                >
+                  {/* Embedded video / link preview */}
+                  {clip.type === "tiktok_link" && clip.link && (
+                    <div className="bg-desert-night/5">
+                      <SocialEmbed url={clip.link} title={clip.title} />
+                    </div>
+                  )}
+
+                  <div className="p-3 flex flex-col gap-2 flex-1">
+                    {/* Status + platform chips */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`chip !text-[9px] ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>
+                      {clip.type === "tiktok_link" && (
+                        <span className="chip chip-teal !text-[9px]">{clip.link ? (linkPlatform(clip.link) ?? "Link") : "Link"}</span>
+                      )}
+                      {clip.type === "video" && <span className="chip chip-copper !text-[9px]">Video</span>}
+                      {clip.type === "final_cut" && <span className="chip chip-copper !text-[9px]">Final Cut</span>}
+                      {clip.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
+                    </div>
+
+                    {/* Title — tap to open */}
+                    <button onClick={() => onSelectClip(clip.id)} className="text-left min-w-0 group">
+                      <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2 group-hover:text-copper-deep">
+                        {displayTitle(clip)}
+                      </p>
+                    </button>
+
+                    {/* Mini timeline */}
+                    {(() => {
+                      const miniDeadlines: { label: string; date: string }[] = [];
+                      if (clip.clip_due_date) miniDeadlines.push({ label: "Drop-by", date: clip.clip_due_date });
+                      if (clip.final_cut_due) miniDeadlines.push({ label: "Cut Ready", date: clip.final_cut_due });
+                      if (clip.approval_due) miniDeadlines.push({ label: "Greenlight", date: clip.approval_due });
+                      if (clip.scheduled_date) miniDeadlines.push({ label: "Goes Live", date: clip.scheduled_date });
+                      if (miniDeadlines.length === 0) return null;
+                      return (
+                        <div className="bg-sandstone-cream/40 rounded-lg p-2 space-y-1">
+                          {miniDeadlines.map((d) => {
+                            const past = new Date(d.date) < now;
+                            return (
+                              <div key={d.label} className="flex items-center justify-between text-[10px]">
+                                <span className="text-smoked-charcoal/60 font-bold uppercase tracking-wide">{d.label}</span>
+                                <span className={`font-bold ${past ? "text-heat-orange" : "text-copper-deep"}`}>
+                                  {past ? "⚠ " : ""}{new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Crew assignment summary */}
+                    <div className="flex items-center gap-1.5 mt-auto pt-1">
+                      {hasCrew ? (
+                        <>
+                          <div className="flex -space-x-1.5">
+                            {clipAssignments.slice(0, 3).map((a) => {
+                              const cm = members.find((m) => m.id === a.member_id);
+                              return (
+                                <span key={a.id} className="w-6 h-6 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-sandstone-cream">
+                                  {cm?.photo_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={cm.photo_url} alt={cm?.name ?? a.member_name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <span className="font-display text-[8px] text-sandstone-cream">
+                                      {(cm?.name ?? a.member_name).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                          </div>
+                          <span className="text-[10px] text-smoked-charcoal/60">
+                            {clipAssignments.length} assigned
+                          </span>
+                        </>
+                      ) : (
+                        <span className="chip chip-cream !text-[9px]">No one assigned</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* What's Moving — recent link drops with embedded videos */}
       {recentLinkDrops.length > 0 && (
         <section>
@@ -2548,18 +2650,25 @@ function PlannerDashboard({
                 </div>
               </button>
             ))}
-            {/* No one assigned — visual cards */}
+            {/* No one assigned — visual cards with embedded videos */}
             {clipsWithoutAssignments.slice(0, 6).map((clip) => (
               <button
                 key={clip.id}
                 onClick={() => onSelectClip(clip.id)}
-                className="card p-4 text-left hover:-translate-y-0.5 transition-transform border-2 border-copper-clay/20"
+                className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform border-2 border-copper-clay/20"
               >
-                <p className="font-bold text-desert-night text-sm truncate">{displayTitle(clip)}</p>
-                <p className="text-xs text-smoked-charcoal/60 mt-1">
-                  {clip.category ? `${clip.category} · ` : ""}Status: {clip.status}
-                </p>
-                <span className="chip chip-cream !text-[9px] mt-2">No one assigned</span>
+                {clip.type === "tiktok_link" && clip.link && (
+                  <div className="bg-desert-night/5">
+                    <SocialEmbed url={clip.link} title={clip.title} />
+                  </div>
+                )}
+                <div className="p-3">
+                  <p className="font-bold text-desert-night text-sm truncate">{displayTitle(clip)}</p>
+                  <p className="text-xs text-smoked-charcoal/60 mt-1">
+                    {clip.category ? `${clip.category} · ` : ""}Status: {clip.status}
+                  </p>
+                  <span className="chip chip-cream !text-[9px] mt-2">No one assigned</span>
+                </div>
               </button>
             ))}
           </div>
@@ -2575,7 +2684,7 @@ function PlannerDashboard({
       )}
 
       {/* Nothing to plan */}
-      {stuckClips.length === 0 && waitingOn.length === 0 && readyForVanessa.length === 0 && needsPlanningTrends.length === 0 && clipsWithoutAssignments.length === 0 && recentLinkDrops.length === 0 && (
+      {planningClips.length === 0 && stuckClips.length === 0 && waitingOn.length === 0 && readyForVanessa.length === 0 && needsPlanningTrends.length === 0 && clipsWithoutAssignments.length === 0 && recentLinkDrops.length === 0 && (
         <div className="card p-10 text-center">
           <p className="font-display text-2xl text-desert-night">Everything&apos;s moving.</p>
           <p className="text-smoked-charcoal/70 mt-2">Nothing stuck. Nothing waiting. You&apos;re all caught up.</p>
