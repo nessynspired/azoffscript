@@ -110,7 +110,7 @@ export default function MyPublicCardPage() {
     if (!file || !member) return;
     setError(null);
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-    const path = `${member.id}/${Date.now()}.${ext}`;
+    const path = `${member.user_id}/${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
     if (upErr) {
       setError(`Upload failed: ${upErr.message}`);
@@ -127,7 +127,7 @@ export default function MyPublicCardPage() {
     if (!file || !member) return;
     setError(null);
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-    const path = `${member.id}/${Date.now()}.${ext}`;
+    const path = `${member.user_id}/${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("crew-photos").upload(path, file, { upsert: true });
     if (upErr) {
       setError(`Upload failed: ${upErr.message}`);
