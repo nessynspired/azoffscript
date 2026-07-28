@@ -134,8 +134,15 @@ export default function DropPage() {
         filePath = path;
       }
 
-      // Auto-generate title from text
-      const title = text.trim().split("\n")[0].slice(0, 80) || file?.name?.replace(/\.[^.]+$/, "") || "Untitled drop";
+      // Auto-generate title — for link drops, use the platform name (not the raw URL)
+      let title: string;
+      if (isLinkDrop && platform) {
+        title = `${platform} drop`;
+      } else if (isLinkDrop) {
+        title = "Link drop";
+      } else {
+        title = text.trim().split("\n")[0].slice(0, 80) || file?.name?.replace(/\.[^.]+$/, "") || "Untitled drop";
+      }
 
       const clipInsert: Database["public"]["Tables"]["clips"]["Insert"] = {
         title,

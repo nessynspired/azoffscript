@@ -126,6 +126,19 @@ function droppedByLabel(clip: { type: string; submitted_by_name: string }): stri
   return `Idea dropped by ${clip.submitted_by_name}`;
 }
 
+// Clean display title for a clip — if the title is a raw URL (old link drops), show a clean label instead
+function displayTitle(clip: { title: string; type: string; link?: string | null }): string {
+  // If the title looks like a URL, replace it with a clean platform label
+  if (clip.title && /^https?:\/\//i.test(clip.title)) {
+    if (clip.link) {
+      const platform = linkPlatform(clip.link);
+      if (platform) return `${platform} drop`;
+    }
+    return "Link drop";
+  }
+  return clip.title;
+}
+
 export default function RunSheetPage() {
   const { member } = useAuth();
   const supabase = createClient();
@@ -208,15 +221,15 @@ export default function RunSheetPage() {
       actor_id: member.id,
       actor_name: member.name,
       kind: "status",
-      body: `${member.name} moved "${clip?.title ?? "a clip"}" to ${status}`,
+      body: `${member.name} moved "${clip ? displayTitle(clip) : "a clip"}" to ${status}`,
     });
     // Notify tagged + assigned people about the status change
-    const notifBody = `"${clip?.title ?? "A clip"}" moved to ${status}`;
+    const notifBody = `"${clip ? displayTitle(clip) : "A clip"}" moved to ${status}`;
     await notifyTaggedPeople(supabase, clipId, "status", notifBody, "/portal/run-sheet", member?.id);
     await notifyAssignedPeople(supabase, clipId, "status", notifBody, "/portal/run-sheet", member?.id);
     // If moved to Review, that means greenlights are needed — notify tagged people specifically
     if (status === "Review") {
-      await notifyTaggedPeople(supabase, clipId, "approval", `Greenlight needed: "${clip?.title ?? "a clip"}"`, "/portal/ready", member?.id);
+      await notifyTaggedPeople(supabase, clipId, "approval", `Greenlight needed: "${clip ? displayTitle(clip) : "a clip"}"`, "/portal/ready", member?.id);
     }
     await load();
   }
@@ -224,7 +237,7 @@ export default function RunSheetPage() {
   async function deleteClip(clipId: string) {
     if (!isAdmin && !member?.can_plan_content) return;
     const clip = clips.find((c) => c.id === clipId);
-    if (!confirm(`Delete "${clip?.title ?? "this clip"}"? This can't be undone.`)) return;
+    if (!confirm(`Delete "${clip ? displayTitle(clip) : "this clip"}"? This can't be undone.`)) return;
     const { error } = await supabase.from("clips").delete().eq("id", clipId);
     if (error) { alert(error.message); return; }
     setSelectedClip(null);
@@ -503,7 +516,7 @@ function ClipCard({
 
       {/* Card body */}
       <div className="p-4">
-        <h3 className="font-bold text-desert-night leading-tight">{clip.title}</h3>
+        <h3 className="font-bold text-desert-night leading-tight">{displayTitle(clip)}</h3>
         <p className="text-xs text-smoked-charcoal/60 mt-1">by {clip.submitted_by_name}</p>
 
         {/* Destination badge — where is this video going? */}
@@ -900,7 +913,7 @@ function CalendarView({ clips, canPlanContent, member, members, onRefresh }: {
                       const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
                       return (
                         <div key={c.id} className={`rounded-lg p-1.5 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
-                          <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"} line-clamp-2`}>{c.title}</p>
+                          <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"} line-clamp-2`}>{displayTitle(c)}</p>
                           {matchingDeadlines.map((d) => (
                             <span key={d.label} className={`font-black ${d.color} block ${isMonth ? "text-[9px]" : "text-[10px]"}`}>{d.label}</span>
                           ))}
@@ -987,7 +1000,7 @@ function ClipDetailModal({
       actor_id: currentMemberId ?? null,
       actor_name: currentMemberName ?? "Someone",
       kind: "approved",
-      body: `${currentMemberName ?? "Someone"} ${status === "Approved" ? "greenlit" : status === "Do Not Post" ? "said do not post" : "reviewed"} "${clip.title}"`,
+      body: `${currentMemberName ?? "Someone"} ${status === "Approved" ? "greenlit" : status === "Do Not Post" ? "said do not post" : "reviewed"} "${displayTitle(clip)}"`,
     });
     await onRefresh();
     setWorking(false);
@@ -1005,7 +1018,7 @@ function ClipDetailModal({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {canPlanContent && <span className={`chip ${STATUS_CHIP[clip.status]}`}>{clip.status}</span>}
-            <h2 className="font-display text-2xl md:text-3xl text-desert-night mt-2 leading-none break-words">{clip.title}</h2>
+            <h2 className="font-display text-2xl md:text-3xl text-desert-night mt-2 leading-none break-words">{displayTitle(clip)}</h2>
             <p className="text-sm text-smoked-charcoal/60 mt-1">{droppedByLabel(clip)}</p>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">✕</button>
@@ -1447,7 +1460,7 @@ function ThisWeekTab({
                     {clip.type === "final_cut" && <span className="chip chip-copper !text-[9px]">Final Cut</span>}
                     {clip.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
                   </div>
-                  <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2">{clip.title}</p>
+                  <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2">{displayTitle(clip)}</p>
                   <p className="text-xs text-smoked-charcoal/50 mt-1">{droppedByLabel(clip)}</p>
                 </div>
               </button>
@@ -1469,7 +1482,7 @@ function ThisWeekTab({
                 <button key={a.id} onClick={() => onSelectClip(a.clip_id)} className="card p-4 w-full text-left hover:-translate-y-0.5 transition-transform">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-bold text-desert-night truncate">{clip?.title ?? "Content item"}</p>
+                      <p className="font-bold text-desert-night truncate">{clip ? displayTitle(clip) : "Content item"}</p>
                       <p className="text-xs text-smoked-charcoal/60 mt-0.5">Role: {a.role}</p>
                     </div>
                     <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[10px] shrink-0`}>{assignmentStatusLabel(a.status)}</span>
@@ -1497,7 +1510,7 @@ function ThisWeekTab({
           <div className="space-y-2">
             {myApprovals.map(({ clip }) => (
               <button key={clip.id} onClick={() => onSelectClip(clip.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform">
-                <p className="font-bold text-desert-night">{clip.title}</p>
+                <p className="font-bold text-desert-night">{displayTitle(clip)}</p>
                 <span className="chip chip-waiting !text-[10px] mt-1">Waiting for your greenlight</span>
               </button>
             ))}
@@ -1520,7 +1533,7 @@ function ThisWeekTab({
               return (
                 <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
                   <div className="min-w-0">
-                    <p className="font-bold text-desert-night">{c.title}</p>
+                    <p className="font-bold text-desert-night">{displayTitle(c)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 md:justify-end shrink-0">
                     {deadlines.map((d) => (
@@ -1550,7 +1563,7 @@ function ThisWeekTab({
                   </div>
                 )}
                 <div className="p-4">
-                  <p className="font-bold text-desert-night">{c.title}</p>
+                  <p className="font-bold text-desert-night">{displayTitle(c)}</p>
                   <p className="text-xs text-cactus-teal font-black mt-1">
                     📅 {new Date(c.scheduled_date!).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
                   </p>
@@ -1570,7 +1583,7 @@ function ThisWeekTab({
             {stuck.map((c) => (
               <button key={c.id} onClick={() => onSelectClip(c.id)} className="card p-3 w-full text-left hover:-translate-y-0.5 transition-transform">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-desert-night">{c.title}</p>
+                  <p className="font-bold text-desert-night">{displayTitle(c)}</p>
                   <span className={`chip ${STATUS_CHIP[c.status]} !text-[10px]`}>{c.status}</span>
                 </div>
                 {c.approvals_blocked > 0 && (
@@ -1834,7 +1847,7 @@ function AssignmentBoardTab({
     } else {
       // Notify the assigned person
       const clip = clips.find((c) => c.id === clipId);
-      const notifBody = `You're on "${clip?.title ?? "a clip"}" — ${assignForm.role}`;
+      const notifBody = `You're on "${clip ? displayTitle(clip) : "a clip"}" — ${assignForm.role}`;
       await notifyMember(supabase, assignForm.member_id, "assignment", notifBody, "/portal/run-sheet");
     }
     setAssignForm({ member_id: "", role: "On-Camera", task_type: "Drop a Clip", task_title: "", task_notes: "", drop_by_date: "", is_required: true });
@@ -1887,7 +1900,7 @@ function AssignmentBoardTab({
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <button onClick={() => onSelectClip(clip.id)} className="text-left">
-                      <h3 className="font-display text-xl text-desert-night hover:text-copper-deep transition-colors">{clip.title}</h3>
+                      <h3 className="font-display text-xl text-desert-night hover:text-copper-deep transition-colors">{displayTitle(clip)}</h3>
                     </button>
                     <div className="flex flex-wrap gap-2 mt-2">
                       <span className={`chip ${STATUS_CHIP[clip.status]} !text-[10px]`}>{clip.status}</span>
@@ -2117,7 +2130,7 @@ function WatchTab({
               {/* Info */}
               <div className="p-4 flex-1 flex flex-col">
                 <button onClick={() => onSelectClip(clip.id)} className="text-left">
-                  <h3 className="font-bold text-desert-night leading-tight hover:text-copper-deep transition-colors">{clip.title}</h3>
+                  <h3 className="font-bold text-desert-night leading-tight hover:text-copper-deep transition-colors">{displayTitle(clip)}</h3>
                 </button>
                 <p className="text-xs text-smoked-charcoal/60 mt-1">by {clip.submitted_by_name}</p>
 
@@ -2210,7 +2223,7 @@ function PlannerDashboard({
       supabase,
       member.id,
       "reminder",
-      `Reminder: "${clip.title}" is waiting on you. Drop-by ${assignment.drop_by_date ? new Date(assignment.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "soon"}.`,
+      `Reminder: "${displayTitle(clip)}" is waiting on you. Drop-by ${assignment.drop_by_date ? new Date(assignment.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "soon"}.`,
       "/portal/drop",
     );
     alert(`Reminder sent to ${member.name}`);
@@ -2264,7 +2277,7 @@ function PlannerDashboard({
                       )}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-desert-night text-sm truncate">{clip.title}</p>
+                      <p className="font-bold text-desert-night text-sm truncate">{displayTitle(clip)}</p>
                       <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
                         {clip.submitted_by_name}
                         {clip.link && linkPlatform(clip.link) ? ` · ${linkPlatform(clip.link)}` : ""}
@@ -2297,7 +2310,7 @@ function PlannerDashboard({
                 )}
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-bold text-desert-night truncate">{clip.title}</p>
+                    <p className="font-bold text-desert-night truncate">{displayTitle(clip)}</p>
                     <p className="text-xs text-heat-orange font-bold mt-0.5">
                       Drop-by was {new Date(clip.clip_due_date!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                     </p>
@@ -2338,7 +2351,7 @@ function PlannerDashboard({
                     )}
                   </span>
                   <button onClick={() => onSelectClip(a.clip_id)} className="min-w-0 flex-1 text-left">
-                    <p className="font-bold text-desert-night text-sm truncate">{clip?.title ?? "Content item"}</p>
+                    <p className="font-bold text-desert-night text-sm truncate">{clip ? displayTitle(clip) : "Content item"}</p>
                     <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
                       {crewMember?.name ?? a.member_name} · {a.role}
                       {a.drop_by_date && (
@@ -2380,7 +2393,7 @@ function PlannerDashboard({
                     </div>
                   )}
                   <button onClick={() => onSelectClip(clip.id)} className="text-left min-w-0 flex-1">
-                    <p className="font-bold text-desert-night truncate">{clip.title}</p>
+                    <p className="font-bold text-desert-night truncate">{displayTitle(clip)}</p>
                     <p className="text-xs text-smoked-charcoal/60 mt-0.5">
                       {allApproved ? "✅ All greenlit" : `${approved}/${total} greenlit`}
                     </p>
@@ -2434,7 +2447,7 @@ function PlannerDashboard({
                 onClick={() => onSelectClip(clip.id)}
                 className="card p-4 text-left hover:-translate-y-0.5 transition-transform border-2 border-copper-clay/20"
               >
-                <p className="font-bold text-desert-night text-sm truncate">{clip.title}</p>
+                <p className="font-bold text-desert-night text-sm truncate">{displayTitle(clip)}</p>
                 <p className="text-xs text-smoked-charcoal/60 mt-1">
                   {clip.category ? `${clip.category} · ` : ""}Status: {clip.status}
                 </p>
