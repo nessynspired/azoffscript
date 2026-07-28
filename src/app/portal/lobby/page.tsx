@@ -102,17 +102,29 @@ export default function LobbyPage() {
 
   const firstName = member?.name?.split(" ")[0] ?? "Crew";
   const [showWelcome, setShowWelcome] = useState(false);
+  const [hasPublicCard, setHasPublicCard] = useState(false);
 
   useEffect(() => {
     if (!member) return;
-    if (sessionStorage.getItem("azos-welcome-seen")) return;
-    const t = setTimeout(() => setShowWelcome(true), 1200);
-    return () => clearTimeout(t);
-  }, [member]);
+    // Check if user already has a public card — if so, don't show the prompt
+    supabase.from("approved_public_profile").select("id").eq("member_id", member.id).maybeSingle()
+      .then(({ data }) => {
+        setHasPublicCard(!!data);
+        // Only show the welcome popup if: not dismissed before AND no public card yet
+        if (localStorage.getItem("azos-welcome-dismissed")) return;
+        if (data) return; // already has a card, no need to prompt
+        const t = setTimeout(() => setShowWelcome(true), 1200);
+        return () => clearTimeout(t);
+      });
+  }, [member, supabase]);
 
   function dismissWelcome() {
     setShowWelcome(false);
-    sessionStorage.setItem("azos-welcome-seen", "1");
+  }
+
+  function dontShowAgain() {
+    setShowWelcome(false);
+    localStorage.setItem("azos-welcome-dismissed", "1");
   }
 
   return (
@@ -149,16 +161,16 @@ export default function LobbyPage() {
           </p>
           <Link
             href="/portal/my-kit/public-card"
-            onClick={dismissWelcome}
+            onClick={dontShowAgain}
             className="btn btn-primary w-full mt-5"
           >
             See my public card →
           </Link>
           <button
-            onClick={dismissWelcome}
+            onClick={dontShowAgain}
             className="text-xs text-smoked-charcoal/50 hover:text-smoked-charcoal mt-3"
           >
-            Maybe later
+            Don&apos;t show me again
           </button>
         </div>
       </div>
