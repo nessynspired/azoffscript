@@ -877,54 +877,60 @@ function CalendarView({ clips, canPlanContent, member, members, onRefresh }: {
       )}
 
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Calendar grid — always 7 columns.
-            Month view gets a scrollable container with taller cells so content isn't squished. */}
+        {/* Calendar grid.
+            Week view: horizontal scroll with fixed-width day columns so 7 days aren't squished.
+            Bi-week: horizontal scroll with 7 visible at a time.
+            Month view: 7-col grid with scrollable container and taller cells. */}
         <div className="flex-1 min-w-0">
           {/* Day-of-week header — only for week/bi-week (month shows weekday inside cells) */}
           {!isMonth && (
-            <div className="grid grid-cols-7 gap-1 md:gap-2 mb-1">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                <div key={d} className="text-center text-[10px] md:text-xs font-black uppercase text-desert-night/50 py-1">{d}</div>
-              ))}
+            <div className="overflow-x-auto pb-1 -mx-1 px-1">
+              <div className="grid grid-cols-7 gap-1 md:gap-2 min-w-[700px] md:min-w-full mb-1">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <div key={d} className="text-center text-[10px] md:text-xs font-black uppercase text-desert-night/50 py-1">{d}</div>
+                ))}
+              </div>
             </div>
           )}
-          <div className={`grid grid-cols-7 gap-1 md:gap-2 min-w-0 ${isMonth ? "max-h-[70vh] overflow-y-auto pr-1" : ""}`}>
-            {days.map((day) => {
-              const isToday = day.toDateString() === today.toDateString();
-              const isOtherMonth = isMonth && day.getMonth() !== monthDate.getMonth();
-              const dayClips = scheduled.filter((c) => {
-                const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
-                return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
-              });
-              return (
-                <div key={day.toISOString()} className={`card p-1 md:p-2 ${isMonth ? "min-h-[100px] md:min-h-[120px]" : isBiweek ? "min-h-[80px] md:min-h-[110px]" : "min-h-[100px] md:min-h-[140px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
-                  <div className="flex items-center justify-between">
-                    <p className={`font-display text-desert-night ${isMonth ? "text-[10px] md:text-xs" : "text-xs md:text-sm"}`}>
-                      {(isMonth || day.getDate() === 1 || isToday) ? day.toLocaleDateString(undefined, { weekday: "short" }) : ""}
-                    </p>
-                    <p className={`text-xs ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
+          <div className={`${isMonth ? "grid grid-cols-7 gap-1 md:gap-2 max-h-[70vh] overflow-y-auto pr-1" : "overflow-x-auto pb-2 -mx-1 px-1"}`}>
+            <div className={`grid grid-cols-7 gap-1 md:gap-2 ${!isMonth ? "min-w-[700px] md:min-w-full" : ""}`}>
+              {days.map((day) => {
+                const isToday = day.toDateString() === today.toDateString();
+                const isOtherMonth = isMonth && day.getMonth() !== monthDate.getMonth();
+                const dayClips = scheduled.filter((c) => {
+                  const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
+                  return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
+                });
+                return (
+                  <div key={day.toISOString()} className={`card p-1 md:p-2 ${isMonth ? "min-h-[100px] md:min-h-[120px]" : isBiweek ? "min-h-[80px] md:min-h-[110px]" : "min-h-[100px] md:min-h-[140px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
+                    <div className="flex items-center justify-between">
+                      <p className={`font-display text-desert-night ${isMonth ? "text-[10px] md:text-xs" : "text-xs md:text-sm"}`}>
+                        {(isMonth || day.getDate() === 1 || isToday) ? day.toLocaleDateString(undefined, { weekday: "short" }) : ""}
+                      </p>
+                      <p className={`text-xs ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
+                    </div>
+                    <div className="space-y-1 mt-1">
+                      {dayClips.map((c) => {
+                        const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
+                          const val = c[dt.field] as string | null;
+                          return val && new Date(val).toDateString() === day.toDateString();
+                        });
+                        const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
+                        return (
+                          <div key={c.id} className={`rounded-lg p-1.5 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
+                            <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"} line-clamp-2`}>{displayTitle(c)}</p>
+                            {matchingDeadlines.map((d) => (
+                              <span key={d.label} className={`font-black ${d.color} block ${isMonth ? "text-[9px]" : "text-[10px]"}`}>{d.label}</span>
+                            ))}
+                            <span className={`chip ${STATUS_CHIP[c.status]} ${isMonth ? "!text-[9px] !py-0" : "!text-[10px] !py-0.5"} mt-1`}>{c.status}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="space-y-1 mt-1">
-                    {dayClips.map((c) => {
-                      const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
-                        const val = c[dt.field] as string | null;
-                        return val && new Date(val).toDateString() === day.toDateString();
-                      });
-                      const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
-                      return (
-                        <div key={c.id} className={`rounded-lg p-1.5 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
-                          <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"} line-clamp-2`}>{displayTitle(c)}</p>
-                          {matchingDeadlines.map((d) => (
-                            <span key={d.label} className={`font-black ${d.color} block ${isMonth ? "text-[9px]" : "text-[10px]"}`}>{d.label}</span>
-                          ))}
-                          <span className={`chip ${STATUS_CHIP[c.status]} ${isMonth ? "!text-[9px] !py-0" : "!text-[10px] !py-0.5"} mt-1`}>{c.status}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
           {scheduled.length === 0 && (
             <div className="card p-6 text-center text-smoked-charcoal/60 mt-2">
