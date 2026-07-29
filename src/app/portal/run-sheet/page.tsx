@@ -619,12 +619,105 @@ function ClipThumbnail({ link }: { link: string }) {
 }
 
 // ===========================================================================
+// SCHEDULE CALENDAR PREVIEW — mini month grid shown beside the schedule form
+// ===========================================================================
+function ScheduleCalendarPreview({
+  scheduledClips,
+  pendingDates,
+}: {
+  scheduledClips: ClipMeta[];
+  pendingDates: { submittedBy: string; cutReadyBy: string; greenlightBy: string; liveDate: string };
+}) {
+  // Show the month containing the "Goes live" date (or current month if none set)
+  const refDateStr = pendingDates.liveDate || pendingDates.submittedBy || pendingDates.cutReadyBy || pendingDates.greenlightBy;
+  const refDate = refDateStr ? new Date(refDateStr + "T12:00:00") : new Date();
+  const [monthOffset, setMonthOffset] = useState(0);
+  const monthDate = new Date(refDate.getFullYear(), refDate.getMonth() + monthOffset, 1);
+  const monthStart = new Date(monthDate);
+  monthStart.setDate(1 - monthStart.getDay());
+  const today = new Date();
+  const monthDays = Array.from({ length: 42 }).map((_, i) => {
+    const d = new Date(monthStart);
+    d.setDate(monthStart.getDate() + i);
+    return d;
+  });
+
+  const DEADLINE_TYPES: { field: keyof ClipMeta; label: string }[] = [
+    { field: "idea_due_date", label: "Spark" },
+    { field: "clip_due_date", label: "Drop" },
+    { field: "final_cut_due", label: "Cut" },
+    { field: "approval_due", label: "Green" },
+    { field: "scheduled_date", label: "Live" },
+  ];
+
+  // Pending dates the user is currently filling in (highlighted differently)
+  const pendingSet = new Set<string>();
+  (["submittedBy", "cutReadyBy", "greenlightBy", "liveDate"] as const).forEach((k) => {
+    const v = pendingDates[k];
+    if (v) pendingSet.add(new Date(v + "T12:00:00").toDateString());
+  });
+
+  const hasClipOnDay = (day: Date) =>
+    scheduledClips.some((c) => {
+      const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
+      return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
+    });
+
+  return (
+    <div className="bg-desert-night/5 rounded-xl p-3 h-full">
+      <div className="flex items-center justify-between mb-2">
+        <p className="font-display text-sm text-desert-night">
+          {monthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+        </p>
+        <div className="flex gap-1">
+          <button onClick={() => setMonthOffset(monthOffset - 1)} className="text-xs text-desert-night/60 hover:text-desert-night px-1">←</button>
+          <button onClick={() => setMonthOffset(0)} className="text-[10px] text-desert-night/60 hover:text-desert-night px-1">Today</button>
+          <button onClick={() => setMonthOffset(monthOffset + 1)} className="text-xs text-desert-night/60 hover:text-desert-night px-1">→</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+          <div key={i} className="text-center text-[9px] font-black uppercase text-desert-night/40">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {monthDays.map((day) => {
+          const isToday = day.toDateString() === today.toDateString();
+          const isOtherMonth = day.getMonth() !== monthDate.getMonth();
+          const hasClip = hasClipOnDay(day);
+          const isPending = pendingSet.has(day.toDateString());
+          return (
+            <div
+              key={day.toISOString()}
+              className={`rounded text-center py-1 text-[10px] leading-tight ${
+                isOtherMonth ? "text-smoked-charcoal/20" : "text-desert-night"
+              } ${
+                isPending ? "bg-copper-clay/40 font-black ring-1 ring-copper-clay" : isToday ? "bg-copper-deep/20 font-bold" : hasClip ? "bg-cactus-teal/20 font-bold" : ""
+              }`}
+              title={hasClip ? "Already scheduled" : isPending ? "Pending date" : ""}
+            >
+              {day.getDate()}
+              {hasClip && <span className="block text-[7px] text-cactus-teal leading-none">●</span>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-2 space-y-1 text-[9px] text-smoked-charcoal/60">
+        <p><span className="inline-block w-2 h-2 bg-cactus-teal/40 rounded-sm align-middle mr-1" /> Already on calendar</p>
+        <p><span className="inline-block w-2 h-2 bg-copper-clay/60 rounded-sm align-middle mr-1" /> Date you entered (pending)</p>
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
 // READY TO SCHEDULE — side panel in Calendar for pulling from Ready Bank
 // ===========================================================================
-function ReadyToSchedulePanel({ member, members, onRefresh }: {
+function ReadyToSchedulePanel({ member, members, onRefresh, scheduledClips }: {
   member: { id: string; name: string };
   members: Member[];
   onRefresh: () => Promise<void>;
+  scheduledClips: ClipMeta[];
 }) {
   const supabase = createClient();
   const [search, setSearch] = useState("");
@@ -733,47 +826,58 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
         </div>
       </div>
 
-      {/* Action modal */}
+      {/* Action modal — with calendar preview on desktop */}
       {actionTemplate && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setActionTemplate(null)}>
-          <div className="bg-sandstone-cream rounded-2xl p-6 max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-display text-lg text-desert-night">{actionTemplate.name}</h3>
-                <p className="text-xs text-smoked-charcoal/50">{actionTemplate.bucket} · {actionTemplate.effort}</p>
+          <div className="bg-sandstone-cream rounded-2xl p-6 w-full max-w-5xl flex flex-col lg:flex-row gap-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Left: form */}
+            <div className="flex-1 space-y-4 min-w-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-display text-lg text-desert-night">{actionTemplate.name}</h3>
+                  <p className="text-xs text-smoked-charcoal/50">{actionTemplate.bucket} · {actionTemplate.effort}</p>
+                </div>
+                <button onClick={() => setActionTemplate(null)} className="text-desert-night/40 text-2xl">×</button>
               </div>
-              <button onClick={() => setActionTemplate(null)} className="text-desert-night/40 text-2xl">×</button>
+              <p className="text-xs text-smoked-charcoal/60 bg-cactus-teal/10 rounded p-2">{actionTemplate.description}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="label">Submitted by</p>
+                  <input type="date" value={submittedBy} onChange={(e) => setSubmittedBy(e.target.value)} className="field w-full" />
+                </div>
+                <div>
+                  <p className="label">Cut ready by</p>
+                  <input type="date" value={cutReadyBy} onChange={(e) => setCutReadyBy(e.target.value)} className="field w-full" />
+                </div>
+                <div>
+                  <p className="label">Greenlight by</p>
+                  <input type="date" value={greenlightBy} onChange={(e) => setGreenlightBy(e.target.value)} className="field w-full" />
+                </div>
+                <div>
+                  <p className="label">Goes live by</p>
+                  <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field w-full" />
+                </div>
+              </div>
+              <div>
+                <p className="label">Assign crew <span className="font-normal text-desert-night/40">(optional)</span></p>
+                <div className="flex flex-wrap gap-1.5">
+                  {members.map((m) => (
+                    <button key={m.id} onClick={() => setSelectedCrew(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])} className={`chip !text-xs ${selectedCrew.includes(m.id) ? "chip-copper" : "chip-cream"}`}>{m.name}</button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={() => createClip(actionTemplate)} disabled={creating} className="btn btn-primary btn-lg w-full">
+                {creating ? "Creating…" : "Add to calendar"}
+              </button>
             </div>
-            <p className="text-xs text-smoked-charcoal/60 bg-cactus-teal/10 rounded p-2">{actionTemplate.description}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <p className="label">Submitted by</p>
-                <input type="date" value={submittedBy} onChange={(e) => setSubmittedBy(e.target.value)} className="field w-full" />
-              </div>
-              <div>
-                <p className="label">Cut ready by</p>
-                <input type="date" value={cutReadyBy} onChange={(e) => setCutReadyBy(e.target.value)} className="field w-full" />
-              </div>
-              <div>
-                <p className="label">Greenlight by</p>
-                <input type="date" value={greenlightBy} onChange={(e) => setGreenlightBy(e.target.value)} className="field w-full" />
-              </div>
-              <div>
-                <p className="label">Goes live by</p>
-                <input type="date" value={liveDate} onChange={(e) => setLiveDate(e.target.value)} className="field w-full" />
-              </div>
+
+            {/* Right: calendar preview (desktop only) */}
+            <div className="hidden lg:block lg:w-[420px] shrink-0">
+              <ScheduleCalendarPreview
+                scheduledClips={scheduledClips}
+                pendingDates={{ submittedBy, cutReadyBy, greenlightBy, liveDate }}
+              />
             </div>
-            <div>
-              <p className="label">Assign crew <span className="font-normal text-desert-night/40">(optional)</span></p>
-              <div className="flex flex-wrap gap-1.5">
-                {members.map((m) => (
-                  <button key={m.id} onClick={() => setSelectedCrew(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])} className={`chip !text-xs ${selectedCrew.includes(m.id) ? "chip-copper" : "chip-cream"}`}>{m.name}</button>
-                ))}
-              </div>
-            </div>
-            <button onClick={() => createClip(actionTemplate)} disabled={creating} className="btn btn-primary btn-lg w-full">
-              {creating ? "Creating…" : "Add to calendar"}
-            </button>
           </div>
         </div>
       )}
@@ -1025,7 +1129,7 @@ function CalendarView({ clips, canPlanContent, member, members, onRefresh, onSel
 
         {/* Ready to Schedule side panel — planner/admin only, toggleable */}
         {canPlanContent && member && members && onRefresh && showSidePanel && (
-          <ReadyToSchedulePanel member={member} members={members} onRefresh={onRefresh} />
+          <ReadyToSchedulePanel member={member} members={members} onRefresh={onRefresh} scheduledClips={clips.filter((c) => c.scheduled_date || c.clip_due_date || c.approval_due || c.idea_due_date || c.final_cut_due || c.due_date)} />
         )}
       </div>
     </div>
