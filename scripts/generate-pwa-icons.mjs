@@ -2,16 +2,15 @@
  * Generate PWA icons + favicons from the official AZ Off Script logo.
  *
  * Source: public/assets/logos/azoffscriptlogo.png (1024x1536, transparent)
- * Content: x=69-955 (886px), y=277-1005 (728px), center=(512, 641)
- *
- * The logo is landscape (886x728) so for square icons we crop the largest
- * square centered on the logo's center, then flatten onto the brand
- * background color (desert-night) so there are no transparency artifacts.
+ * Content is cropped to its artwork bounds, enlarged to fill the square, and
+ * placed on an opaque brand-cream background so home screens do not shrink it as
+ * transparent foreground artwork.
  *
  * Creates:
- *  - icon-192.png, icon-512.png, icon-maskable-512.png
- *  - apple-touch-icon.png (180x180)
- *  - favicon-32.png, favicon-16.png
+ *  - icon-192.png, icon-512.png, icon-576.png, icon-1536.png
+ *  - icon-maskable-512.png, icon-maskable-1536.png
+ *  - apple-touch-icon.png (180x180), apple-touch-icon-540.png
+ *  - favicon-16.png, favicon-32.png, favicon-48.png, favicon-96.png
  */
 import sharp from "sharp";
 import { resolve, dirname } from "node:path";
@@ -28,66 +27,43 @@ if (!existsSync(logoSrc)) {
 }
 mkdirSync(dest, { recursive: true });
 
-const BG = "#0d1b2a"; // desert-night (brand color)
+const BG = { r: 0xf2, g: 0xe8, b: 0xd8, alpha: 1 };
 
-// Crop the largest square centered on the logo content, then resize.
-// Logo content: x=69-955, y=277-1005, center=(512, 641)
-// Largest square that fits in content: 728x728, but we use a bit more
-// to include some breathing room. Center on (512, 641).
-async function logoSquare(size) {
-  // Source is 1024x1536. Center of content is (512, 641).
-  // Crop a square of side 760 centered there (fits within content + small pad).
-  const cropSize = 760;
-  const left = Math.max(0, 512 - Math.round(cropSize / 2));   // 132
-  const top = Math.max(0, 641 - Math.round(cropSize / 2));    // 261
-  return sharp(logoSrc)
-    .extract({ left, top, width: cropSize, height: cropSize })
-    .flatten({ background: { r: 0x0d, g: 0x1b, b: 0x2a, alpha: 1 } })
-    .resize(size, size, { fit: "cover", position: "top" })
-    .flatten({ background: { r: 0x0d, g: 0x1b, b: 0x2a, alpha: 1 } });
-}
-
+// Trim the transparent source and place the artwork on a full opaque canvas.
 async function makeIcon(size, name, maskable = false) {
-  // For maskable icons, add padding so the safe zone keeps the logo visible
-  const padding = maskable ? Math.round(size * 0.1) : Math.round(size * 0.05);
+  const padding = Math.round(size * (maskable ? 0.08 : 0.025));
   const inner = size - padding * 2;
-  const pipeline = await logoSquare(inner);
-  await pipeline
-    .extend({
-      top: padding, bottom: padding, left: padding, right: padding,
-      background: { r: 0x0d, g: 0x1b, b: 0x2a, alpha: 1 },
-    })
+  const artwork = await sharp(logoSrc)
+    .extract({ left: 69, top: 277, width: 887, height: 729 })
+    .resize(inner, inner, { fit: "contain", background: BG })
     .png()
-    .toFile(resolve(dest, name));
-  console.log(`  ✓ ${name} (${size}x${size})`);
-}
-
-async function makeAppleIcon(size, name) {
-  const pipeline = await logoSquare(size);
-  await pipeline
+    .toBuffer();
+  await sharp({ create: { width: size, height: size, channels: 4, background: BG } })
+    .composite([{ input: artwork, gravity: "center" }])
     .flatten({ background: BG })
     .png()
     .toFile(resolve(dest, name));
   console.log(`  ✓ ${name} (${size}x${size})`);
 }
 
-async function makeFavicon() {
-  const p32 = await logoSquare(32);
-  await p32.flatten({ background: BG }).png().toFile(resolve(dest, "favicon-32.png"));
-  console.log("  ✓ favicon-32.png (32x32)");
-
-  const p16 = await logoSquare(16);
-  await p16.flatten({ background: BG }).png().toFile(resolve(dest, "favicon-16.png"));
-  console.log("  ✓ favicon-16.png (16x16)");
+async function makeFavicon(size, name) {
+  await makeIcon(size, name);
 }
 
 async function main() {
   console.log("Generating PWA icons + favicons from official logo...\n");
   await makeIcon(192, "icon-192.png");
   await makeIcon(512, "icon-512.png");
+  await makeIcon(576, "icon-576.png");
+  await makeIcon(1536, "icon-1536.png");
   await makeIcon(512, "icon-maskable-512.png", true);
-  await makeAppleIcon(180, "apple-touch-icon.png");
-  await makeFavicon();
+  await makeIcon(1536, "icon-maskable-1536.png", true);
+  await makeIcon(180, "apple-touch-icon.png");
+  await makeIcon(540, "apple-touch-icon-540.png");
+  await makeFavicon(16, "favicon-16.png");
+  await makeFavicon(32, "favicon-32.png");
+  await makeFavicon(48, "favicon-48.png");
+  await makeFavicon(96, "favicon-96.png");
   console.log("\nDone. Icons in public/icons/");
 }
 

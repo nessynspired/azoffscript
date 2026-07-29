@@ -39,20 +39,20 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/favicon-96.png?v=16", sizes: "96x96", type: "image/png" },
-      { url: "/icons/favicon-48.png?v=16", sizes: "48x48", type: "image/png" },
-      { url: "/icons/favicon-32.png?v=16", sizes: "32x32", type: "image/png" },
-      { url: "/icons/favicon-16.png?v=16", sizes: "16x16", type: "image/png" },
-      { url: "/icons/icon-192.png?v=16", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png?v=16", sizes: "512x512", type: "image/png" },
-      { url: "/icons/icon-576.png?v=16", sizes: "576x576", type: "image/png" },
-      { url: "/icons/icon-1536.png?v=16", sizes: "1536x1536", type: "image/png" },
+      { url: "/icons/favicon-96.png?v=20", sizes: "96x96", type: "image/png" },
+      { url: "/icons/favicon-48.png?v=20", sizes: "48x48", type: "image/png" },
+      { url: "/icons/favicon-32.png?v=20", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16.png?v=20", sizes: "16x16", type: "image/png" },
+      { url: "/icons/icon-192.png?v=20", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png?v=20", sizes: "512x512", type: "image/png" },
+      { url: "/icons/icon-576.png?v=20", sizes: "576x576", type: "image/png" },
+      { url: "/icons/icon-1536.png?v=20", sizes: "1536x1536", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/apple-touch-icon-540.png?v=16", sizes: "540x540", type: "image/png" },
-      { url: "/icons/apple-touch-icon.png?v=16", sizes: "180x180", type: "image/png" },
+      { url: "/icons/apple-touch-icon-540.png?v=20", sizes: "540x540", type: "image/png" },
+      { url: "/icons/apple-touch-icon.png?v=20", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: ["/icons/favicon-32.png?v=15"],
+    shortcut: ["/icons/favicon-32.png?v=20"],
   },
   openGraph: {
     title: "AZ Off Script — The Off Script Room",
@@ -96,8 +96,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Off Script" />
         {/* Favicon */}
-        <link rel="icon" href="/icons/favicon-96.png?v=16" type="image/png" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-540.png?v=16" />
+        <link rel="icon" href="/icons/favicon-96.png?v=20" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-540.png?v=20" />
       </head>
       <body className="min-h-full flex flex-col" style={{ backgroundColor: "#f2e8d8" }}>
         {children}
