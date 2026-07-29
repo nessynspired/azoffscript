@@ -517,67 +517,63 @@ export interface Database {
         };
       };
 
-      deleted_clips: {
+      deleted_rows: {
         Relationships: [];
         Row: {
           id: string;
+          table_name: string;
+          row_id: string;
           data: Record<string, unknown>;
           deleted_by: string | null;
           deleted_at: string;
         };
         Insert: {
           id?: string;
+          table_name: string;
+          row_id: string;
           data: Record<string, unknown>;
           deleted_by?: string | null;
           deleted_at?: string;
         };
         Update: {
           id?: string;
+          table_name?: string;
+          row_id?: string;
           data?: Record<string, unknown>;
           deleted_by?: string | null;
           deleted_at?: string;
         };
       };
 
-      deleted_content_assignments: {
+      deleted_files: {
         Relationships: [];
         Row: {
           id: string;
-          data: Record<string, unknown>;
+          bucket_id: string;
+          file_path: string;
+          file_url: string | null;
+          file_size: number | null;
+          mime_type: string | null;
           deleted_by: string | null;
           deleted_at: string;
         };
         Insert: {
           id?: string;
-          data: Record<string, unknown>;
+          bucket_id: string;
+          file_path: string;
+          file_url?: string | null;
+          file_size?: number | null;
+          mime_type?: string | null;
           deleted_by?: string | null;
           deleted_at?: string;
         };
         Update: {
           id?: string;
-          data?: Record<string, unknown>;
-          deleted_by?: string | null;
-          deleted_at?: string;
-        };
-      };
-
-      deleted_trend_references: {
-        Relationships: [];
-        Row: {
-          id: string;
-          data: Record<string, unknown>;
-          deleted_by: string | null;
-          deleted_at: string;
-        };
-        Insert: {
-          id?: string;
-          data: Record<string, unknown>;
-          deleted_by?: string | null;
-          deleted_at?: string;
-        };
-        Update: {
-          id?: string;
-          data?: Record<string, unknown>;
+          bucket_id?: string;
+          file_path?: string;
+          file_url?: string | null;
+          file_size?: number | null;
+          mime_type?: string | null;
           deleted_by?: string | null;
           deleted_at?: string;
         };
@@ -1313,6 +1309,7 @@ export interface Database {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       current_member_id: { Args: Record<string, never>; Returns: string };
       is_member_of_clip: { Args: { _clip_id: string }; Returns: boolean };
+      restore_deleted_row: { Args: { p_archive_id: string }; Returns: void };
     };
 
     Enums: {
