@@ -11,7 +11,7 @@ import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { SocialEmbed } from "@/components/SocialEmbed";
 import { InfoTooltip } from "@/components/InfoTooltip";
-import type { Database, ClipStatus, Platform } from "@/lib/types/db";
+import type { Database, ClipStatus, Platform, AssignmentRole, AssignmentTaskType } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
 type ClipPerson = Database["public"]["Tables"]["clip_people"]["Row"];
@@ -433,6 +433,7 @@ export default function RunSheetPage() {
           trends={trends}
           members={members}
           isAdmin={isAdmin}
+          canPlanContent={canPlanContent}
           onSelectClip={(id) => setSelectedClip(id)}
           onRefresh={load}
         />
@@ -448,6 +449,8 @@ export default function RunSheetPage() {
           clip={clips.find((c) => c.id === selectedClip)!}
           people={people[selectedClip] ?? []}
           approvals={approvals[selectedClip] ?? []}
+          assignments={assignments.filter((a) => a.clip_id === selectedClip)}
+          members={members}
           isAdmin={isAdmin}
           canPlanContent={canPlanContent}
           currentMemberId={member?.id}
@@ -949,11 +952,13 @@ function CalendarView({ clips, canPlanContent, member, members, onRefresh }: {
 }
 
 function ClipDetailModal({
-  clip, people, approvals, isAdmin, canPlanContent, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
+  clip, people, approvals, assignments, members, isAdmin, canPlanContent, currentMemberId, currentMemberName, onClose, onStatusChange, onDelete, onRefresh,
 }: {
   clip: ClipMeta;
   people: ClipPerson[];
   approvals: Approval[];
+  assignments: Assignment[];
+  members: Member[];
   isAdmin: boolean;
   canPlanContent: boolean;
   currentMemberId?: string;
@@ -974,6 +979,65 @@ function ClipDetailModal({
     scheduled_date: clip.scheduled_date ?? "",
   });
   const [savingDeadlines, setSavingDeadlines] = useState(false);
+
+  const [assignForm, setAssignForm] = useState({
+    member_id: "",
+    role: "On-Camera" as AssignmentRole,
+    task_type: "Drop a Clip" as AssignmentTaskType,
+    task_title: "",
+    task_notes: "",
+    drop_by_date: "",
+    is_required: true,
+  });
+  const [savingAssignment, setSavingAssignment] = useState(false);
+  const [showAssignForm, setShowAssignForm] = useState(false);
+
+  async function createAssignment() {
+    if (!assignForm.member_id || !currentMemberId) return;
+    const m = members.find((mem) => mem.id === assignForm.member_id);
+    if (!m) return;
+    setSavingAssignment(true);
+    const { error } = await supabase.from("content_assignments").insert({
+      clip_id: clip.id,
+      member_id: assignForm.member_id,
+      member_name: m.name,
+      role: assignForm.role,
+      task_type: assignForm.task_type,
+      task_title: assignForm.task_title || null,
+      task_notes: assignForm.task_notes || null,
+      drop_by_date: assignForm.drop_by_date || null,
+      is_required: assignForm.is_required,
+      created_by: currentMemberId,
+    });
+    if (error) {
+      if (error.code === "23505") {
+        alert("This person already has this task type on this clip.");
+      } else {
+        alert(error.message);
+      }
+    } else {
+      const notifBody = `You're on "${displayTitle(clip)}" — ${assignForm.role}`;
+      await notifyMember(supabase, assignForm.member_id, "assignment", notifBody, "/portal/run-sheet");
+    }
+    setAssignForm({ member_id: "", role: "On-Camera", task_type: "Drop a Clip", task_title: "", task_notes: "", drop_by_date: "", is_required: true });
+    setShowAssignForm(false);
+    await onRefresh();
+    setSavingAssignment(false);
+  }
+
+  async function deleteAssignment(id: string) {
+    if (!confirm("Remove this assignment?")) return;
+    const { error } = await supabase.from("content_assignments").delete().eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
+
+  async function updateAssignmentStatus(id: string, status: string) {
+    const completed_at = status === "Done" || status === "Greenlit" || status === "Dropped" ? new Date().toISOString() : null;
+    const { error } = await supabase.from("content_assignments").update({ status, completed_at }).eq("id", id);
+    if (error) alert(error.message);
+    await onRefresh();
+  }
 
   async function saveDeadlines() {
     setSavingDeadlines(true);
@@ -1263,6 +1327,92 @@ function ClipDetailModal({
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Assignments — admin/planners can add crew to any existing clip */}
+        {canPlanContent && (
+          <div className="mt-6 card p-4 bg-sandstone-cream/50">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-xl text-desert-night">Assignments</h3>
+              <button onClick={() => setShowAssignForm(!showAssignForm)} className="btn btn-primary btn-sm">
+                {showAssignForm ? "Cancel" : "+ Assign Crew"}
+              </button>
+            </div>
+
+            {assignments.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {assignments.map((a) => {
+                  const late = a.drop_by_date && new Date(a.drop_by_date) < new Date() && a.status !== "Done" && a.status !== "Greenlit" && a.status !== "Dropped";
+                  return (
+                    <div key={a.id} className={`bg-sandstone-cream/70 rounded-xl p-3 ${late ? "border-l-4 border-heat-orange" : ""}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-desert-night">{a.member_name}</span>
+                            <span className="chip chip-dark !text-[9px]">{a.role}</span>
+                            <span className="chip chip-cream !text-[9px]">{a.task_type}</span>
+                            {!a.is_required && <span className="chip chip-cream !text-[9px]">Optional</span>}
+                          </div>
+                          {a.task_title && <p className="text-sm text-desert-night mt-1">{a.task_title}</p>}
+                          {a.task_notes && <p className="text-xs text-smoked-charcoal/60 mt-1">{a.task_notes}</p>}
+                          {a.drop_by_date && (
+                            <p className={`text-xs font-bold mt-1 ${late ? "text-heat-orange" : "text-copper-deep"}`}>
+                              {late ? "⚠ Late — " : ""}Drop-by: {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className={`chip ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"} !text-[9px]`}>{assignmentStatusLabel(a.status)}</span>
+                          <select
+                            className="field !py-1 !text-xs !w-auto"
+                            value={a.status}
+                            onChange={(e) => updateAssignmentStatus(a.id, e.target.value)}
+                          >
+                            {["Not Started", "In Progress", "Dropped", "Waiting on Vanessa", "Needs Tweak", "Greenlit", "Done", "Skipped", "Hold"].map((s) => (
+                              <option key={s} value={s}>{assignmentStatusLabel(s)}</option>
+                            ))}
+                          </select>
+                          <button onClick={() => deleteAssignment(a.id)} className="text-xs text-heat-orange hover:underline">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {assignments.length === 0 && !showAssignForm && (
+              <p className="text-sm text-smoked-charcoal/60 italic mb-4">No one assigned yet. Click + Assign Crew to add people.</p>
+            )}
+
+            {showAssignForm && (
+              <div className="bg-sandstone-cream/70 rounded-xl p-4 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <select className="field" value={assignForm.member_id} onChange={(e) => setAssignForm({ ...assignForm, member_id: e.target.value })}>
+                    <option value="">Pick someone…</option>
+                    {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                  <select className="field" value={assignForm.role} onChange={(e) => setAssignForm({ ...assignForm, role: e.target.value as AssignmentRole })}>
+                    {ASSIGNMENT_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <select className="field" value={assignForm.task_type} onChange={(e) => setAssignForm({ ...assignForm, task_type: e.target.value as AssignmentTaskType })}>
+                    {ASSIGNMENT_TASK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <input type="date" className="field" value={assignForm.drop_by_date} onChange={(e) => setAssignForm({ ...assignForm, drop_by_date: e.target.value })} title="Drop-by date" />
+                </div>
+                <input className="field" placeholder="Task title" value={assignForm.task_title} onChange={(e) => setAssignForm({ ...assignForm, task_title: e.target.value })} />
+                <textarea className="field min-h-[50px]" placeholder="What do they need to do?" value={assignForm.task_notes} onChange={(e) => setAssignForm({ ...assignForm, task_notes: e.target.value })} />
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm font-bold text-desert-night">
+                    <input type="checkbox" checked={assignForm.is_required} onChange={(e) => setAssignForm({ ...assignForm, is_required: e.target.checked })} />
+                    Required
+                  </label>
+                  <button onClick={createAssignment} className="btn btn-primary btn-sm ml-auto" disabled={savingAssignment || !assignForm.member_id}>
+                    {savingAssignment ? "Assigning…" : "Assign"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -2227,7 +2377,7 @@ function WatchTab({
 // PLANNER DASHBOARD — What's Stuck, Ready for Vanessa, Needs Planning
 // ===========================================================================
 function PlannerDashboard({
-  clips, assignments, approvals, people, trends, members, isAdmin, onSelectClip, onRefresh,
+  clips, assignments, approvals, people, trends, members, isAdmin, canPlanContent, onSelectClip, onRefresh,
 }: {
   clips: ClipMeta[];
   assignments: Assignment[];
@@ -2236,6 +2386,7 @@ function PlannerDashboard({
   trends: TrendRef[];
   members: Member[];
   isAdmin: boolean;
+  canPlanContent: boolean;
   onSelectClip: (id: string) => void;
   onRefresh: () => Promise<void>;
 }) {
@@ -2400,6 +2551,14 @@ function PlannerDashboard({
                         </>
                       ) : (
                         <span className="chip chip-cream !text-[9px]">No one assigned</span>
+                      )}
+                      {canPlanContent && (
+                        <button
+                          onClick={() => onSelectClip(clip.id)}
+                          className="chip chip-dark !text-[9px] ml-auto hover:opacity-80"
+                        >
+                          + Assign
+                        </button>
                       )}
                     </div>
                   </div>
@@ -2580,6 +2739,12 @@ function PlannerDashboard({
                         className="btn btn-secondary btn-sm !text-xs shrink-0"
                       >
                         Remind
+                      </button>
+                      <button
+                        onClick={() => onSelectClip(a.clip_id)}
+                        className="chip chip-dark !text-[9px] shrink-0 hover:opacity-80"
+                      >
+                        + Assign
                       </button>
                     </div>
                   </div>
