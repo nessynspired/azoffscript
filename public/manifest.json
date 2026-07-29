@@ -23,8 +23,26 @@
       "purpose": "any"
     },
     {
+      "src": "/icons/icon-576.png",
+      "sizes": "576x576",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-1536.png",
+      "sizes": "1536x1536",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icons/icon-maskable-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-1536.png",
+      "sizes": "1536x1536",
       "type": "image/png",
       "purpose": "maskable"
     }
