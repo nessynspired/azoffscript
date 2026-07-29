@@ -44,7 +44,7 @@ export default function NotificationsPage() {
     if (!member) return;
     const [notifRes, actRes] = await Promise.all([
       supabase.from("notifications").select("*").eq("user_id", member.id).order("created_at", { ascending: false }).limit(50),
-      supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(30),
+      supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
     setNotifications(notifRes.data ?? []);
     setActivity(actRes.data ?? []);
@@ -215,7 +215,9 @@ export default function NotificationsPage() {
                       <span className="text-xl shrink-0">{iconForKind(item.kind)}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-desert-night leading-snug">{cleanActivityBody(item.body)}</p>
-                        <p className="text-xs text-desert-night/40 mt-0.5">{timeAgo(item.created_at)}</p>
+                        <p className="text-xs text-desert-night/40 mt-0.5">
+                          {item.actor_name} · {timeAgo(item.created_at)} · {new Date(item.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </p>
                       </div>
                     </div>
                   </div>

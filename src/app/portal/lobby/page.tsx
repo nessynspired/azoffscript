@@ -429,6 +429,7 @@ export default function LobbyPage() {
             </div>
           </div>
         ) : (
+          <>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
             {activity.map((a) => {
               const url = extractUrlFromBody(a.body);
@@ -442,11 +443,20 @@ export default function LobbyPage() {
                   <div className="p-3">
                     <p className="text-sm text-desert-night font-bold leading-snug">{cleanActivityBody(a.body)}</p>
                     <p className="text-xs text-smoked-charcoal/60 mt-1">{a.actor_name}</p>
+                    <p className="text-[10px] text-smoked-charcoal/40 mt-0.5">
+                      {new Date(a.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                    </p>
                   </div>
                 </div>
               );
             })}
           </div>
+          <div className="mt-3">
+            <Link href="/portal/notifications" className="btn btn-secondary btn-sm !text-xs">
+              See full activity log →
+            </Link>
+          </div>
+          </>
         )}
       </section>
 
