@@ -49,6 +49,7 @@ const PLANNER_PRIMARY: NavItem[] = [
 const PLANNER_MORE: NavItem[] = [
   { href: "/portal/sparks", label: "Spark Board", info: "Drop raw content ideas and vote on ideas you like. Best ones become Ready Bank templates." },
   { href: "/portal/gear-board", label: "Gear Board", info: "Admin only. Track personalized merch for each crew member — tumblers, shirts, badges, cards." },
+  { href: "/portal/recycle-bin", label: "Recycle Bin", info: "Admin only. Restore deleted clips, assignments, and trends before they're gone forever." },
   { href: "/portal/crew-profiles", label: "Crew Profiles", info: "Admin only. Control who appears on the public website and how they're shown." },
   { href: "/portal/invites", label: "Invites", info: "Admin only. Generate one-time invite codes for new crew members signing up." },
   { href: "/portal/join-submissions", label: "Join Submissions", info: "Admin only. Review public /join form submissions and convert approved ones to invite codes." },

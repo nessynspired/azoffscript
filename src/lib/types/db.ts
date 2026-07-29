@@ -517,6 +517,72 @@ export interface Database {
         };
       };
 
+      deleted_clips: {
+        Relationships: [];
+        Row: {
+          id: string;
+          data: Record<string, unknown>;
+          deleted_by: string | null;
+          deleted_at: string;
+        };
+        Insert: {
+          id?: string;
+          data: Record<string, unknown>;
+          deleted_by?: string | null;
+          deleted_at?: string;
+        };
+        Update: {
+          id?: string;
+          data?: Record<string, unknown>;
+          deleted_by?: string | null;
+          deleted_at?: string;
+        };
+      };
+
+      deleted_content_assignments: {
+        Relationships: [];
+        Row: {
+          id: string;
+          data: Record<string, unknown>;
+          deleted_by: string | null;
+          deleted_at: string;
+        };
+        Insert: {
+          id?: string;
+          data: Record<string, unknown>;
+          deleted_by?: string | null;
+          deleted_at?: string;
+        };
+        Update: {
+          id?: string;
+          data?: Record<string, unknown>;
+          deleted_by?: string | null;
+          deleted_at?: string;
+        };
+      };
+
+      deleted_trend_references: {
+        Relationships: [];
+        Row: {
+          id: string;
+          data: Record<string, unknown>;
+          deleted_by: string | null;
+          deleted_at: string;
+        };
+        Insert: {
+          id?: string;
+          data: Record<string, unknown>;
+          deleted_by?: string | null;
+          deleted_at?: string;
+        };
+        Update: {
+          id?: string;
+          data?: Record<string, unknown>;
+          deleted_by?: string | null;
+          deleted_at?: string;
+        };
+      };
+
       assignment_comments: {
         Relationships: [];
         Row: {
