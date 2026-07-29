@@ -432,10 +432,10 @@ export default function MyWaveKitPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {myClips.map((clip) => (
               <Link key={clip.id} href="/portal/run-sheet" className="card overflow-hidden block hover:-translate-y-0.5 transition-transform">
-                {/* Embedded video for link drops */}
+                {/* Embedded video for link drops — compact */}
                 {clip.type === "tiktok_link" && clip.link && (
                   <div className="bg-desert-night/5">
-                    <SocialEmbed url={clip.link} title={clip.title} />
+                    <SocialEmbed url={clip.link} title={clip.title} compact />
                   </div>
                 )}
                 <div className="p-3">
@@ -468,10 +468,10 @@ export default function MyWaveKitPage() {
               const clip = assignedClips.find((c) => c.id === app.clip_id) ?? myClips.find((c) => c.id === app.clip_id);
               return (
                 <Link key={app.id} href="/portal/run-sheet" className="card overflow-hidden block hover:-translate-y-0.5 transition-transform">
-                  {/* Embedded video for link drops */}
+                  {/* Embedded video for link drops — compact */}
                   {clip?.type === "tiktok_link" && clip.link && (
                     <div className="bg-desert-night/5">
-                      <SocialEmbed url={clip.link} title={clip.title} />
+                      <SocialEmbed url={clip.link} title={clip.title} compact />
                     </div>
                   )}
                   <div className="p-3">

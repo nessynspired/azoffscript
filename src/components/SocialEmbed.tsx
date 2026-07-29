@@ -19,6 +19,9 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  // YouTube facade: show thumbnail until the user clicks play, then load the iframe.
+  // This makes YouTube embeds appear instantly instead of loading the full player.
+  const [ytActivated, setYtActivated] = useState(false);
 
   // In compact mode, scale the embed down and clip it to a small preview area
   const scale = compact ? 0.42 : 1;
@@ -41,6 +44,13 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
     if (!isYouTube) return null;
     const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
     return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+  })();
+
+  // YouTube video ID for thumbnail facade
+  const ytVideoId = (() => {
+    if (!isYouTube) return null;
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
+    return m ? m[1] : null;
   })();
 
   // TikTok / Instagram / Facebook — need to load embed scripts after render
@@ -102,18 +112,39 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
     setFailed(true);
   }, [url, ytEmbedUrl, isTikTok, isInstagram, isFacebook]);
 
-  // YouTube — iframe
-  if (ytEmbedUrl) {
+  // YouTube — thumbnail facade (instant load) → iframe on click
+  if (ytEmbedUrl && ytVideoId) {
+    const thumb = `https://img.youtube.com/vi/${ytVideoId}/hqdefault.jpg`;
     return (
-      <div className="rounded-xl overflow-hidden bg-desert-night" style={compactWrapper}>
-        <div className="aspect-video" style={compactInner}>
-          <iframe
-            src={ytEmbedUrl}
-            title={title ?? "YouTube video"}
-            className="w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
+      <div className="rounded-xl overflow-hidden bg-desert-night relative group" style={compactWrapper}>
+        <div className="aspect-video relative" style={compactInner}>
+          {ytActivated ? (
+            <iframe
+              src={`${ytEmbedUrl}?autoplay=1&rel=0`}
+              title={title ?? "YouTube video"}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <button
+              onClick={() => { setYtActivated(true); setLoading(false); }}
+              className="w-full h-full block relative cursor-pointer"
+              aria-label={`Play ${title ?? "YouTube video"}`}
+            >
+              <img
+                src={thumb}
+                alt={title ?? "YouTube video"}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+              <span className="absolute inset-0 flex items-center justify-center bg-desert-night/30 group-hover:bg-desert-night/20 transition">
+                <span className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z" /></svg>
+                </span>
+              </span>
+            </button>
+          )}
         </div>
       </div>
     );

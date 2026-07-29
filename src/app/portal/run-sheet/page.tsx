@@ -349,6 +349,7 @@ export default function RunSheetPage() {
           member={member ? { id: member.id, name: member.name } : undefined}
           members={members}
           onRefresh={load}
+          onSelectClip={(id) => setSelectedClip(id)}
         />
       )}
 
@@ -780,12 +781,13 @@ function ReadyToSchedulePanel({ member, members, onRefresh }: {
   );
 }
 
-function CalendarView({ clips, canPlanContent, member, members, onRefresh }: {
+function CalendarView({ clips, canPlanContent, member, members, onRefresh, onSelectClip }: {
   clips: ClipMeta[];
   canPlanContent?: boolean;
   member?: { id: string; name: string };
   members?: Member[];
   onRefresh?: () => Promise<void>;
+  onSelectClip?: (id: string) => void;
 }) {
   const [viewMode, setViewMode] = useState<"week" | "biweek" | "month">("week");
   const [weekOffset, setWeekOffset] = useState(0);
@@ -881,60 +883,139 @@ function CalendarView({ clips, canPlanContent, member, members, onRefresh }: {
 
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Calendar grid.
-            Week view: horizontal scroll with fixed-width day columns so 7 days aren't squished.
-            Bi-week: horizontal scroll with 7 visible at a time.
-            Month view: 7-col grid with scrollable container and taller cells. */}
+            Week/bi-week: horizontal scroll with wide day columns (~3 visible at a time).
+            Month view: 7-col grid with scrollable container. */}
         <div className="flex-1 min-w-0">
           {/* Day-of-week header — only for week/bi-week (month shows weekday inside cells) */}
           {!isMonth && (
             <div className="overflow-x-auto pb-1 -mx-1 px-1">
-              <div className="grid grid-cols-7 gap-1 md:gap-2 min-w-[700px] md:min-w-full mb-1">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <div key={d} className="text-center text-[10px] md:text-xs font-black uppercase text-desert-night/50 py-1">{d}</div>
+              <div
+                className="flex gap-1 md:gap-2 mb-1"
+                style={{ minWidth: isBiweek ? "2520px" : "1260px" }}
+              >
+                {days.map((day, i) => (
+                  <div
+                    key={i}
+                    className="text-center text-[10px] md:text-xs font-black uppercase text-desert-night/50 py-1 shrink-0"
+                    style={{ width: isBiweek ? "170px" : "170px", flex: "0 0 170px" }}
+                  >
+                    {day.toLocaleDateString(undefined, { weekday: "short" })}
+                  </div>
                 ))}
               </div>
             </div>
           )}
-          <div className={`${isMonth ? "grid grid-cols-7 gap-1 md:gap-2 max-h-[70vh] overflow-y-auto pr-1" : "overflow-x-auto pb-2 -mx-1 px-1"}`}>
-            <div className={`grid grid-cols-7 gap-1 md:gap-2 ${!isMonth ? "min-w-[700px] md:min-w-full" : ""}`}>
-              {days.map((day) => {
-                const isToday = day.toDateString() === today.toDateString();
-                const isOtherMonth = isMonth && day.getMonth() !== monthDate.getMonth();
-                const dayClips = scheduled.filter((c) => {
-                  const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
-                  return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
-                });
-                return (
-                  <div key={day.toISOString()} className={`card p-1 md:p-2 ${isMonth ? "min-h-[100px] md:min-h-[120px]" : isBiweek ? "min-h-[80px] md:min-h-[110px]" : "min-h-[100px] md:min-h-[140px]"} ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
-                    <div className="flex items-center justify-between">
-                      <p className={`font-display text-desert-night ${isMonth ? "text-[10px] md:text-xs" : "text-xs md:text-sm"}`}>
-                        {(isMonth || day.getDate() === 1 || isToday) ? day.toLocaleDateString(undefined, { weekday: "short" }) : ""}
-                      </p>
-                      <p className={`text-xs ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>{day.getDate()}</p>
+
+          {/* Week / Bi-week: horizontal scroll with wide day columns */}
+          {!isMonth && (
+            <div className="overflow-x-auto pb-2 -mx-1 px-1">
+              <div
+                className="flex gap-1 md:gap-2"
+                style={{ minWidth: isBiweek ? "2520px" : "1260px" }}
+              >
+                {days.map((day) => {
+                  const isToday = day.toDateString() === today.toDateString();
+                  const dayClips = scheduled.filter((c) => {
+                    const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
+                    return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
+                  });
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={`card p-2 md:p-3 shrink-0 ${isToday ? "ring-2 ring-copper-clay" : ""}`}
+                      style={{ width: "170px", flex: "0 0 170px", minHeight: isBiweek ? "120px" : "160px" }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-display text-sm text-desert-night">
+                          {day.toLocaleDateString(undefined, { weekday: "short" })}
+                        </p>
+                        <p className={`text-sm font-black ${isToday ? "text-copper-deep" : "text-smoked-charcoal/60"}`}>
+                          {day.getDate()}
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        {dayClips.map((c) => {
+                          const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
+                            const val = c[dt.field] as string | null;
+                            return val && new Date(val).toDateString() === day.toDateString();
+                          });
+                          const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => onSelectClip?.(c.id)}
+                              className={`rounded-lg p-2 w-full text-left block hover:-translate-y-0.5 transition-transform ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}
+                            >
+                              <p className="font-bold text-desert-night text-xs leading-tight line-clamp-2">{displayTitle(c)}</p>
+                              {matchingDeadlines.map((d) => (
+                                <span key={d.label} className={`font-black ${d.color} block text-[10px]`}>{d.label}</span>
+                              ))}
+                              <span className={`chip ${STATUS_CHIP[c.status]} !text-[9px] !py-0.5 mt-1`}>{c.status}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="space-y-1 mt-1">
-                      {dayClips.map((c) => {
-                        const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
-                          const val = c[dt.field] as string | null;
-                          return val && new Date(val).toDateString() === day.toDateString();
-                        });
-                        const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
-                        return (
-                          <div key={c.id} className={`rounded-lg p-1.5 ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}>
-                            <p className={`font-bold text-desert-night leading-tight ${isMonth ? "text-[10px]" : "text-xs"} line-clamp-2`}>{displayTitle(c)}</p>
-                            {matchingDeadlines.map((d) => (
-                              <span key={d.label} className={`font-black ${d.color} block ${isMonth ? "text-[9px]" : "text-[10px]"}`}>{d.label}</span>
-                            ))}
-                            <span className={`chip ${STATUS_CHIP[c.status]} ${isMonth ? "!text-[9px] !py-0" : "!text-[10px] !py-0.5"} mt-1`}>{c.status}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Month view: proper 7-col grid (no double nesting) */}
+          {isMonth && (
+            <div className="max-h-[70vh] overflow-y-auto pr-1">
+              {/* Weekday header */}
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <div key={d} className="text-center text-[10px] font-black uppercase text-desert-night/50 py-1">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {days.map((day) => {
+                  const isToday = day.toDateString() === today.toDateString();
+                  const isOtherMonth = day.getMonth() !== monthDate.getMonth();
+                  const dayClips = scheduled.filter((c) => {
+                    const dates = [c.scheduled_date, c.clip_due_date, c.approval_due, c.idea_due_date, c.final_cut_due, c.due_date].filter(Boolean);
+                    return dates.some((d) => new Date(d!).toDateString() === day.toDateString());
+                  });
+                  return (
+                    <div key={day.toISOString()} className={`card p-1 min-h-[90px] ${isToday ? "ring-2 ring-copper-clay" : ""} ${isOtherMonth ? "opacity-40" : ""}`}>
+                      <div className="flex items-center justify-between">
+                        <p className="font-display text-desert-night text-[10px]">
+                          {day.toLocaleDateString(undefined, { weekday: "short" })}
+                        </p>
+                        <p className={`text-[10px] ${isToday ? "text-copper-deep font-black" : isOtherMonth ? "text-smoked-charcoal/30" : "text-smoked-charcoal/60"}`}>
+                          {day.getDate()}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 mt-1">
+                        {dayClips.map((c) => {
+                          const matchingDeadlines = DEADLINE_TYPES.filter((dt) => {
+                            const val = c[dt.field] as string | null;
+                            return val && new Date(val).toDateString() === day.toDateString();
+                          });
+                          const isLive = matchingDeadlines.some((d) => d.label === "Goes Live");
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => onSelectClip?.(c.id)}
+                              className={`rounded p-1 w-full text-left block hover:bg-copper-clay/25 transition ${isLive ? "bg-cactus-teal/20" : "bg-copper-clay/15"}`}
+                            >
+                              <p className="font-bold text-desert-night text-[9px] leading-tight line-clamp-1">{displayTitle(c)}</p>
+                              {matchingDeadlines.map((d) => (
+                                <span key={d.label} className={`font-black ${d.color} block text-[8px]`}>{d.label}</span>
+                              ))}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {scheduled.length === 0 && (
             <div className="card p-6 text-center text-smoked-charcoal/60 mt-2">
               Nothing scheduled yet. Set deadlines on a clip from Studio Flow.
@@ -1602,10 +1683,10 @@ function ThisWeekTab({
                 onClick={() => onSelectClip(clip.id)}
                 className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
               >
-                {/* Embedded video for link drops */}
+                {/* Embedded video for link drops — compact to keep card small */}
                 {clip.type === "tiktok_link" && clip.link && (
                   <div className="bg-desert-night/5">
-                    <SocialEmbed url={clip.link} title={clip.title} />
+                    <SocialEmbed url={clip.link} title={clip.title} compact />
                   </div>
                 )}
                 <div className="p-3">
@@ -1645,52 +1726,52 @@ function ThisWeekTab({
                   key={a.id}
                   className={`card overflow-hidden flex flex-col ${isOverdue ? "border-2 border-heat-orange/40" : "border-2 border-copper-clay/30"}`}
                 >
-                  {/* Embedded video / link preview (if the clip has one) */}
+                  {/* Embedded video / link preview (if the clip has one) — compact to keep card small */}
                   {clip?.type === "tiktok_link" && clip.link && (
                     <div className="bg-desert-night/5">
-                      <SocialEmbed url={clip.link} title={clip.title} />
+                      <SocialEmbed url={clip.link} title={clip.title} compact />
                     </div>
                   )}
-                  {/* Video player for uploaded videos — play without tapping in */}
+                  {/* Video player for uploaded videos — compact to keep card small */}
                   {clip?.file_path && (clip.type === "video" || clip.type === "final_cut") && (
-                    <div className="bg-desert-night/5">
+                    <div className="bg-desert-night/5 max-h-[130px] overflow-hidden">
                       <VideoPlayer filePath={clip.file_path} title={clip.title} className="aspect-video" />
                     </div>
                   )}
 
-                  <div className="p-3 flex flex-col gap-2 flex-1">
+                  <div className="p-2 flex flex-col gap-1.5 flex-1">
                     {/* Status + platform chips */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`chip !text-[9px] ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"}`}>{assignmentStatusLabel(a.status)}</span>
-                      {clip && <span className={`chip !text-[9px] ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className={`chip !text-[8px] !px-1.5 !py-0.5 ${ASSIGNMENT_STATUS_CHIP[a.status] ?? "chip-cream"}`}>{assignmentStatusLabel(a.status)}</span>
+                      {clip && <span className={`chip !text-[8px] !px-1.5 !py-0.5 ${STATUS_CHIP[clip.status] ?? "chip-cream"}`}>{clip.status}</span>}
                       {clip?.type === "tiktok_link" && (
-                        <span className="chip chip-teal !text-[9px]">{clip.link ? (linkPlatform(clip.link) ?? "Link") : "Link"}</span>
+                        <span className="chip chip-teal !text-[8px] !px-1.5 !py-0.5">{clip.link ? (linkPlatform(clip.link) ?? "Link") : "Link"}</span>
                       )}
-                      {clip?.type === "video" && <span className="chip chip-copper !text-[9px]">Video</span>}
-                      {clip?.type === "final_cut" && <span className="chip chip-copper !text-[9px]">Final Cut</span>}
-                      {clip?.category && <span className="chip chip-cream !text-[9px]">{clip.category}</span>}
-                      {!a.is_required && <span className="chip chip-cream !text-[9px]">Optional</span>}
+                      {clip?.type === "video" && <span className="chip chip-copper !text-[8px] !px-1.5 !py-0.5">Video</span>}
+                      {clip?.type === "final_cut" && <span className="chip chip-copper !text-[8px] !px-1.5 !py-0.5">Final Cut</span>}
+                      {clip?.category && <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{clip.category}</span>}
+                      {!a.is_required && <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">Optional</span>}
                     </div>
 
                     {/* Title — tap to open clip detail */}
                     <button onClick={() => onSelectClip(a.clip_id)} className="text-left min-w-0 group">
-                      <p className="font-bold text-desert-night text-sm leading-tight line-clamp-2 group-hover:text-copper-deep">
+                      <p className="font-bold text-desert-night text-xs leading-tight line-clamp-2 group-hover:text-copper-deep">
                         {clip ? displayTitle(clip) : "Content item"}
                       </p>
-                      <p className="text-xs text-smoked-charcoal/60 mt-0.5">Your role: {a.role}</p>
+                      <p className="text-[10px] text-smoked-charcoal/60 mt-0.5">Your role: {a.role}</p>
                     </button>
 
                     {/* Task title + notes */}
-                    {a.task_title && <p className="text-sm text-desert-night">{a.task_title}</p>}
-                    {a.task_notes && <p className="text-xs text-smoked-charcoal/60">{a.task_notes}</p>}
+                    {a.task_title && <p className="text-xs text-desert-night leading-tight">{a.task_title}</p>}
+                    {a.task_notes && <p className="text-[10px] text-smoked-charcoal/60 leading-tight">{a.task_notes}</p>}
 
                     {/* Mini timeline — compact deadline rows */}
                     {miniDeadlines.length > 0 && (
-                      <div className="bg-sandstone-cream/40 rounded-lg p-2 space-y-1">
+                      <div className="bg-sandstone-cream/40 rounded-lg p-1.5 space-y-0.5">
                         {miniDeadlines.map((d) => {
                           const past = new Date(d.date) < now;
                           return (
-                            <div key={d.label} className="flex items-center justify-between text-[10px]">
+                            <div key={d.label} className="flex items-center justify-between text-[9px]">
                               <span className="text-smoked-charcoal/60 font-bold uppercase tracking-wide">{d.label}</span>
                               <span className={`font-bold ${past ? "text-heat-orange" : "text-copper-deep"}`}>
                                 {past ? "⚠ " : ""}{new Date(d.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
@@ -1703,7 +1784,7 @@ function ThisWeekTab({
 
                     {/* Your drop-by date */}
                     {a.drop_by_date && (
-                      <p className={`text-xs font-bold ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
+                      <p className={`text-[10px] font-bold ${isOverdue ? "text-heat-orange" : "text-copper-deep"}`}>
                         {isOverdue ? "⚠ Late — " : ""}Your drop-by: {new Date(a.drop_by_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                       </p>
                     )}
@@ -1769,10 +1850,10 @@ function ThisWeekTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {goingLive.map((c) => (
               <button key={c.id} onClick={() => onSelectClip(c.id)} className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform bg-cactus-teal/10">
-                {/* Embedded video for link drops */}
+                {/* Embedded video for link drops — compact */}
                 {c.type === "tiktok_link" && c.link && (
                   <div className="bg-desert-night/5">
-                    <SocialEmbed url={c.link} title={c.title} />
+                    <SocialEmbed url={c.link} title={c.title} compact />
                   </div>
                 )}
                 <div className="p-4">
