@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { useAuth } from "@/context/AuthContext";
 
 const HASHTAGS = [
   "#AZOffScript", "#OffScriptRoom", "#ArizonaOurWay", "#RedFlagOrRealLife",
@@ -63,6 +64,12 @@ const TABS: { key: Tab; label: string }[] = [
 export default function BrandLockerPage() {
   const [tab, setTab] = useState<Tab>("logos");
   const [copied, setCopied] = useState<string | null>(null);
+  const { member } = useAuth();
+  const isPlanner = member?.role === "admin" || member?.can_plan_content === true;
+
+  // Crew only sees: logos, mascot, colors, formats, templates
+  // Planners also see: captions, hashtags (brand IP)
+  const visibleTabs = isPlanner ? TABS : TABS.filter(t => t.key !== "captions" && t.key !== "hashtags");
 
   function copy(text: string, id: string) {
     navigator.clipboard.writeText(text);
@@ -80,7 +87,7 @@ export default function BrandLockerPage() {
 
       {/* Tab switcher */}
       <div className="flex gap-2 bg-desert-night/10 rounded-full p-1 overflow-x-auto">
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}

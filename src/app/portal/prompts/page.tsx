@@ -14,6 +14,7 @@ import {
   type PromptCategory,
 } from "@/lib/prompt-library";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { PlannerOnly } from "@/components/PlannerOnly";
 
 export default function PromptsPage() {
   const [search, setSearch] = useState("");
@@ -53,6 +54,7 @@ export default function PromptsPage() {
   const communityCount = PROMPTS.filter((p) => p.type === "Community").length;
 
   return (
+    <PlannerOnly label="The Prompt Library">
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -216,5 +218,6 @@ export default function PromptsPage() {
         <Link href="/portal/lobby" className="btn btn-ghost btn-sm">← Back to Lobby</Link>
       </div>
     </div>
+    </PlannerOnly>
   );
 }

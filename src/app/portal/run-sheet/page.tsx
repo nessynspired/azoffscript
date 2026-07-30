@@ -1328,9 +1328,10 @@ function ClipDetailModal({
           </div>
         )}
 
-        {clip.idea_text && <p className="mt-4 text-smoked-charcoal bg-sandstone-cream/50 rounded-xl p-4">{clip.idea_text}</p>}
-        {clip.caption && <p className="mt-4 font-script text-xl text-desert-night">{clip.caption}</p>}
-        {clip.do_not_post_notes && (
+        {/* Planner-only fields — caption, brief, do-not-post notes are IP, not for crew */}
+        {canPlanContent && clip.idea_text && <p className="mt-4 text-smoked-charcoal bg-sandstone-cream/50 rounded-xl p-4">{clip.idea_text}</p>}
+        {canPlanContent && clip.caption && <p className="mt-4 font-script text-xl text-desert-night">{clip.caption}</p>}
+        {canPlanContent && clip.do_not_post_notes && (
           <div className="mt-4 bg-copper-deep/15 border border-copper-clay rounded-xl p-3">
             <p className="text-xs font-black uppercase text-copper-deep">Do not post notes</p>
             <p className="text-sm text-desert-night mt-1">{clip.do_not_post_notes}</p>
