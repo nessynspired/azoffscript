@@ -21,6 +21,7 @@ import {
 } from "@/lib/off-script-versions";
 import { nextSunday } from "@/lib/plan-defaults";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { CalendarBuilder } from "@/components/CalendarBuilder";
 import type { Database } from "@/lib/types/db";
 
 type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content">;
@@ -55,6 +56,9 @@ export default function ReadyBankPage() {
 
   // Saved templates (localStorage bookmarks)
   const [savedIds, setSavedIds] = useState<string[]>([]);
+
+  // View toggle — List vs Calendar Builder
+  const [viewMode, setViewMode] = useState<"list" | "builder">("list");
 
   // Action modal
   const [actionTemplate, setActionTemplate] = useState<QuickDropTemplate | null>(null);
@@ -213,11 +217,26 @@ export default function ReadyBankPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-display text-3xl md:text-4xl text-desert-night">Ready Bank</h1>
-        <InfoTooltip text="A library of vetted, ready-to-use content templates and ideas. These are sparks from the Spark Board that have been approved for production. Planners can create scheduled clips from any template here — that sends them to the Run Sheet for the crew to film." />
-        <p className="text-smoked-charcoal/70 mt-2">
-          Vetted ideas and formats ready to pull into the calendar. Not posted. Not filmed. Just ready to plan.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-3xl md:text-4xl text-desert-night">Ready Bank</h1>
+            <InfoTooltip text="A library of vetted, ready-to-use content templates and ideas. These are sparks from the Spark Board that have been approved for production. Planners can create scheduled clips from any template here — that sends them to the Run Sheet for the crew to film." />
+            <p className="text-smoked-charcoal/70 mt-2">
+              Vetted ideas and formats ready to pull into the calendar. Not posted. Not filmed. Just ready to plan.
+            </p>
+          </div>
+          {/* View toggle */}
+          <div className="flex gap-1 bg-desert-night/10 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${viewMode === "list" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+            >📋 List</button>
+            <button
+              onClick={() => setViewMode("builder")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${viewMode === "builder" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+            >📅 Calendar Builder</button>
+          </div>
+        </div>
       </div>
 
       {/* Flow explanation */}
@@ -236,6 +255,14 @@ export default function ReadyBankPage() {
         </p>
       </div>
 
+      {/* Calendar Builder view — 3-panel workspace */}
+      {viewMode === "builder" && member && (
+        <CalendarBuilder member={{ id: member.id, name: member.name }} members={members} />
+      )}
+
+      {/* List view — filters + template cards (default) */}
+      {viewMode === "list" && (
+      <>
       {/* Filters */}
       <div className="space-y-3">
         {/* Search */}
@@ -425,6 +452,9 @@ export default function ReadyBankPage() {
             ))}
           </div>
         </section>
+      )}
+
+      </> /* end list view */
       )}
 
       {/* Action modal */}

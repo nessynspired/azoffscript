@@ -1,64 +1,36 @@
-Add AZ Off Script Growth Intelligence System (9 master documents)
+Add Calendar Builder view to Ready Bank — 3-panel planning workspace
 
-The previous Discovery Library was a single page with captions and
-hashtags. The user requested a complete restructuring into 9 separate
-master documents — a true Growth Intelligence System that protects the
-brand identity while driving discovery.
+The Ready Bank now has a toggle between List View (the existing
+template browser) and Calendar Builder View (a new 3-panel workspace).
 
-The question is not 'What is trending?'
-The question is 'What is trending that we can make uniquely AZ Off Script?'
+Calendar Builder layout:
+  LEFT: Ready Bank templates (compact, searchable, click to select)
+  CENTER: Big calendar (week/month toggle) showing scheduled clips
+  RIGHT: Libraries panel with 6 tabs:
+    - Hooks (from growth hook library)
+    - Prompts (from growth prompt intelligence)
+    - Captions (from growth caption frameworks)
+    - Transitions (from transition library)
+    - Recording Styles (from recording style library)
+    - Shot Recipes (from shot recipe library)
 
-New /portal/growth hub page links all 9 documents:
+When you select a Ready Bank template on the left, the right panel
+automatically shows matching library items — hooks that work with
+that format, prompts for that category, caption frameworks that fit,
+etc. This is the "put together from libraries" part.
 
-DOCUMENT 1: Market Gap Intelligence (src/lib/growth/market-gap-intelligence.ts)
-  3 parts: Saturated Markets (16), White Space Opportunities (8),
-  Anti-Brand Rules (10). For each saturated market: what everyone does,
-  why it's a problem, what AZ Off Script does instead, best formats,
-  and example prompts. White space has moats and success metrics.
+Click "Schedule" on the selected template to open the date picker
+modal with crew assignment, deadlines, and goes-live date — same
+flow as the existing Ready Bank scheduling, but integrated into
+the calendar workspace.
 
-DOCUMENT 2: Hook Library (src/lib/growth/hook-library.ts)
-  88 hooks across 8 types: Curiosity, Debate, Identity, Emotional,
-  Pattern Interrupt, Local, Story, Challenge. Each hook has an effect
-  description, delivery method (on-screen/spoken/either), and best
-  formats. Not trends — hooks that work repeatedly.
+New files:
+  src/components/CalendarBuilder.tsx — the 3-panel workspace component
 
-DOCUMENT 3: Caption Frameworks (src/lib/growth/caption-framework-library.ts)
-  10 frameworks, not individual captions. Each has a formula, purpose,
-  why it works, examples, best formats, and what to avoid. The formulas
-  stay permanent; the examples rotate.
-
-DOCUMENT 4: Prompt Intelligence (src/lib/growth/prompt-intelligence.ts)
-  60+ prompts across 14 categories: Women, Men, Dating, Friendship,
-  Arizona, Parenting, Adulting, Deep Conversations, Texting, Family,
-  Beauty/Style, Public Behavior, Cultural, Work/Money. Each has a
-  sub-topic and best formats. The massive idea engine.
-
-DOCUMENT 5: Search Keyword Intelligence (src/lib/growth/search-keyword-intelligence.ts)
-  50+ keywords across 8 categories with performance tracking
-  (High/Medium/Low/New/Fading) and related keywords.
-
-DOCUMENT 6: Trend Capture System (src/lib/growth/trend-capture-system.ts)
-  13 trends with full evaluation: why it works, why people watch,
-  AZ Off Script adaptation, best formats, and a Keep/Modify/Ignore
-  decision. Stage tracking: Rising/Peaking/Fading/Watch.
-
-DOCUMENT 7: Seasonal Opportunities (src/lib/growth/seasonal-opportunity-library.ts)
-  16 opportunities across 7 seasons with prompt ideas, best formats,
-  and timing notes.
-
-DOCUMENT 8: Do Not Chase Rules (src/lib/growth/do-not-chase-rules.ts)
-  12 rules with severity (Brand Killer/Diluter/Distractor). Each has
-  what to avoid, why, what to do instead, and specific behaviors.
-
-DOCUMENT 9: Brand Moat Library (src/lib/growth/brand-moat-library.ts)
-  10 moats across 8 types. Each moat has: what it is, why no one can
-  copy it, how we protect it, and examples. This answers the biggest
-  question: 'Why should someone choose AZ Off Script instead of the
-  thousands of other pages?'
-
-All 9 documents have browsable portal pages with search, filters, and
-the project's design system. Added to portal navigation in both CREW_MORE
-and PLANNER_MORE menus as 'Growth System'.
+Modified files:
+  src/app/portal/ready-bank/page.tsx — added List/Calendar Builder
+  toggle in the header, conditionally renders CalendarBuilder when
+  in builder mode
 
 Generated with [Devin](https://devin.ai)
 
