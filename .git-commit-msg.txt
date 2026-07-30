@@ -1,47 +1,21 @@
-Change IP gates from planner-only to admin-only
+Hide IP gates silently — no locked messages
 
-Planners are still crew members who could copy your brand IP
-(hooks, captions, market gaps, brand moats, prompts). Changed
-all IP-sensitive gates from PlannerOnly to AdminOnly so only
-the brand owner (admin) can see them.
+Planners were seeing "admin-only" locked messages on the
+Calendar Builder right panel, Growth System, Discovery, and
+Prompts pages. That rubs people the wrong way. Now non-admins
+just see nothing — the content is silently hidden.
 
-NEW: AdminOnly component (src/components/AdminOnly.tsx)
-  Same as PlannerOnly but checks role === "admin" only.
-  Planners and crew both see the locked message.
+AdminOnly component now renders null for non-admins (no fallback
+message). The `label` prop is still accepted for backward
+compatibility but ignored.
 
-CHANGED FROM PLANNER-ONLY TO ADMIN-ONLY:
-  - Growth System (all 9 documents) — layout.tsx now uses AdminOnly
-  - Discovery Library — wrapped in AdminOnly
-  - Prompts Library — wrapped in AdminOnly
-  - Brand Locker captions/hashtags tabs — admin-only
-  - ClipDetailModal caption, brief, do-not-post notes — admin-only
-  - "Edit with Libraries" button in ClipDetailModal — admin-only
-  - "Create from Library" button on Run Sheet — admin-only
-  - Calendar Builder right panel (libraries) — admin-only
-    (non-admin planners see a locked message instead)
-  - Calendar Builder "Create from Library" button — admin-only
-
-NAVIGATION:
-  Added adminOnly flag to NavItem type. Marked these as adminOnly
-  in PLANNER_MORE: Editing Recipes, Prompts, Discovery, Growth
-  System. Non-admin planners don't see these in their nav.
-  Admins see everything.
-
-WHAT PLANNERS CAN STILL DO:
-  - Schedule clips from the Ready Bank
-  - Add content (free-form, no library items)
+Calendar Builder: the right panel (libraries) is now completely
+absent for non-admin planners — no locked card, no message.
+Planners can still:
+  - Schedule templates from the Ready Bank onto the calendar
+  - Delete clips from the calendar
+  - Add content (free-form)
   - Set deadlines, assign crew, change clip status
-  - See the calendar, studio flow, assignment board
-  - Manage the Run Sheet
-
-WHAT PLANNERS CAN NO LONGER SEE:
-  - Hooks, prompts, caption frameworks (growth libraries)
-  - Market gaps, brand moats, do-not-chase rules
-  - Discovery library (captions, search keywords, comment prompts)
-  - Prompts library
-  - Brand Locker captions and hashtags
-  - Clip captions, briefs, and do-not-post notes
-  - "Edit with Libraries" / "Create from Library" features
 
 Generated with [Devin](https://devin.ai)
 

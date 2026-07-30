@@ -483,18 +483,7 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
             </div>
           </div>
         </div>
-        ) : (
-          <div className="lg:w-80 shrink-0">
-            <div className="card p-4 text-center">
-              <div className="text-3xl mb-2">🔒</div>
-              <p className="font-display text-base text-desert-night">Libraries</p>
-              <p className="text-xs text-smoked-charcoal/50 mt-1">
-                Hooks, prompts, and caption frameworks are admin-only.
-                You can still schedule templates from the Ready Bank.
-              </p>
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Clip Editor — edit scheduled clips and attach library items */}
