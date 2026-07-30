@@ -12,6 +12,7 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { SocialEmbed } from "@/components/SocialEmbed";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { ClipEditor } from "@/components/ClipEditor";
+import { RecipeBuilder, type ClipRecipe } from "@/components/RecipeBuilder";
 import { CreateFromLibraryModal } from "@/components/CreateFromLibraryModal";
 import type { Database, ClipStatus, Platform, AssignmentRole, AssignmentTaskType } from "@/lib/types/db";
 
@@ -1200,6 +1201,7 @@ function ClipDetailModal({
   const [savingAssignment, setSavingAssignment] = useState(false);
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [showClipEditor, setShowClipEditor] = useState(false);
+  const [showRecipeBuilder, setShowRecipeBuilder] = useState(false);
 
   async function createAssignment() {
     if (!assignForm.member_id || !currentMemberId) return;
@@ -1301,6 +1303,11 @@ function ClipDetailModal({
             <p className="text-sm text-smoked-charcoal/60 mt-1">{droppedByLabel(clip)}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {canPlanContent && (
+              <button onClick={() => setShowRecipeBuilder(true)} className="btn btn-secondary btn-sm !text-xs">
+                📋 Build Recipe
+              </button>
+            )}
             {isAdmin && (
               <button onClick={() => setShowClipEditor(true)} className="btn btn-secondary btn-sm !text-xs">
                 📚 Edit with Libraries
@@ -1343,7 +1350,160 @@ function ClipDetailModal({
         {/* ===== CREW VIEW — prompt them, don't script them ===== */}
         {!canPlanContent && (
           <div className="mt-6 space-y-4">
-            {/* Template — idea, vibe, what to drop, examples, make it yours */}
+            {/* Recipe — the full production pack built by the planner/admin */}
+            {clip.recipe && (() => {
+              const r = clip.recipe as Record<string, unknown>;
+              const hasRecipe = r && (r.goal || r.creatorTask || r.prompt || (r.finalVideoFlow && (r.finalVideoFlow as string[]).length > 0));
+              if (!hasRecipe) return null;
+              const recipe = r as unknown as ClipRecipe;
+              return (
+                <div className="card p-5 bg-cactus-teal/10 space-y-4">
+                  <div>
+                    <p className="font-display text-lg text-desert-night">Your Assignment</p>
+                    {recipe.difficulty && (
+                      <p className="text-xs text-smoked-charcoal/60 mt-1">
+                        {recipe.difficulty === "Easy" ? "🟢" : recipe.difficulty === "Medium" ? "🟡" : "🔴"} {recipe.difficulty}
+                      </p>
+                    )}
+                  </div>
+
+                  {recipe.goal && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Goal</p>
+                      <p className="text-sm text-desert-night mt-1">{recipe.goal}</p>
+                    </div>
+                  )}
+
+                  {recipe.creatorTask && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Your Task</p>
+                      <p className="text-sm text-desert-night mt-1">{recipe.creatorTask}</p>
+                    </div>
+                  )}
+
+                  {recipe.prompt && (
+                    <div className="bg-sandstone-cream/70 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Prompt</p>
+                      <p className="text-sm text-desert-night mt-1 font-script text-base">&ldquo;{recipe.prompt}&rdquo;</p>
+                      {recipe.exampleResponse && (
+                        <div className="mt-2">
+                          <p className="text-xs font-bold text-desert-night/50 uppercase">Example response (use it or make it your own)</p>
+                          <p className="text-sm text-desert-night/70 mt-1 font-script text-base">&ldquo;{recipe.exampleResponse}&rdquo;</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* What the final video looks like */}
+                  {recipe.finalVideoFlow && recipe.finalVideoFlow.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">What the Final Video Looks Like</p>
+                      <ol className="mt-2 space-y-1">
+                        {recipe.finalVideoFlow.map((step, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-desert-night/40 font-bold">{i + 1}</span>
+                            <span>{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* 3 Parts */}
+                  {recipe.part1Start && recipe.part1Start.instructions.length > 0 && (
+                    <div className="bg-sandstone-cream/50 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Part 1 — {recipe.part1Start.label}</p>
+                      <ol className="mt-2 space-y-1">
+                        {recipe.part1Start.instructions.map((inst, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-desert-night/40 font-bold">{i + 1}.</span>
+                            <span>{inst}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {recipe.part2Content && recipe.part2Content.instructions.length > 0 && (
+                    <div className="bg-sandstone-cream/50 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Part 2 — {recipe.part2Content.label}</p>
+                      <ol className="mt-2 space-y-1">
+                        {recipe.part2Content.instructions.map((inst, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-desert-night/40 font-bold">{i + 1}.</span>
+                            <span>{inst}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {recipe.part3End && recipe.part3End.instructions.length > 0 && (
+                    <div className="bg-sandstone-cream/50 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Part 3 — {recipe.part3End.label}</p>
+                      <ol className="mt-2 space-y-1">
+                        {recipe.part3End.instructions.map((inst, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-desert-night/40 font-bold">{i + 1}.</span>
+                            <span>{inst}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Recording instructions */}
+                  {recipe.beforeRecording && recipe.beforeRecording.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Before Recording</p>
+                      <ul className="mt-2 space-y-1">
+                        {recipe.beforeRecording.map((item, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-cactus-teal">✅</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {recipe.recordSteps && recipe.recordSteps.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Record</p>
+                      <ol className="mt-2 space-y-1">
+                        {recipe.recordSteps.map((step, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-desert-night/40 font-bold">{i + 1}</span>
+                            <span>{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* What to send */}
+                  {recipe.submissionRules && recipe.submissionRules.length > 0 && (
+                    <div className="bg-heat-orange/10 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">What to Send</p>
+                      <ul className="mt-2 space-y-1">
+                        {recipe.submissionRules.map((rule, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-cactus-teal">✅</span>
+                            <span>{rule}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-smoked-charcoal/50 text-center italic">
+                    One take is fine. We are looking for real, not perfect.
+                  </p>
+                </div>
+              );
+            })()}
+
+            {/* Template — idea, vibe, what to drop, examples, make it yours (fallback if no recipe) */}
             {clip.template_id && getTemplate(clip.template_id) && (() => {
               const t = getTemplate(clip.template_id)!;
               return (
@@ -1468,6 +1628,56 @@ function ClipDetailModal({
         {/* ===== ADMIN VIEW — the full machine ===== */}
         {canPlanContent && (
           <>
+            {/* Recipe preview — show what's been built */}
+            {clip.recipe && (() => {
+              const r = clip.recipe as Record<string, unknown>;
+              const hasRecipe = r && (r.goal || r.creatorTask || r.prompt);
+              if (!hasRecipe) return null;
+              const recipe = r as unknown as ClipRecipe;
+              return (
+                <div className="mt-6 card p-5 bg-cactus-teal/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-display text-lg text-desert-night">📋 Recipe</p>
+                    <button onClick={() => setShowRecipeBuilder(true)} className="btn btn-cream btn-sm !text-xs">
+                      Edit Recipe
+                    </button>
+                  </div>
+                  {recipe.goal && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Goal</p>
+                      <p className="text-sm text-desert-night mt-1">{recipe.goal}</p>
+                    </div>
+                  )}
+                  {recipe.creatorTask && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Creator Task</p>
+                      <p className="text-sm text-desert-night mt-1">{recipe.creatorTask}</p>
+                    </div>
+                  )}
+                  {recipe.prompt && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Prompt</p>
+                      <p className="text-sm text-desert-night mt-1 font-script text-base">&ldquo;{recipe.prompt}&rdquo;</p>
+                    </div>
+                  )}
+                  {recipe.finalVideoFlow && recipe.finalVideoFlow.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Final Video Flow ({recipe.finalVideoFlow.length} steps)</p>
+                      <p className="text-xs text-smoked-charcoal/60 mt-1">
+                        {recipe.finalVideoFlow.map((s, i) => `${i + 1}. ${s}`).join(" → ")}
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-xs text-smoked-charcoal/50">
+                    {recipe.part1Start?.instructions.length || 0} start steps ·{" "}
+                    {recipe.part2Content?.instructions.length || 0} content steps ·{" "}
+                    {recipe.part3End?.instructions.length || 0} end steps ·{" "}
+                    {recipe.recordSteps?.length || 0} record steps
+                  </p>
+                </div>
+              );
+            })()}
+
             {/* Weekly Heat — deadlines with clean labels */}
             {(clip.idea_due_date || clip.clip_due_date || clip.final_cut_due || clip.approval_due || clip.scheduled_date) && (
               <div className="mt-6 card p-4 bg-sandstone-cream/50">
@@ -1708,6 +1918,15 @@ function ClipDetailModal({
           clip={clip}
           onClose={() => setShowClipEditor(false)}
           onSaved={() => { onRefresh(); setShowClipEditor(false); }}
+        />
+      )}
+
+      {/* Recipe Builder — planner-accessible, no library IP exposed */}
+      {showRecipeBuilder && (
+        <RecipeBuilder
+          clip={clip}
+          onClose={() => setShowRecipeBuilder(false)}
+          onSaved={() => { onRefresh(); setShowRecipeBuilder(false); }}
         />
       )}
     </div>

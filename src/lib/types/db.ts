@@ -296,6 +296,7 @@ export interface Database {
           template_id: string | null;
           planned_clip_id: string | null;
           production_notes: Record<string, unknown> | null;
+          recipe: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -327,6 +328,7 @@ export interface Database {
           template_id?: string | null;
           planned_clip_id?: string | null;
           production_notes?: Record<string, unknown> | null;
+          recipe?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -358,6 +360,7 @@ export interface Database {
           template_id?: string | null;
           planned_clip_id?: string | null;
           production_notes?: Record<string, unknown> | null;
+          recipe?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1297,6 +1300,7 @@ export interface Database {
           template_id: string | null;
           planned_clip_id: string | null;
           production_notes: Record<string, unknown> | null;
+          recipe: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
           people_count: number;

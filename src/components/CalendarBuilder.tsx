@@ -36,6 +36,7 @@ import {
   SHOT_RECIPES,
 } from "@/lib/shot-recipe-library";
 import { ClipEditor } from "@/components/ClipEditor";
+import { RecipeBuilder } from "@/components/RecipeBuilder";
 import { CreateFromLibraryModal } from "@/components/CreateFromLibraryModal";
 import type { Database } from "@/lib/types/db";
 
@@ -78,6 +79,7 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
   // Schedule modal
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editingClip, setEditingClip] = useState<Clip | null>(null);
+  const [recipeClip, setRecipeClip] = useState<Clip | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [liveDate, setLiveDate] = useState<string>("");
   const [submittedBy, setSubmittedBy] = useState("");
@@ -292,7 +294,7 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
                         {dayClips.slice(0, 3).map((c) => (
                           <button
                             key={c.id}
-                            onClick={() => setEditingClip(c)}
+                            onClick={() => isAdmin ? setEditingClip(c) : setRecipeClip(c)}
                             className="w-full text-left text-[9px] bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep rounded px-1 py-0.5 truncate transition-colors"
                             title={`Click to edit: ${c.title}`}
                           >
@@ -325,7 +327,7 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
                         {dayClips.map((c) => (
                           <button
                             key={c.id}
-                            onClick={() => setEditingClip(c)}
+                            onClick={() => isAdmin ? setEditingClip(c) : setRecipeClip(c)}
                             className="w-full text-left text-[10px] bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep rounded px-1.5 py-1 truncate transition-colors"
                             title={`Click to edit: ${c.title}`}
                           >
@@ -486,11 +488,20 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
         ) : null}
       </div>
 
-      {/* Clip Editor — edit scheduled clips and attach library items */}
+      {/* Clip Editor — edit scheduled clips and attach library items (admin only) */}
       {editingClip && (
         <ClipEditor
           clip={editingClip}
           onClose={() => setEditingClip(null)}
+          onSaved={load}
+        />
+      )}
+
+      {/* Recipe Builder — planner-accessible, no library IP exposed */}
+      {recipeClip && (
+        <RecipeBuilder
+          clip={recipeClip}
+          onClose={() => setRecipeClip(null)}
           onSaved={load}
         />
       )}

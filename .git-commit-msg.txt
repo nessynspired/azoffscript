@@ -1,21 +1,56 @@
-Hide IP gates silently — no locked messages
+Add Recipe Builder — planner builds production packs without seeing IP
 
-Planners were seeing "admin-only" locked messages on the
-Calendar Builder right panel, Growth System, Discovery, and
-Prompts pages. That rubs people the wrong way. Now non-admins
-just see nothing — the content is silently hidden.
+The planner can now build a full production pack (recipe) for each
+clip — goal, creator task, prompt, video parts, recording
+instructions, admin editing recipe — by picking from a blind bank
+of Shot Recipes, Recording Styles, and Transitions. She never sees
+the actual library pages or IP content.
 
-AdminOnly component now renders null for non-admins (no fallback
-message). The `label` prop is still accepted for backward
-compatibility but ignored.
+NEW: RecipeBuilder component (src/components/RecipeBuilder.tsx)
+  - Pick a Shot Recipe from dropdown (name + category + difficulty
+    only) → auto-fills ALL fields
+  - Pick a Recording Style (name + difficulty only) → auto-fills
+    how-to-record steps
+  - Pick a Transition (name + difficulty + category only) →
+    auto-fills start/end transition steps
+  - Edit every field manually after auto-fill
+  - Add/remove/reorder steps in: final video flow, 3 parts,
+    before recording, record steps, what to send, editing order
+  - NO access to: hooks, captions, prompts, market gaps, brand
+    moats, caption packages — that stays admin-only
 
-Calendar Builder: the right panel (libraries) is now completely
-absent for non-admin planners — no locked card, no message.
-Planners can still:
-  - Schedule templates from the Ready Bank onto the calendar
-  - Delete clips from the calendar
-  - Add content (free-form)
-  - Set deadlines, assign crew, change clip status
+NEW: recipe JSONB column on clips table
+  - SQL migration: supabase/add-recipe-column.sql
+  - Stores the full recipe per clip
+  - Updated TypeScript types in db.ts (Row, Insert, Update, view)
+
+INTEGRATION:
+  Run Sheet (ClipDetailModal):
+    - "Build Recipe" button — planner-accessible (canPlanContent)
+    - "Edit with Libraries" button — still admin-only
+    - Crew view: shows the recipe if it exists (full assignment:
+      goal, task, prompt, example, video flow, 3 parts, recording
+      instructions, what to send)
+    - Admin/planner view: recipe preview with step counts + edit
+      button
+    - Template view is now a fallback (shows only if no recipe)
+
+  Calendar Builder:
+    - Clicking a clip opens RecipeBuilder for planners
+    - Clicking a clip opens ClipEditor for admins (unchanged)
+    - Planner can build/edit recipes directly from the calendar
+
+WHAT THE PLANNER SEES:
+  - Dropdowns with names + difficulty only (no library text/IP)
+  - Auto-filled fields she can edit
+  - No access to library pages (Growth, Discovery, Prompts, etc.)
+
+WHAT THE CREW SEES:
+  - The full recipe as their assignment (if one exists)
+  - Goal, task, prompt, example response, video flow, 3 parts
+    with step-by-step instructions, recording checklist, record
+    steps, what to send
+  - Falls back to template view if no recipe exists
 
 Generated with [Devin](https://devin.ai)
 
