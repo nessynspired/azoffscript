@@ -275,18 +275,20 @@ export function RecipeBuilder({ clip, onClose, onSaved }: {
             <div>
               <p className="label">Shot Recipe {selectedRecipe && <span className="text-xs text-cactus-teal">✓ {selectedRecipe.name}</span>}</p>
               <button onClick={() => setShowRecipePicker(!showRecipePicker)} className="field w-full text-left text-sm text-smoked-charcoal/70 hover:text-desert-night">
-                {selectedRecipe ? `${selectedRecipe.name} — ${selectedRecipe.category}` : "Pick a shot recipe (optional starting point)…"}
+                {selectedRecipe ? `${selectedRecipe.name} — ${selectedRecipe.category} · ${selectedRecipe.contentFormatName}` : "Pick a shot recipe (optional starting point)…"}
               </button>
               {showRecipePicker && (
-                <div className="mt-2 border border-desert-night/10 rounded-xl bg-white/50 max-h-60 overflow-y-auto p-2 space-y-1">
+                <div className="mt-2 border border-desert-night/10 rounded-xl bg-white/50 max-h-72 overflow-y-auto p-2 space-y-1">
                   {SHOT_RECIPES.map(sr => (
                     <button key={sr.id} onClick={() => pickShotRecipe(sr)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-cactus-teal/10 flex items-center justify-between">
-                      <div>
+                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-cactus-teal/10 flex items-start justify-between">
+                      <div className="min-w-0">
                         <p className="text-sm text-desert-night font-bold">{sr.name}</p>
-                        <p className="text-xs text-smoked-charcoal/50">{sr.category} · {RECIPE_DIFF_COLORS[sr.difficulty]} {sr.difficulty}</p>
+                        <p className="text-xs text-smoked-charcoal/50 mt-0.5">{sr.category} · {RECIPE_DIFF_COLORS[sr.difficulty]} {sr.difficulty}</p>
+                        <p className="text-xs text-smoked-charcoal/60 mt-1 italic">{sr.goal}</p>
+                        <p className="text-[10px] text-copper-deep/70 mt-0.5">Format: {sr.contentFormatName}</p>
                       </div>
-                      {recipe.shotRecipeId === sr.id && <span className="text-cactus-teal text-sm">✓</span>}
+                      {recipe.shotRecipeId === sr.id && <span className="text-cactus-teal text-sm shrink-0">✓</span>}
                     </button>
                   ))}
                 </div>
@@ -297,18 +299,22 @@ export function RecipeBuilder({ clip, onClose, onSaved }: {
             <div>
               <p className="label">Recording Style {selectedStyle && <span className="text-xs text-cactus-teal">✓ {selectedStyle.name}</span>}</p>
               <button onClick={() => setShowStylePicker(!showStylePicker)} className="field w-full text-left text-sm text-smoked-charcoal/70 hover:text-desert-night">
-                {selectedStyle ? `${selectedStyle.name} — ${RECORDING_DIFF_COLORS[selectedStyle.difficulty]} ${selectedStyle.difficulty}` : "Pick a recording style (how to film)…"}
+                {selectedStyle ? `${selectedStyle.name} — ${RECORDING_DIFF_COLORS[selectedStyle.difficulty]} ${selectedStyle.difficulty} · ${selectedStyle.simpleDescription}` : "Pick a recording style (how to film)…"}
               </button>
               {showStylePicker && (
-                <div className="mt-2 border border-desert-night/10 rounded-xl bg-white/50 max-h-60 overflow-y-auto p-2 space-y-1">
+                <div className="mt-2 border border-desert-night/10 rounded-xl bg-white/50 max-h-72 overflow-y-auto p-2 space-y-1">
                   {RECORDING_STYLES.map(rs => (
                     <button key={rs.id} onClick={() => pickRecordingStyle(rs)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-cactus-teal/10 flex items-center justify-between">
-                      <div>
+                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-cactus-teal/10 flex items-start justify-between">
+                      <div className="min-w-0">
                         <p className="text-sm text-desert-night font-bold">{rs.name}</p>
-                        <p className="text-xs text-smoked-charcoal/50">{RECORDING_DIFF_COLORS[rs.difficulty]} {rs.difficulty}</p>
+                        <p className="text-xs text-smoked-charcoal/50 mt-0.5">{RECORDING_DIFF_COLORS[rs.difficulty]} {rs.difficulty}</p>
+                        <p className="text-xs text-smoked-charcoal/60 mt-1 italic">{rs.simpleDescription}</p>
+                        {rs.bestFor.length > 0 && (
+                          <p className="text-[10px] text-copper-deep/70 mt-0.5">Best for: {rs.bestFor.join(", ")}</p>
+                        )}
                       </div>
-                      {recipe.recordingStyleId === rs.id && <span className="text-cactus-teal text-sm">✓</span>}
+                      {recipe.recordingStyleId === rs.id && <span className="text-cactus-teal text-sm shrink-0">✓</span>}
                     </button>
                   ))}
                 </div>
@@ -319,18 +325,20 @@ export function RecipeBuilder({ clip, onClose, onSaved }: {
             <div>
               <p className="label">Transition {selectedTransition && <span className="text-xs text-cactus-teal">✓ {selectedTransition.name}</span>}</p>
               <button onClick={() => setShowTransitionPicker(!showTransitionPicker)} className="field w-full text-left text-sm text-smoked-charcoal/70 hover:text-desert-night">
-                {selectedTransition ? `${selectedTransition.name} — ${TRANSITION_DIFF_COLORS[selectedTransition.difficulty]} ${selectedTransition.difficulty}` : "Pick a transition (how clips connect)…"}
+                {selectedTransition ? `${selectedTransition.name} — ${TRANSITION_DIFF_COLORS[selectedTransition.difficulty]} ${selectedTransition.difficulty} · ${selectedTransition.simpleDescription}` : "Pick a transition (how clips connect)…"}
               </button>
               {showTransitionPicker && (
-                <div className="mt-2 border border-desert-night/10 rounded-xl bg-white/50 max-h-60 overflow-y-auto p-2 space-y-1">
+                <div className="mt-2 border border-desert-night/10 rounded-xl bg-white/50 max-h-72 overflow-y-auto p-2 space-y-1">
                   {TRANSITIONS.map(t => (
                     <button key={t.id} onClick={() => pickTransition(t)}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-cactus-teal/10 flex items-center justify-between">
-                      <div>
+                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-cactus-teal/10 flex items-start justify-between">
+                      <div className="min-w-0">
                         <p className="text-sm text-desert-night font-bold">{t.name}</p>
-                        <p className="text-xs text-smoked-charcoal/50">{TRANSITION_DIFF_COLORS[t.difficulty]} {t.difficulty} · {t.category}</p>
+                        <p className="text-xs text-smoked-charcoal/50 mt-0.5">{TRANSITION_DIFF_COLORS[t.difficulty]} {t.difficulty} · {t.category}</p>
+                        <p className="text-xs text-smoked-charcoal/60 mt-1 italic">{t.simpleDescription}</p>
+                        <p className="text-[10px] text-copper-deep/70 mt-0.5">Viewer sees: {t.whatViewersSee}</p>
                       </div>
-                      {recipe.transitionId === t.id && <span className="text-cactus-teal text-sm">✓</span>}
+                      {recipe.transitionId === t.id && <span className="text-cactus-teal text-sm shrink-0">✓</span>}
                     </button>
                   ))}
                 </div>
