@@ -32,6 +32,7 @@ const CREW_MORE: NavItem[] = [
   { href: "/portal/crew", label: "Crew", info: "The crew directory — see everyone in the room, their roles, and tags." },
   { href: "/portal/sparks", label: "Spark Board", info: "Drop raw content ideas and vote on ideas you like. Best ones become Ready Bank templates." },
   { href: "/portal/transitions", label: "Transitions", info: "How to connect your clip to the next person's clip. Simple step-by-step instructions for every transition." },
+  { href: "/portal/recording-styles", label: "Recording Styles", info: "How to film your video — direct to camera, natural moment, reaction, POV, and more. Not the transition, the actual filming style." },
   { href: "/portal/brand-locker", label: "Brand Locker", info: "Official brand assets — logos, colors, captions, hashtags. Copy anything you need for content." },
   { href: "/portal/ground-rules", label: "Ground Rules", info: "How the room works — core rules, comfort guidelines, and the content flow." },
   { href: "/portal/quick-terms", label: "Quick Terms", info: "The quick room rules you agreed to when you joined. Required before dropping clips." },
@@ -50,6 +51,7 @@ const PLANNER_PRIMARY: NavItem[] = [
 const PLANNER_MORE: NavItem[] = [
   { href: "/portal/sparks", label: "Spark Board", info: "Drop raw content ideas and vote on ideas you like. Best ones become Ready Bank templates." },
   { href: "/portal/transitions", label: "Transitions", info: "How to connect your clip to the next person's clip. Simple step-by-step instructions for every transition." },
+  { href: "/portal/recording-styles", label: "Recording Styles", info: "How to film your video — direct to camera, natural moment, reaction, POV, and more. Not the transition, the actual filming style." },
   { href: "/portal/gear-board", label: "Gear Board", info: "Admin only. Track personalized merch for each crew member — tumblers, shirts, badges, cards." },
   { href: "/portal/recycle-bin", label: "Recycle Bin", info: "Admin only. Restore deleted clips, assignments, and trends before they're gone forever." },
   { href: "/portal/crew-profiles", label: "Crew Profiles", info: "Admin only. Control who appears on the public website and how they're shown." },
