@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
 import { AnimatedIntro } from "@/components/AnimatedIntro";
 import { SocialEmbed } from "@/components/SocialEmbed";
+import { NewUserOnboarding } from "@/components/NewUserOnboarding";
 import { getTemplate, getExampleFor } from "@/lib/quick-drop-templates";
 import type { Database } from "@/lib/types/db";
 
@@ -211,6 +212,9 @@ export default function LobbyPage() {
           </p>
         </div>
       </section>
+
+      {/* START HERE — onboarding checklist for new crew members */}
+      <NewUserOnboarding />
 
       {/* YOUR WEEK — one clean card with quick drop buttons */}
       <section>
