@@ -8,9 +8,11 @@ import { notifyMember } from "@/lib/notify";
 import {
   QUICK_DROP_TEMPLATES,
   CONTENT_BUCKETS,
+  TOPIC_WORLDS,
   getTemplatesByBucket,
   type QuickDropTemplate,
   type EffortLabel,
+  type TopicWorld,
 } from "@/lib/quick-drop-templates";
 import {
   OFF_SCRIPT_BY_TEMPLATE_ID,
@@ -47,6 +49,7 @@ export default function ReadyBankPage() {
   const [effortFilter, setEffortFilter] = useState<string | null>(null);
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [bucketFilter, setBucketFilter] = useState<string | null>(null);
+  const [topicWorldFilter, setTopicWorldFilter] = useState<TopicWorld | null>(null);
   const [versionFilter, setVersionFilter] = useState<"current" | "offscript" | "both">("current");
   const [scriptLayerFilters, setScriptLayerFilters] = useState<string[]>([]);
 
@@ -165,6 +168,7 @@ export default function ReadyBankPage() {
   const filteredTemplates = QUICK_DROP_TEMPLATES.filter((t) => {
     if (effortFilter && t.effort !== effortFilter) return false;
     if (bucketFilter && t.bucket !== bucketFilter) return false;
+    if (topicWorldFilter && t.topicWorld !== topicWorldFilter) return false;
     if (tagFilters.includes("homeFriendly") && !t.homeFriendly) return false;
     if (tagFilters.includes("noTalking") && t.needsTalking) return false;
     if (tagFilters.includes("transition") && t.bucket !== "Transitions") return false;
@@ -275,6 +279,28 @@ export default function ReadyBankPage() {
           </div>
         </div>
 
+        {/* Topic World filter */}
+        <div>
+          <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Topic World</p>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setTopicWorldFilter(null)}
+              className={`chip !text-[10px] ${!topicWorldFilter ? "chip-copper" : "chip-cream"}`}
+            >All</button>
+            {TOPIC_WORLDS.map((w) => {
+              const count = QUICK_DROP_TEMPLATES.filter((t) => t.topicWorld === w).length;
+              if (count === 0) return null;
+              return (
+                <button
+                  key={w}
+                  onClick={() => setTopicWorldFilter(w === topicWorldFilter ? null : w)}
+                  className={`chip !text-[10px] ${topicWorldFilter === w ? "chip-copper" : "chip-cream"}`}
+                >{w}</button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Bucket filter */}
         <div>
           <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Category</p>
@@ -370,7 +396,7 @@ export default function ReadyBankPage() {
         <div className="card p-10 text-center">
           <p className="font-display text-2xl text-desert-night">No formats match those filters.</p>
           <button
-            onClick={() => { setEffortFilter(null); setTagFilters([]); setBucketFilter(null); setSearch(""); }}
+            onClick={() => { setEffortFilter(null); setTagFilters([]); setBucketFilter(null); setTopicWorldFilter(null); setSearch(""); }}
             className="btn btn-secondary btn-sm mt-4"
           >Clear filters</button>
         </div>
@@ -512,7 +538,7 @@ function ReadyBankCard({
           <p className="font-display text-lg text-desert-night">
             {showB && offScript ? offScript.scriptTitle : template.name}
           </p>
-          <p className="text-xs text-smoked-charcoal/50 mt-0.5">{template.bucket}</p>
+          <p className="text-xs text-smoked-charcoal/50 mt-0.5">{template.bucket} · {template.topicWorld}</p>
         </div>
         <button onClick={onToggleSave} className="text-2xl shrink-0" title={isSaved ? "Saved" : "Save for later"}>
           {isSaved ? "🔖" : "📑"}
@@ -549,6 +575,53 @@ function ReadyBankCard({
       {!showB && (
         <>
           <p className="text-sm text-smoked-charcoal/70">{template.description}</p>
+
+          {/* Clear instructions — what to do, what to send, examples */}
+          {template.whatThisIs && (
+            <div className="bg-desert-night/5 rounded-lg p-2 space-y-2">
+              <div>
+                <p className="text-xs font-bold text-desert-night/50 uppercase">What this is</p>
+                <p className="text-sm text-desert-night">{template.whatThisIs}</p>
+              </div>
+              {template.whatEachPersonDoes && (
+                <div>
+                  <p className="text-xs font-bold text-desert-night/50 uppercase">What each person does</p>
+                  <p className="text-sm text-desert-night">{template.whatEachPersonDoes}</p>
+                </div>
+              )}
+              {template.whatToSend && (
+                <div>
+                  <p className="text-xs font-bold text-desert-night/50 uppercase">What to send</p>
+                  <p className="text-sm text-desert-night">{template.whatToSend}</p>
+                </div>
+              )}
+              {template.examplePrompts && template.examplePrompts.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-desert-night/50 uppercase">Example prompts</p>
+                  <ul className="space-y-0.5">
+                    {template.examplePrompts.map((p, i) => (
+                      <li key={i} className="text-sm text-smoked-charcoal/70 flex gap-1.5">
+                        <span className="text-copper-clay shrink-0">→</span>
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {template.whyItWorks && (
+                <div>
+                  <p className="text-xs font-bold text-desert-night/50 uppercase">Why it works</p>
+                  <p className="text-sm text-desert-night">{template.whyItWorks}</p>
+                </div>
+              )}
+              {template.bestFor && (
+                <div>
+                  <p className="text-xs font-bold text-desert-night/50 uppercase">Best for</p>
+                  <p className="text-sm text-desert-night">{template.bestFor}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="bg-cactus-teal/10 rounded-lg p-2">
             <p className="text-xs font-bold text-desert-night/50 uppercase">Search phrase</p>
