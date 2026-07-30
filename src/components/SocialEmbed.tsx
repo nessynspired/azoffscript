@@ -23,21 +23,24 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
   // This makes YouTube embeds appear instantly instead of loading the full player.
   const [ytActivated, setYtActivated] = useState(false);
 
-  // In compact mode, scale the embed down and clip it to a small preview area
-  const scale = compact ? 0.42 : 1;
-  // Wrapper clips the scaled embed to a small fixed-height preview
-  const compactWrapper = compact
-    ? { height: "130px", overflow: "hidden" as const, position: "relative" as const }
-    : {};
-  const compactInner = compact
-    ? { transform: `scale(${scale})`, transformOrigin: "top center" as const, width: `${100 / scale}%`, marginLeft: `${(1 - 1 / scale) * 50}%` }
-    : {};
-
   // Detect platform
   const isYouTube = /youtube\.com|youtu\.be/i.test(url);
   const isTikTok = /tiktok\.com/i.test(url);
   const isInstagram = /instagram\.com/i.test(url);
   const isFacebook = /facebook\.com|fb\.watch|fb\.com/i.test(url);
+
+  // In compact mode, scale the embed down and clip it to a small preview area.
+  // YouTube is landscape so 130px is fine. TikTok/Instagram are vertical (portrait)
+  // so they need a taller wrapper or the video gets cropped in half.
+  const isPortrait = isTikTok || isInstagram;
+  const scale = compact ? (isPortrait ? 0.5 : 0.42) : 1;
+  const compactHeight = compact ? (isPortrait ? "320px" : "130px") : "auto";
+  const compactWrapper = compact
+    ? { height: compactHeight, overflow: "hidden" as const, position: "relative" as const }
+    : {};
+  const compactInner = compact
+    ? { transform: `scale(${scale})`, transformOrigin: "top center" as const, width: `${100 / scale}%`, marginLeft: `${(1 - 1 / scale) * 50}%` }
+    : {};
 
   // YouTube — direct iframe, no script needed
   const ytEmbedUrl = (() => {
