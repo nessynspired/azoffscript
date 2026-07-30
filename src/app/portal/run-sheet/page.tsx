@@ -1316,8 +1316,8 @@ function ClipDetailModal({
 
         {/* Video player — plays uploaded videos right in the modal */}
         {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
-          <div className="mt-4">
-            <VideoPlayer filePath={clip.file_path} title={clip.title} className="aspect-video" />
+          <div className="mt-4 max-h-[500px]">
+            <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[500px]" />
           </div>
         )}
 
@@ -1874,10 +1874,10 @@ function ThisWeekTab({
                       <SocialEmbed url={clip.link} title={clip.title} compact />
                     </div>
                   )}
-                  {/* Video player for uploaded videos — compact to keep card small */}
+                  {/* Video player for uploaded videos — use object-contain so vertical videos aren't cropped */}
                   {clip?.file_path && (clip.type === "video" || clip.type === "final_cut") && (
-                    <div className="bg-desert-night/5 max-h-[130px] overflow-hidden">
-                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="aspect-video" />
+                    <div className="bg-desert-night/5">
+                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[200px] object-contain" />
                     </div>
                   )}
 

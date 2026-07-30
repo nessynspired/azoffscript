@@ -66,7 +66,7 @@ export function VideoPlayer({
       controls
       playsInline
       preload="metadata"
-      className={`w-full rounded-xl bg-desert-night ${className}`}
+      className={`w-full rounded-xl bg-desert-night object-contain ${className}`}
       title={title}
     />
   );

@@ -1,19 +1,21 @@
-Fix cropped/cut-off video embeds — TikTok/Instagram no longer clipped
+Fix video cropping on This Week tab assignment cards
 
-Two fixes for videos being half-covered or cropped:
+The "Your Part" cards on the This Week tab were cropping videos:
 
-1. Watch tab (Run Sheet) — social embeds (TikTok, Instagram) were
-   forced into aspect-[9/16] overflow-hidden containers, which
-   clipped the embed iframe. The TikTok player is ~700px tall
-   (header + video + buttons), so a 9:16 box cut it in half.
-   Removed the aspect ratio constraint — embeds now size naturally
-   and the full video is visible.
+1. Uploaded videos were wrapped in max-h-[130px] overflow-hidden
+   with aspect-video (16:9), which badly cropped vertical (9:16)
+   videos. Replaced with max-h-[200px] and object-contain so the
+   full video shows without being cut off.
 
-2. SocialEmbed compact mode — the portrait wrapper height was
-   320px, but a 0.5x scaled TikTok embed is ~350px tall, so the
-   bottom was getting cut off. Increased to 360px so the full
-   scaled video shows in compact previews (Recent Drops, lobby,
-   my-kit, notifications).
+2. Added object-contain to VideoPlayer's default classes so
+   vertical videos are always letterboxed (full video visible)
+   rather than cropped to fill a container.
+
+3. ClipDetailModal — removed aspect-video constraint on uploaded
+   videos so vertical videos display properly in the modal too.
+
+The compact TikTok embed fix from the previous commit (360px
+wrapper height) also applies to these cards.
 
 Generated with [Devin](https://devin.ai)
 
