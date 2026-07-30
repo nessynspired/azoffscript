@@ -1,41 +1,19 @@
-Add Create from Library modal + edit posted clips
+Fix cropped/cut-off video embeds — TikTok/Instagram no longer clipped
 
-You can now create a clip from scratch by selecting items from
-all the libraries, and edit posted/live clips with library items.
+Two fixes for videos being half-covered or cropped:
 
-NEW: CreateFromLibraryModal component
-  (src/components/CreateFromLibraryModal.tsx)
-  A modal that lets you build a clip from scratch using library
-  items. 8 tabs:
-    🎬 Format — pick a Ready Bank template (optional)
-    🪝 Hooks — multi-select from the Hook Library
-    💡 Prompts — multi-select from Prompt Intelligence
-    📝 Captions — multi-select from Caption Frameworks
-    🔀 Transitions — multi-select from the Transition Library
-    📹 Recording — single-select from Recording Style Library
-    📋 Recipes — single-select from Shot Recipe Library
-    ✏️ Notes — free text production notes
-  Plus: title, dates (drop by, cut ready, greenlight, goes live),
-  caption, and crew assignment.
-  Shows a summary of all attached items at the top.
-  Creates the clip with status "Planned" and saves all library
-  selections to production_notes.
+1. Watch tab (Run Sheet) — social embeds (TikTok, Instagram) were
+   forced into aspect-[9/16] overflow-hidden containers, which
+   clipped the embed iframe. The TikTok player is ~700px tall
+   (header + video + buttons), so a 9:16 box cut it in half.
+   Removed the aspect ratio constraint — embeds now size naturally
+   and the full video is visible.
 
-WIRED INTO:
-  1. Calendar Builder (Ready Bank) — "+ Create from Library"
-     button in the top bar
-  2. Run Sheet — "📚 Create from Library" button next to the
-     existing "+ Add Content" button
-
-POSTED/LIVE CLIPS NOW EDITABLE:
-  The Watch tab (posted clips) already opened the ClipDetailModal
-  on click. That modal already has the "📚 Edit with Libraries"
-  button (added in previous commit) that opens the ClipEditor.
-  Added a more visible "📚 Edit details & library items" button
-  on each Watch tab card to make this more discoverable.
-  This means you can edit posted clips — change the title, dates,
-  caption, and attach/update library items (hooks, prompts,
-  captions, transitions, recording styles, shot recipes, notes).
+2. SocialEmbed compact mode — the portrait wrapper height was
+   320px, but a 0.5x scaled TikTok embed is ~350px tall, so the
+   bottom was getting cut off. Increased to 360px so the full
+   scaled video shows in compact previews (Recent Drops, lobby,
+   my-kit, notifications).
 
 Generated with [Devin](https://devin.ai)
 

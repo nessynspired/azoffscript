@@ -32,9 +32,11 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
   // In compact mode, scale the embed down and clip it to a small preview area.
   // YouTube is landscape so 130px is fine. TikTok/Instagram are vertical (portrait)
   // so they need a taller wrapper or the video gets cropped in half.
+  // TikTok embed v2 iframe is ~700px tall (header + video + buttons).
+  // At scale 0.5 → 350px visible, so wrapper needs ~360px to show the full video.
   const isPortrait = isTikTok || isInstagram;
   const scale = compact ? (isPortrait ? 0.5 : 0.42) : 1;
-  const compactHeight = compact ? (isPortrait ? "320px" : "130px") : "auto";
+  const compactHeight = compact ? (isPortrait ? "360px" : "130px") : "auto";
   const compactWrapper = compact
     ? { height: compactHeight, overflow: "hidden" as const, position: "relative" as const }
     : {};
