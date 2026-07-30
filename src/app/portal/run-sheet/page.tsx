@@ -2540,7 +2540,7 @@ function WatchTab({
                 {hasUploadedVideo ? (
                   <VideoPlayer filePath={clip.file_path!} title={clip.title} className="aspect-[9/16]" />
                 ) : isSocialLink && watchUrl ? (
-                  <div className="flex justify-center bg-desert-night/10">
+                  <div className="flex justify-center py-2">
                     <SocialEmbed url={watchUrl} title={clip.title} />
                   </div>
                 ) : watchUrl ? (

@@ -164,16 +164,23 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
   }
 
   // TikTok — iframe embed (reliable, plays inline, no redirect)
+  // The TikTok player is naturally ~340-380px wide. The container must match
+  // that width or the video sits tiny in the middle of a large dark box.
   if (isTikTok && tiktokVideoId) {
     const tiktokEmbedUrl = `https://www.tiktok.com/embed/v2/${tiktokVideoId}`;
+    const tiktokWidth = compact ? "340px" : "380px";
+    const tiktokHeight = compact ? "700px" : "700px";
     return (
-      <div className="rounded-xl overflow-hidden bg-desert-night flex justify-center" style={compactWrapper}>
+      <div
+        className="rounded-xl overflow-hidden bg-desert-night mx-auto"
+        style={{ maxWidth: tiktokWidth, width: "100%", ...compactWrapper }}
+      >
         <div style={compactInner} className="w-full">
           <iframe
             src={tiktokEmbedUrl}
             title={title ?? "TikTok video"}
             className="w-full"
-            style={{ border: "none", minHeight: compact ? "310px" : "700px", maxWidth: "380px", margin: "0 auto", display: "block" }}
+            style={{ border: "none", minHeight: tiktokHeight, width: "100%", display: "block" }}
             allow="encrypted-media; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             scrolling="no"

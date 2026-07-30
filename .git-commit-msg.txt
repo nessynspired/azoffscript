@@ -1,47 +1,25 @@
-Gate IP-sensitive content from crew — planner-only access
+Fix TikTok embed sizing — constrain container to video width
 
-Crew members can no longer see brand IP (captions, hashtags, hooks,
-prompts, market gaps, brand moats, do-not-chase rules, etc.).
-Only planners/admins can access these.
+ROOT CAUSE:
+  The TikTok embed iframe was hardcoded to maxWidth: 380px (the
+  TikTok player's natural width) with margin: 0 auto, but the
+  outer container expanded to full width. This created a large
+  dark blue box with a small 380px video centered inside it —
+  the "video in a small corner of the blue container" issue.
 
-NAVIGATION (PortalNav.tsx):
-  Removed from CREW_MORE menu:
-    - Prompts
-    - Discovery
-    - Growth System
-  Brand Locker stays visible to crew but captions/hashtags tabs
-  are hidden (crew only sees logos, mascot, colors, formats,
-  templates).
+  On the Watch tab (cards ~400px wide) this meant dark padding
+  on both sides of the video. In the ClipDetailModal (672px
+  wide) the video looked tiny in the middle of a huge dark box.
 
-GROWTH SYSTEM (all 9 documents):
-  New layout.tsx at /portal/growth/ wraps all growth pages in
-  <PlannerOnly>. Crew who navigate directly to any growth URL
-  see a "planner-only" locked message instead.
+FIX:
+  Constrain the SocialEmbed outer container to match the video
+  width (380px full, 340px compact) with mx-auto centering.
+  The dark background now only covers the video area, not the
+  full card width. The video fills its container properly.
 
-DISCOVERY LIBRARY (/portal/discovery):
-  Wrapped in <PlannerOnly label="The Discovery Library">.
-  Crew see locked message.
-
-PROMPTS LIBRARY (/portal/prompts):
-  Wrapped in <PlannerOnly label="The Prompt Library">.
-  Crew see locked message.
-
-BRAND LOCKER (/portal/brand-locker):
-  Captions and Hashtags tabs hidden from crew. Crew see:
-  Logos, Mascot, Colors, Formats, Gear Templates.
-  Planners see all tabs including Captions and Hashtags.
-
-CLIP DETAIL MODAL (Run Sheet):
-  Caption, idea_text (brief), and do_not_post_notes are now
-  planner-only. Crew see the clip title, video, template
-  instructions, deadlines, and status — but not the caption,
-  brief, or do-not-post notes. This prevents crew from copying
-  captions/hashtags/strategy from scheduled clips.
-
-NEW COMPONENT:
-  src/components/PlannerOnly.tsx — reusable wrapper that checks
-  member.role === "admin" || member.can_plan_content. Shows a
-  locked message to non-planners, renders children for planners.
+  Also removed the redundant bg-desert-night/10 wrapper on the
+  Watch tab that was adding a second layer of blue around the
+  already-sized embed.
 
 Generated with [Devin](https://devin.ai)
 
