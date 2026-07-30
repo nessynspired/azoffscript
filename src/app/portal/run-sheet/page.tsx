@@ -11,6 +11,7 @@ import { MascotImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { SocialEmbed } from "@/components/SocialEmbed";
 import { InfoTooltip } from "@/components/InfoTooltip";
+import { ClipEditor } from "@/components/ClipEditor";
 import type { Database, ClipStatus, Platform, AssignmentRole, AssignmentTaskType } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
@@ -1176,6 +1177,7 @@ function ClipDetailModal({
   });
   const [savingAssignment, setSavingAssignment] = useState(false);
   const [showAssignForm, setShowAssignForm] = useState(false);
+  const [showClipEditor, setShowClipEditor] = useState(false);
 
   async function createAssignment() {
     if (!assignForm.member_id || !currentMemberId) return;
@@ -1276,7 +1278,14 @@ function ClipDetailModal({
             <h2 className="font-display text-2xl md:text-3xl text-desert-night mt-2 leading-none break-words">{displayTitle(clip)}</h2>
             <p className="text-sm text-smoked-charcoal/60 mt-1">{droppedByLabel(clip)}</p>
           </div>
-          <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">✕</button>
+          <div className="flex items-center gap-2 shrink-0">
+            {canPlanContent && (
+              <button onClick={() => setShowClipEditor(true)} className="btn btn-secondary btn-sm !text-xs">
+                📚 Edit with Libraries
+              </button>
+            )}
+            <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">✕</button>
+          </div>
         </div>
 
         {clip.link && (
@@ -1669,6 +1678,15 @@ function ClipDetailModal({
           </div>
         )}
       </div>
+
+      {/* Clip Editor — attach library items (hooks, prompts, captions, transitions, etc.) */}
+      {showClipEditor && (
+        <ClipEditor
+          clip={clip}
+          onClose={() => setShowClipEditor(false)}
+          onSaved={() => { onRefresh(); setShowClipEditor(false); }}
+        />
+      )}
     </div>
   );
 }

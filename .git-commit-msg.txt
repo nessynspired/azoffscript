@@ -1,36 +1,49 @@
-Add Calendar Builder view to Ready Bank — 3-panel planning workspace
+Add Clip Editor — edit scheduled clips and attach library items
 
-The Ready Bank now has a toggle between List View (the existing
-template browser) and Calendar Builder View (a new 3-panel workspace).
+You can now click any clip on the calendar (both the Ready Bank
+Calendar Builder and the Run Sheet calendar) to open the Clip Editor
+and attach library items to it.
 
-Calendar Builder layout:
-  LEFT: Ready Bank templates (compact, searchable, click to select)
-  CENTER: Big calendar (week/month toggle) showing scheduled clips
-  RIGHT: Libraries panel with 6 tabs:
-    - Hooks (from growth hook library)
-    - Prompts (from growth prompt intelligence)
-    - Captions (from growth caption frameworks)
-    - Transitions (from transition library)
-    - Recording Styles (from recording style library)
-    - Shot Recipes (from shot recipe library)
+NEW: production_notes JSONB column on clips table
+  SQL migration: supabase/add-production-notes.sql
+  Stores selected library items as JSON:
+    { hooks: [], prompts: [], captions: [], transitions: [],
+      recordingStyle: null, shotRecipe: null, notes: "" }
+  Run this migration in Supabase before using the editor.
 
-When you select a Ready Bank template on the left, the right panel
-automatically shows matching library items — hooks that work with
-that format, prompts for that category, caption frameworks that fit,
-etc. This is the "put together from libraries" part.
+NEW: ClipEditor component (src/components/ClipEditor.tsx)
+  A modal that opens when you click a clip on the calendar.
+  Two sections:
+    1. Clip Details — edit title, dates (drop by, cut ready,
+       greenlight, goes live), and caption
+    2. Library Items — 7 tabs to attach items from the libraries:
+       🪝 Hooks — multi-select from the Hook Library
+       💡 Prompts — multi-select from Prompt Intelligence
+       📝 Captions — multi-select from Caption Frameworks
+       🎬 Transitions — multi-select from the Transition Library
+       📹 Recording — single-select from Recording Style Library
+       📋 Recipes — single-select from Shot Recipe Library
+       ✏️ Notes — free text production notes
+  Shows a summary of all attached items at the top.
+  Search within each library tab.
+  Save button writes to the clips table (title, dates, caption,
+  production_notes).
 
-Click "Schedule" on the selected template to open the date picker
-modal with crew assignment, deadlines, and goes-live date — same
-flow as the existing Ready Bank scheduling, but integrated into
-the calendar workspace.
+WIRED INTO:
+  1. Calendar Builder (Ready Bank) — click any clip on the week or
+     month calendar to open the editor
+  2. Run Sheet — ClipDetailModal now has an "Edit with Libraries"
+     button (visible to planners/admins) that opens the ClipEditor
+     on top of the existing detail modal
 
-New files:
-  src/components/CalendarBuilder.tsx — the 3-panel workspace component
-
-Modified files:
-  src/app/portal/ready-bank/page.tsx — added List/Calendar Builder
-  toggle in the header, conditionally renders CalendarBuilder when
-  in builder mode
+This means you can now:
+  - Schedule a template from the Ready Bank onto the calendar
+  - Click it to open the editor
+  - Attach hooks, prompts, captions, transitions, recording styles,
+    and shot recipes from the libraries
+  - Add production notes
+  - Save — everything persists to the database
+  - The crew can see what library items are attached to each clip
 
 Generated with [Devin](https://devin.ai)
 

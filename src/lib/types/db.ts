@@ -295,6 +295,7 @@ export interface Database {
           theme_id: string | null;
           template_id: string | null;
           planned_clip_id: string | null;
+          production_notes: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -325,6 +326,7 @@ export interface Database {
           theme_id?: string | null;
           template_id?: string | null;
           planned_clip_id?: string | null;
+          production_notes?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -355,6 +357,7 @@ export interface Database {
           theme_id?: string | null;
           template_id?: string | null;
           planned_clip_id?: string | null;
+          production_notes?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1293,6 +1296,7 @@ export interface Database {
           theme_id: string | null;
           template_id: string | null;
           planned_clip_id: string | null;
+          production_notes: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
           people_count: number;

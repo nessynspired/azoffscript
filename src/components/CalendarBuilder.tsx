@@ -35,6 +35,7 @@ import {
 import {
   SHOT_RECIPES,
 } from "@/lib/shot-recipe-library";
+import { ClipEditor } from "@/components/ClipEditor";
 import type { Database } from "@/lib/types/db";
 
 type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content">;
@@ -74,6 +75,7 @@ export function CalendarBuilder({ member, members }: {
 
   // Schedule modal
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [editingClip, setEditingClip] = useState<Clip | null>(null);
   const [liveDate, setLiveDate] = useState<string>("");
   const [submittedBy, setSubmittedBy] = useState("");
   const [cutReadyBy, setCutReadyBy] = useState("");
@@ -282,9 +284,14 @@ export function CalendarBuilder({ member, members }: {
                       </p>
                       <div className="space-y-0.5 mt-0.5">
                         {dayClips.slice(0, 3).map((c) => (
-                          <div key={c.id} className="text-[9px] bg-copper-clay/15 text-copper-deep rounded px-1 py-0.5 truncate" title={c.title}>
+                          <button
+                            key={c.id}
+                            onClick={() => setEditingClip(c)}
+                            className="w-full text-left text-[9px] bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep rounded px-1 py-0.5 truncate transition-colors"
+                            title={`Click to edit: ${c.title}`}
+                          >
                             {c.title}
-                          </div>
+                          </button>
                         ))}
                         {dayClips.length > 3 && (
                           <p className="text-[8px] text-smoked-charcoal/40">+{dayClips.length - 3} more</p>
@@ -310,9 +317,14 @@ export function CalendarBuilder({ member, members }: {
                       </p>
                       <div className="space-y-1 mt-1">
                         {dayClips.map((c) => (
-                          <div key={c.id} className="text-[10px] bg-copper-clay/15 text-copper-deep rounded px-1.5 py-1 truncate" title={c.title}>
+                          <button
+                            key={c.id}
+                            onClick={() => setEditingClip(c)}
+                            className="w-full text-left text-[10px] bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep rounded px-1.5 py-1 truncate transition-colors"
+                            title={`Click to edit: ${c.title}`}
+                          >
                             {c.title}
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -465,6 +477,15 @@ export function CalendarBuilder({ member, members }: {
           </div>
         </div>
       </div>
+
+      {/* Clip Editor — edit scheduled clips and attach library items */}
+      {editingClip && (
+        <ClipEditor
+          clip={editingClip}
+          onClose={() => setEditingClip(null)}
+          onSaved={load}
+        />
+      )}
 
       {/* Schedule modal */}
       {showScheduleModal && selectedTemplate && (
