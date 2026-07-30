@@ -12,6 +12,7 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { SocialEmbed } from "@/components/SocialEmbed";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { ClipEditor } from "@/components/ClipEditor";
+import { CreateFromLibraryModal } from "@/components/CreateFromLibraryModal";
 import type { Database, ClipStatus, Platform, AssignmentRole, AssignmentTaskType } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
@@ -153,6 +154,7 @@ export default function RunSheetPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "watch" | "planner">("week");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showCreateFromLibrary, setShowCreateFromLibrary] = useState(false);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -297,12 +299,20 @@ export default function RunSheetPage() {
           <p className="text-smoked-charcoal/70 mt-2 text-lg">This is what&apos;s moving next.</p>
         </div>
         {canPlanContent && (
-          <button
-            onClick={() => setShowTemplatePicker(!showTemplatePicker)}
-            className="btn btn-primary btn-sm"
-          >
-            + Add Content
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowCreateFromLibrary(true)}
+              className="btn btn-secondary btn-sm"
+            >
+              📚 Create from Library
+            </button>
+            <button
+              onClick={() => setShowTemplatePicker(!showTemplatePicker)}
+              className="btn btn-primary btn-sm"
+            >
+              + Add Content
+            </button>
+          </div>
         )}
       </div>
 
@@ -312,6 +322,16 @@ export default function RunSheetPage() {
           member={member}
           members={members}
           onCreated={async () => { setShowTemplatePicker(false); await load(); }}
+        />
+      )}
+
+      {/* Create from Library — build a clip from scratch using library items */}
+      {showCreateFromLibrary && canPlanContent && member && (
+        <CreateFromLibraryModal
+          member={{ id: member.id, name: member.name }}
+          members={members}
+          onClose={() => setShowCreateFromLibrary(false)}
+          onCreated={async () => { setShowCreateFromLibrary(false); await load(); }}
         />
       )}
 
@@ -2561,6 +2581,11 @@ function WatchTab({
                     Watch on {PLATFORM_LABEL[(clip.destination ?? "").toLowerCase()] ?? "platform"} →
                   </a>
                 )}
+
+                {/* Edit with libraries — for planners/admins */}
+                <button onClick={() => onSelectClip(clip.id)} className="btn btn-ghost btn-sm !text-xs mt-2 w-full">
+                  📚 Edit details & library items
+                </button>
               </div>
             </div>
           );

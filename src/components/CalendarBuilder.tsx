@@ -36,6 +36,7 @@ import {
   SHOT_RECIPES,
 } from "@/lib/shot-recipe-library";
 import { ClipEditor } from "@/components/ClipEditor";
+import { CreateFromLibraryModal } from "@/components/CreateFromLibraryModal";
 import type { Database } from "@/lib/types/db";
 
 type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content">;
@@ -76,6 +77,7 @@ export function CalendarBuilder({ member, members }: {
   // Schedule modal
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editingClip, setEditingClip] = useState<Clip | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [liveDate, setLiveDate] = useState<string>("");
   const [submittedBy, setSubmittedBy] = useState("");
   const [cutReadyBy, setCutReadyBy] = useState("");
@@ -208,6 +210,7 @@ export function CalendarBuilder({ member, members }: {
         <div className="flex items-center gap-2">
           <button onClick={() => { setViewMode("week"); setMonthOffset(0); }} className={`chip !text-xs ${viewMode === "week" ? "chip-copper" : "chip-cream"}`}>Week</button>
           <button onClick={() => { setViewMode("month"); setWeekOffset(0); }} className={`chip !text-xs ${viewMode === "month" ? "chip-copper" : "chip-cream"}`}>Month</button>
+          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary btn-sm !text-xs ml-2">+ Create from Library</button>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => isMonth ? setMonthOffset(monthOffset - 1) : setWeekOffset(weekOffset - 1)} className="text-desert-night/60 hover:text-desert-night text-lg px-2">←</button>
@@ -484,6 +487,16 @@ export function CalendarBuilder({ member, members }: {
           clip={editingClip}
           onClose={() => setEditingClip(null)}
           onSaved={load}
+        />
+      )}
+
+      {/* Create from Library — build a clip from scratch using library items */}
+      {showCreateModal && (
+        <CreateFromLibraryModal
+          member={member}
+          members={members}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={load}
         />
       )}
 

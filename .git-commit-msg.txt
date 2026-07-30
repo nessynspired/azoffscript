@@ -1,49 +1,41 @@
-Add Clip Editor — edit scheduled clips and attach library items
+Add Create from Library modal + edit posted clips
 
-You can now click any clip on the calendar (both the Ready Bank
-Calendar Builder and the Run Sheet calendar) to open the Clip Editor
-and attach library items to it.
+You can now create a clip from scratch by selecting items from
+all the libraries, and edit posted/live clips with library items.
 
-NEW: production_notes JSONB column on clips table
-  SQL migration: supabase/add-production-notes.sql
-  Stores selected library items as JSON:
-    { hooks: [], prompts: [], captions: [], transitions: [],
-      recordingStyle: null, shotRecipe: null, notes: "" }
-  Run this migration in Supabase before using the editor.
-
-NEW: ClipEditor component (src/components/ClipEditor.tsx)
-  A modal that opens when you click a clip on the calendar.
-  Two sections:
-    1. Clip Details — edit title, dates (drop by, cut ready,
-       greenlight, goes live), and caption
-    2. Library Items — 7 tabs to attach items from the libraries:
-       🪝 Hooks — multi-select from the Hook Library
-       💡 Prompts — multi-select from Prompt Intelligence
-       📝 Captions — multi-select from Caption Frameworks
-       🎬 Transitions — multi-select from the Transition Library
-       📹 Recording — single-select from Recording Style Library
-       📋 Recipes — single-select from Shot Recipe Library
-       ✏️ Notes — free text production notes
+NEW: CreateFromLibraryModal component
+  (src/components/CreateFromLibraryModal.tsx)
+  A modal that lets you build a clip from scratch using library
+  items. 8 tabs:
+    🎬 Format — pick a Ready Bank template (optional)
+    🪝 Hooks — multi-select from the Hook Library
+    💡 Prompts — multi-select from Prompt Intelligence
+    📝 Captions — multi-select from Caption Frameworks
+    🔀 Transitions — multi-select from the Transition Library
+    📹 Recording — single-select from Recording Style Library
+    📋 Recipes — single-select from Shot Recipe Library
+    ✏️ Notes — free text production notes
+  Plus: title, dates (drop by, cut ready, greenlight, goes live),
+  caption, and crew assignment.
   Shows a summary of all attached items at the top.
-  Search within each library tab.
-  Save button writes to the clips table (title, dates, caption,
-  production_notes).
+  Creates the clip with status "Planned" and saves all library
+  selections to production_notes.
 
 WIRED INTO:
-  1. Calendar Builder (Ready Bank) — click any clip on the week or
-     month calendar to open the editor
-  2. Run Sheet — ClipDetailModal now has an "Edit with Libraries"
-     button (visible to planners/admins) that opens the ClipEditor
-     on top of the existing detail modal
+  1. Calendar Builder (Ready Bank) — "+ Create from Library"
+     button in the top bar
+  2. Run Sheet — "📚 Create from Library" button next to the
+     existing "+ Add Content" button
 
-This means you can now:
-  - Schedule a template from the Ready Bank onto the calendar
-  - Click it to open the editor
-  - Attach hooks, prompts, captions, transitions, recording styles,
-    and shot recipes from the libraries
-  - Add production notes
-  - Save — everything persists to the database
-  - The crew can see what library items are attached to each clip
+POSTED/LIVE CLIPS NOW EDITABLE:
+  The Watch tab (posted clips) already opened the ClipDetailModal
+  on click. That modal already has the "📚 Edit with Libraries"
+  button (added in previous commit) that opens the ClipEditor.
+  Added a more visible "📚 Edit details & library items" button
+  on each Watch tab card to make this more discoverable.
+  This means you can edit posted clips — change the title, dates,
+  caption, and attach/update library items (hooks, prompts,
+  captions, transitions, recording styles, shot recipes, notes).
 
 Generated with [Devin](https://devin.ai)
 
