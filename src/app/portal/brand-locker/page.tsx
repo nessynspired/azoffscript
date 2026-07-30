@@ -65,11 +65,11 @@ export default function BrandLockerPage() {
   const [tab, setTab] = useState<Tab>("logos");
   const [copied, setCopied] = useState<string | null>(null);
   const { member } = useAuth();
-  const isPlanner = member?.role === "admin" || member?.can_plan_content === true;
+  const isAdmin = member?.role === "admin";
 
-  // Crew only sees: logos, mascot, colors, formats, templates
-  // Planners also see: captions, hashtags (brand IP)
-  const visibleTabs = isPlanner ? TABS : TABS.filter(t => t.key !== "captions" && t.key !== "hashtags");
+  // Crew + planners see: logos, mascot, colors, formats, templates
+  // Admin only: captions, hashtags (brand IP — nobody else gets these)
+  const visibleTabs = isAdmin ? TABS : TABS.filter(t => t.key !== "captions" && t.key !== "hashtags");
 
   function copy(text: string, id: string) {
     navigator.clipboard.writeText(text);

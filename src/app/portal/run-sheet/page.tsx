@@ -300,12 +300,14 @@ export default function RunSheetPage() {
         </div>
         {canPlanContent && (
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowCreateFromLibrary(true)}
-              className="btn btn-secondary btn-sm"
-            >
-              📚 Create from Library
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setShowCreateFromLibrary(true)}
+                className="btn btn-secondary btn-sm"
+              >
+                📚 Create from Library
+              </button>
+            )}
             <button
               onClick={() => setShowTemplatePicker(!showTemplatePicker)}
               className="btn btn-primary btn-sm"
@@ -325,8 +327,8 @@ export default function RunSheetPage() {
         />
       )}
 
-      {/* Create from Library — build a clip from scratch using library items */}
-      {showCreateFromLibrary && canPlanContent && member && (
+      {/* Create from Library — admin only, exposes growth library items */}
+      {showCreateFromLibrary && isAdmin && member && (
         <CreateFromLibraryModal
           member={{ id: member.id, name: member.name }}
           members={members}
@@ -1299,7 +1301,7 @@ function ClipDetailModal({
             <p className="text-sm text-smoked-charcoal/60 mt-1">{droppedByLabel(clip)}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {canPlanContent && (
+            {isAdmin && (
               <button onClick={() => setShowClipEditor(true)} className="btn btn-secondary btn-sm !text-xs">
                 📚 Edit with Libraries
               </button>
@@ -1328,10 +1330,10 @@ function ClipDetailModal({
           </div>
         )}
 
-        {/* Planner-only fields — caption, brief, do-not-post notes are IP, not for crew */}
-        {canPlanContent && clip.idea_text && <p className="mt-4 text-smoked-charcoal bg-sandstone-cream/50 rounded-xl p-4">{clip.idea_text}</p>}
-        {canPlanContent && clip.caption && <p className="mt-4 font-script text-xl text-desert-night">{clip.caption}</p>}
-        {canPlanContent && clip.do_not_post_notes && (
+        {/* Admin-only fields — caption, brief, do-not-post notes are brand IP */}
+        {isAdmin && clip.idea_text && <p className="mt-4 text-smoked-charcoal bg-sandstone-cream/50 rounded-xl p-4">{clip.idea_text}</p>}
+        {isAdmin && clip.caption && <p className="mt-4 font-script text-xl text-desert-night">{clip.caption}</p>}
+        {isAdmin && clip.do_not_post_notes && (
           <div className="mt-4 bg-copper-deep/15 border border-copper-clay rounded-xl p-3">
             <p className="text-xs font-black uppercase text-copper-deep">Do not post notes</p>
             <p className="text-sm text-desert-night mt-1">{clip.do_not_post_notes}</p>

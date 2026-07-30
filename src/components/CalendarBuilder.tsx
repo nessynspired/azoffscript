@@ -53,9 +53,10 @@ const LIBRARY_TABS: { id: LibraryTab; label: string; icon: string }[] = [
   { id: "recipes", label: "Shot Recipes", icon: "📋" },
 ];
 
-export function CalendarBuilder({ member, members }: {
+export function CalendarBuilder({ member, members, isAdmin = false }: {
   member: { id: string; name: string };
   members: Member[];
+  isAdmin?: boolean;
 }) {
   const supabase = createClient();
   const [clips, setClips] = useState<Clip[]>([]);
@@ -210,7 +211,9 @@ export function CalendarBuilder({ member, members }: {
         <div className="flex items-center gap-2">
           <button onClick={() => { setViewMode("week"); setMonthOffset(0); }} className={`chip !text-xs ${viewMode === "week" ? "chip-copper" : "chip-cream"}`}>Week</button>
           <button onClick={() => { setViewMode("month"); setWeekOffset(0); }} className={`chip !text-xs ${viewMode === "month" ? "chip-copper" : "chip-cream"}`}>Month</button>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary btn-sm !text-xs ml-2">+ Create from Library</button>
+          {isAdmin && (
+            <button onClick={() => setShowCreateModal(true)} className="btn btn-primary btn-sm !text-xs ml-2">+ Create from Library</button>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => isMonth ? setMonthOffset(monthOffset - 1) : setWeekOffset(weekOffset - 1)} className="text-desert-night/60 hover:text-desert-night text-lg px-2">←</button>
@@ -353,7 +356,8 @@ export function CalendarBuilder({ member, members }: {
           </div>
         </div>
 
-        {/* RIGHT — Libraries */}
+        {/* RIGHT — Libraries (admin only — contains brand IP) */}
+        {isAdmin ? (
         <div className="lg:w-80 shrink-0">
           <div className="card p-3 space-y-3 lg:sticky lg:top-4">
             <div className="flex items-center justify-between">
@@ -479,6 +483,18 @@ export function CalendarBuilder({ member, members }: {
             </div>
           </div>
         </div>
+        ) : (
+          <div className="lg:w-80 shrink-0">
+            <div className="card p-4 text-center">
+              <div className="text-3xl mb-2">🔒</div>
+              <p className="font-display text-base text-desert-night">Libraries</p>
+              <p className="text-xs text-smoked-charcoal/50 mt-1">
+                Hooks, prompts, and caption frameworks are admin-only.
+                You can still schedule templates from the Ready Bank.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Clip Editor — edit scheduled clips and attach library items */}

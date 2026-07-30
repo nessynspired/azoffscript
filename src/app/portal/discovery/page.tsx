@@ -48,7 +48,7 @@ import {
   TREND_FILTER,
 } from "@/lib/discovery-library";
 import { InfoTooltip } from "@/components/InfoTooltip";
-import { PlannerOnly } from "@/components/PlannerOnly";
+import { AdminOnly } from "@/components/AdminOnly";
 
 type Tab = "gaps" | "advantages" | "hooks" | "captions" | "comments" | "search" | "trends" | "filter" | "dont";
 
@@ -68,7 +68,7 @@ export default function DiscoveryPage() {
   ];
 
   return (
-    <PlannerOnly label="The Discovery Library">
+    <AdminOnly label="The Discovery Library">
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -140,7 +140,7 @@ export default function DiscoveryPage() {
         <Link href="/portal/lobby" className="btn btn-ghost btn-sm">← Back to Lobby</Link>
       </div>
     </div>
-    </PlannerOnly>
+    </AdminOnly>
   );
 }
 

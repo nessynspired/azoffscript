@@ -257,7 +257,7 @@ export default function ReadyBankPage() {
 
       {/* Calendar Builder view — 3-panel workspace */}
       {viewMode === "builder" && member && (
-        <CalendarBuilder member={{ id: member.id, name: member.name }} members={members} />
+        <CalendarBuilder member={{ id: member.id, name: member.name }} members={members} isAdmin={member.role === "admin"} />
       )}
 
       {/* List view — filters + template cards (default) */}

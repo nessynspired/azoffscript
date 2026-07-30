@@ -1,25 +1,47 @@
-Fix TikTok embed sizing — constrain container to video width
+Change IP gates from planner-only to admin-only
 
-ROOT CAUSE:
-  The TikTok embed iframe was hardcoded to maxWidth: 380px (the
-  TikTok player's natural width) with margin: 0 auto, but the
-  outer container expanded to full width. This created a large
-  dark blue box with a small 380px video centered inside it —
-  the "video in a small corner of the blue container" issue.
+Planners are still crew members who could copy your brand IP
+(hooks, captions, market gaps, brand moats, prompts). Changed
+all IP-sensitive gates from PlannerOnly to AdminOnly so only
+the brand owner (admin) can see them.
 
-  On the Watch tab (cards ~400px wide) this meant dark padding
-  on both sides of the video. In the ClipDetailModal (672px
-  wide) the video looked tiny in the middle of a huge dark box.
+NEW: AdminOnly component (src/components/AdminOnly.tsx)
+  Same as PlannerOnly but checks role === "admin" only.
+  Planners and crew both see the locked message.
 
-FIX:
-  Constrain the SocialEmbed outer container to match the video
-  width (380px full, 340px compact) with mx-auto centering.
-  The dark background now only covers the video area, not the
-  full card width. The video fills its container properly.
+CHANGED FROM PLANNER-ONLY TO ADMIN-ONLY:
+  - Growth System (all 9 documents) — layout.tsx now uses AdminOnly
+  - Discovery Library — wrapped in AdminOnly
+  - Prompts Library — wrapped in AdminOnly
+  - Brand Locker captions/hashtags tabs — admin-only
+  - ClipDetailModal caption, brief, do-not-post notes — admin-only
+  - "Edit with Libraries" button in ClipDetailModal — admin-only
+  - "Create from Library" button on Run Sheet — admin-only
+  - Calendar Builder right panel (libraries) — admin-only
+    (non-admin planners see a locked message instead)
+  - Calendar Builder "Create from Library" button — admin-only
 
-  Also removed the redundant bg-desert-night/10 wrapper on the
-  Watch tab that was adding a second layer of blue around the
-  already-sized embed.
+NAVIGATION:
+  Added adminOnly flag to NavItem type. Marked these as adminOnly
+  in PLANNER_MORE: Editing Recipes, Prompts, Discovery, Growth
+  System. Non-admin planners don't see these in their nav.
+  Admins see everything.
+
+WHAT PLANNERS CAN STILL DO:
+  - Schedule clips from the Ready Bank
+  - Add content (free-form, no library items)
+  - Set deadlines, assign crew, change clip status
+  - See the calendar, studio flow, assignment board
+  - Manage the Run Sheet
+
+WHAT PLANNERS CAN NO LONGER SEE:
+  - Hooks, prompts, caption frameworks (growth libraries)
+  - Market gaps, brand moats, do-not-chase rules
+  - Discovery library (captions, search keywords, comment prompts)
+  - Prompts library
+  - Brand Locker captions and hashtags
+  - Clip captions, briefs, and do-not-post notes
+  - "Edit with Libraries" / "Create from Library" features
 
 Generated with [Devin](https://devin.ai)
 

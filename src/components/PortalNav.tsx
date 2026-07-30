@@ -18,7 +18,7 @@ import type { UserRole } from "@/lib/types/db";
  * Mobile: bottom nav with oversized center Drop button + "More" sheet.
  */
 
-type NavItem = { href: string; label: string; center?: boolean; info?: string };
+type NavItem = { href: string; label: string; center?: boolean; info?: string; adminOnly?: boolean };
 
 // ---- Crew menu (simple participation) ----
 const CREW_PRIMARY: NavItem[] = [
@@ -54,10 +54,10 @@ const PLANNER_MORE: NavItem[] = [
   { href: "/portal/transitions", label: "Transitions", info: "How to connect your clip to the next person's clip. Simple step-by-step instructions for every transition." },
   { href: "/portal/recording-styles", label: "Recording Styles", info: "How to film your video — direct to camera, natural moment, reaction, POV, and more. Not the transition, the actual filming style." },
   { href: "/portal/shot-recipes", label: "Shot Recipes", info: "Ready-to-film assignments. Each recipe combines content + version + prompt + recording style + transition + editing + caption into one card. Just hit record." },
-  { href: "/portal/editing-recipes", label: "Editing Recipes", info: "For admin. Once everyone sends their clips, this is how the final video gets put together. Repeatable blueprints for every content type." },
-  { href: "/portal/prompts", label: "Prompts", info: "The endless idea engine. Evergreen, seasonal, trending, and community-generated prompts organized by category. This is a living library that keeps getting fed." },
-  { href: "/portal/discovery", label: "Discovery", info: "How people find us. Captions, search keywords, comment prompts, and trend monitoring. Living library — updates continuously based on what's performing." },
-  { href: "/portal/growth", label: "Growth System", info: "9 master documents that make up the AZ Off Script growth strategy. Market gaps, hooks, caption frameworks, prompts, search keywords, trend capture, seasonal opportunities, do-not-chase rules, and brand moats. This protects the brand identity while driving discovery." },
+  { href: "/portal/editing-recipes", label: "Editing Recipes", info: "For admin. Once everyone sends their clips, this is how the final video gets put together. Repeatable blueprints for every content type.", adminOnly: true },
+  { href: "/portal/prompts", label: "Prompts", info: "The endless idea engine. Evergreen, seasonal, trending, and community-generated prompts organized by category. This is a living library that keeps getting fed.", adminOnly: true },
+  { href: "/portal/discovery", label: "Discovery", info: "How people find us. Captions, search keywords, comment prompts, and trend monitoring. Living library — updates continuously based on what's performing.", adminOnly: true },
+  { href: "/portal/growth", label: "Growth System", info: "9 master documents that make up the AZ Off Script growth strategy. Market gaps, hooks, caption frameworks, prompts, search keywords, trend capture, seasonal opportunities, do-not-chase rules, and brand moats. This protects the brand identity while driving discovery.", adminOnly: true },
   { href: "/portal/gear-board", label: "Gear Board", info: "Admin only. Track personalized merch for each crew member — tumblers, shirts, badges, cards." },
   { href: "/portal/recycle-bin", label: "Recycle Bin", info: "Admin only. Restore deleted clips, assignments, and trends before they're gone forever." },
   { href: "/portal/crew-profiles", label: "Crew Profiles", info: "Admin only. Control who appears on the public website and how they're shown." },
@@ -110,8 +110,10 @@ export function PortalTopBar({
   const moreRef = useRef<HTMLDivElement>(null);
 
   const isPlanner = memberRole === "admin" || member?.can_plan_content === true;
+  const isAdmin = memberRole === "admin";
   const primaryNav = isPlanner ? PLANNER_PRIMARY : CREW_PRIMARY;
-  const moreNav = isPlanner ? PLANNER_MORE : CREW_MORE;
+  // Filter out admin-only items (brand IP) for non-admin planners
+  const moreNav = (isPlanner ? PLANNER_MORE : CREW_MORE).filter(item => !item.adminOnly || isAdmin);
 
   // Fetch unread notification count
   useEffect(() => {
@@ -269,8 +271,9 @@ export function PortalBottomNav() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   const isPlanner = member?.role === "admin" || member?.can_plan_content === true;
+  const isAdmin = member?.role === "admin";
   const mobileNav = isPlanner ? PLANNER_MOBILE : CREW_MOBILE;
-  const moreNav = isPlanner ? PLANNER_MORE : CREW_MORE;
+  const moreNav = (isPlanner ? PLANNER_MORE : CREW_MORE).filter(item => !item.adminOnly || isAdmin);
   const avatarUrl = member?.photo_url ?? null;
   const memberName = member?.name ?? "Crew";
 
