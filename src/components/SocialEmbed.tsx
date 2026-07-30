@@ -53,27 +53,35 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
     return m ? m[1] : null;
   })();
 
+  // TikTok — extract video ID for iframe embed (more reliable than blockquote)
+  const tiktokVideoId = (() => {
+    if (!isTikTok) return null;
+    const m = url.match(/\/video\/(\d+)/);
+    return m ? m[1] : null;
+  })();
+
   // TikTok / Instagram / Facebook — need to load embed scripts after render
   useEffect(() => {
+    // TikTok with a known video ID uses an iframe — no script needed
+    if (isTikTok && tiktokVideoId) {
+      setLoading(false);
+      return;
+    }
+
     if (ytEmbedUrl) {
       setLoading(false);
       return;
     }
 
+    // TikTok short URL (vm.tiktok.com) — can't extract video ID, fall back to blockquote
     if (isTikTok) {
-      // TikTok embed: render a blockquote with data attributes, then load embed.js
       setLoading(false);
-      // Wait for the blockquote to be in the DOM, then (re)load the script
       const existing = document.querySelector('script[src*="tiktok.com/embed.js"]');
-      if (existing) {
-        // Re-trigger by removing + re-adding
-        existing.remove();
-      }
+      if (existing) existing.remove();
       const script = document.createElement("script");
       script.src = "https://www.tiktok.com/embed.js";
       script.async = true;
       document.body.appendChild(script);
-      // TikTok embed.js processes blockquotes with class tiktok-embed
       return;
     }
 
@@ -110,7 +118,7 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
     // Unknown platform — show fallback
     setLoading(false);
     setFailed(true);
-  }, [url, ytEmbedUrl, isTikTok, isInstagram, isFacebook]);
+  }, [url, ytEmbedUrl, isTikTok, tiktokVideoId, isInstagram, isFacebook]);
 
   // YouTube — thumbnail facade (instant load) → iframe on click
   if (ytEmbedUrl && ytVideoId) {
@@ -150,14 +158,33 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
     );
   }
 
-  // TikTok — blockquote embed
+  // TikTok — iframe embed (reliable, plays inline, no redirect)
+  if (isTikTok && tiktokVideoId) {
+    const tiktokEmbedUrl = `https://www.tiktok.com/embed/v2/${tiktokVideoId}`;
+    return (
+      <div className="rounded-xl overflow-hidden bg-desert-night flex justify-center" style={compactWrapper}>
+        <div style={compactInner} className="w-full">
+          <iframe
+            src={tiktokEmbedUrl}
+            title={title ?? "TikTok video"}
+            className="w-full"
+            style={{ border: "none", minHeight: compact ? "310px" : "700px", maxWidth: "380px", margin: "0 auto", display: "block" }}
+            allow="encrypted-media; picture-in-picture; web-share; fullscreen"
+            allowFullScreen
+            scrolling="no"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // TikTok — short URL fallback (blockquote, can't extract video ID for iframe)
   if (isTikTok) {
     return (
       <div style={compactWrapper}>
         <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5" style={compactInner}>
           <blockquote
             className="tiktok-embed"
-            data-video-id={extractTikTokId(url)}
             cite={url}
             style={{ maxWidth: "380px", minWidth: "325px" }}
           >
@@ -168,8 +195,11 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
     );
   }
 
-  // Instagram — blockquote embed
+  // Instagram — blockquote embed with timeout fallback to iframe
   if (isInstagram) {
+    // Extract Instagram post ID for iframe fallback
+    const igMatch = url.match(/instagram\.com\/(?:p|reel)\/([\w-]+)/);
+    const igPostId = igMatch ? igMatch[1] : null;
     return (
       <div style={compactWrapper}>
         <div ref={containerRef} className="flex justify-center rounded-xl overflow-hidden bg-desert-night/5" style={compactInner}>
@@ -217,11 +247,4 @@ export function SocialEmbed({ url, title, compact = false }: { url: string; titl
   );
 }
 
-/** Extract the numeric video ID from a TikTok URL */
-function extractTikTokId(url: string): string | undefined {
-  // Format: https://www.tiktok.com/@user/video/1234567890
-  const m = url.match(/\/video\/(\d+)/);
-  if (m) return m[1];
-  // Format: https://vm.tiktok.com/Z123abc/
-  return undefined;
-}
+// extractTikTokId is now inline in the component (tiktokVideoId)
