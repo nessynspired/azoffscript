@@ -1,13 +1,14 @@
-Fix video visibility — show dropped videos in Recent Drops, My Drops, and Watch tab
+Show uploaded videos in all Run Sheet sections — not just link embeds
 
-- Add "My Drops" section to This Week tab — shows clips the member submitted
-  with video playback right in the card (no need to click into the detail)
-- Add video preview to Recent Drops cards for uploaded videos (was only
-  showing TikTok link embeds before)
-- Watch tab now shows Dropped clips with videos/links, not just Live ones
-  — crew can watch each other's dropped content
-- Add "Dropped" filter button in Watch tab
-- Update Watch tab count to include dropped videos
+The "What's Moving", "In the Pipeline", "What's Stuck", "Ready for
+Review", "No one assigned", and "Going Live" sections were only showing
+SocialEmbed for tiktok_link clips. Uploaded videos (type "video" or
+"final_cut" with file_path) were invisible in all these sections — you'd
+only see the title text, no video preview.
+
+Now every section that showed link embeds also shows a VideoPlayer for
+uploaded videos, so crew can watch each other's dropped videos anywhere
+they appear on the Run Sheet.
 
 Generated with [Devin](https://devin.ai)
 

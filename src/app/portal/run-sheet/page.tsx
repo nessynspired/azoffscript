@@ -2701,7 +2701,12 @@ function ThisWeekTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {goingLive.map((c) => (
               <button key={c.id} onClick={() => onSelectClip(c.id)} className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform bg-cactus-teal/10">
-                {/* Embedded video for link drops — compact */}
+                {/* Video player for uploaded videos, embed for link drops */}
+                {c.file_path && (c.type === "video" || c.type === "final_cut") && (
+                  <div className="bg-desert-night/5 max-h-[200px] overflow-hidden">
+                    <VideoPlayer filePath={c.file_path} title={c.title} className="max-h-[200px] object-contain" />
+                  </div>
+                )}
                 {c.type === "tiktok_link" && c.link && (
                   <div className="bg-desert-night/5">
                     <SocialEmbed url={c.link} title={c.title} compact />
@@ -3373,10 +3378,10 @@ function PlannerDashboard({
   // Missing assignments: clips with no one assigned
   const clipsWithoutAssignments = planningClips.filter((c) => !assignments.some((a) => a.clip_id === c.id));
 
-  // What's Moving — recent link drops (TikTok, Instagram, Facebook, YouTube)
-  // Shows the crew's latest trend/reference drops so the planner can see them at a glance
+  // What's Moving — recent drops from the crew (uploaded videos AND link drops)
+  // Shows the crew's latest drops so the planner can see them at a glance
   const recentLinkDrops = clips
-    .filter((c) => c.type === "tiktok_link" && c.link && c.status === "Dropped")
+    .filter((c) => c.status === "Dropped" && ((c.type === "tiktok_link" && c.link) || ((c.type === "video" || c.type === "final_cut") && c.file_path)))
     .slice(0, 6);
 
   async function sendReminder(assignment: Assignment) {
@@ -3423,7 +3428,12 @@ function PlannerDashboard({
                   key={clip.id}
                   className="card overflow-hidden flex flex-col hover:-translate-y-0.5 transition-transform"
                 >
-                  {/* Embedded video / link preview */}
+                  {/* Video player for uploaded videos, embed for link drops */}
+                  {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+                    <div className="bg-desert-night/5">
+                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[250px] object-contain" />
+                    </div>
+                  )}
                   {clip.type === "tiktok_link" && clip.link && (
                     <div className="bg-desert-night/5">
                       <SocialEmbed url={clip.link} title={clip.title} />
@@ -3533,9 +3543,13 @@ function PlannerDashboard({
                   onClick={() => onSelectClip(clip.id)}
                   className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
                 >
-                  {/* Embed or thumbnail */}
+                  {/* Video player for uploaded videos, embed for link drops */}
                   <div className="bg-desert-night/5">
-                    <SocialEmbed url={clip.link!} title={clip.title} />
+                    {clip.file_path && (clip.type === "video" || clip.type === "final_cut") ? (
+                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[250px] object-contain" />
+                    ) : clip.link ? (
+                      <SocialEmbed url={clip.link} title={clip.title} />
+                    ) : null}
                   </div>
                   {/* Info — with dropper's profile picture */}
                   <div className="p-3 flex items-center gap-2">
@@ -3576,7 +3590,12 @@ function PlannerDashboard({
                 onClick={() => onSelectClip(clip.id)}
                 className="card p-4 w-full text-left hover:-translate-y-0.5 transition-transform border-2 border-heat-orange/30"
               >
-                {/* Thumbnail for link drops */}
+                {/* Video preview for uploaded videos, embed for link drops */}
+                {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+                  <div className="bg-desert-night/5 rounded-lg overflow-hidden mb-3 max-h-[200px]">
+                    <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[200px] object-contain" />
+                  </div>
+                )}
                 {clip.type === "tiktok_link" && clip.link && (
                   <div className="bg-desert-night/5 rounded-lg overflow-hidden mb-3">
                     <SocialEmbed url={clip.link} title={clip.title} />
@@ -3623,7 +3642,12 @@ function PlannerDashboard({
                   key={a.id}
                   className={`card overflow-hidden flex flex-col ${isOverdue ? "border-2 border-heat-orange/40" : ""}`}
                 >
-                  {/* Embedded video / link preview (if the clip has one) */}
+                  {/* Video player for uploaded videos, embed for link drops */}
+                  {clip?.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+                    <div className="bg-desert-night/5 max-h-[200px] overflow-hidden">
+                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[200px] object-contain" />
+                    </div>
+                  )}
                   {clip?.type === "tiktok_link" && clip.link && (
                     <div className="bg-desert-night/5">
                       <SocialEmbed url={clip.link} title={clip.title} />
@@ -3717,7 +3741,12 @@ function PlannerDashboard({
               const allApproved = total > 0 && approved === total;
               return (
                 <div key={clip.id} className="card p-3 flex flex-col gap-2">
-                  {/* Thumbnail for link drops */}
+                  {/* Video player for uploaded videos, embed for link drops */}
+                  {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+                    <div className="bg-desert-night/5 rounded-lg overflow-hidden max-h-[200px]">
+                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[200px] object-contain" />
+                    </div>
+                  )}
                   {clip.type === "tiktok_link" && clip.link && (
                     <div className="bg-desert-night/5 rounded-lg overflow-hidden">
                       <SocialEmbed url={clip.link} title={clip.title} />
@@ -3778,6 +3807,11 @@ function PlannerDashboard({
                 onClick={() => onSelectClip(clip.id)}
                 className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform border-2 border-copper-clay/20"
               >
+                {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+                  <div className="bg-desert-night/5 max-h-[200px] overflow-hidden">
+                    <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[200px] object-contain" />
+                  </div>
+                )}
                 {clip.type === "tiktok_link" && clip.link && (
                   <div className="bg-desert-night/5">
                     <SocialEmbed url={clip.link} title={clip.title} />
