@@ -86,7 +86,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Check for existing signature (unique constraint on agreement_id + member_id)
-    const { data: existing } = await supabase
+    //    Use the SERVICE ROLE client here because the RLS policy sig_read_own
+    //    checks member_id = auth.uid(), but member_id is the members.id UUID,
+    //    NOT the auth user ID — so RLS would block the read and we'd miss
+    //    existing signatures, causing a unique constraint violation on insert.
+    const serviceClient = createServiceClient();
+    const { data: existing } = await serviceClient
       .from("agreement_signatures")
       .select("id")
       .eq("agreement_id", agreementId)
@@ -106,7 +111,6 @@ export async function POST(request: NextRequest) {
     // 8. Insert the signature using the SERVICE ROLE client (bypasses RLS)
     //    This is safe because we verified the auth session above and we use
     //    member.id from the verified session — NOT from the request body.
-    const serviceClient = createServiceClient();
     const { data: signature, error: insertErr } = await serviceClient
       .from("agreement_signatures")
       .insert({

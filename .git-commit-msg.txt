@@ -1,26 +1,19 @@
-Separate raw footage from content pipeline — new Raw Footage tab
+Fix duplicate signature error — use service client for existing-signature check
 
-The crew was dropping raw videos for Vanessa to stitch, but they were
-mixing into the content planning pipeline (What's Moving, Studio Flow,
-Watch, etc). Now there's a clear separation:
+The "duplicate key value violates unique constraint" error happened because:
+1. The existing-signature check used the regular supabase client (with RLS)
+2. The RLS policy sig_read_own checks member_id = auth.uid()
+3. But member_id is the members.id UUID, NOT the auth user ID
+4. So RLS blocked the read, the check returned null
+5. The insert tried to add a duplicate, hitting the unique constraint
 
-DROP PAGE:
-- When dropping a video, women choose: "Content Clip" (for the production
-  pipeline) or "Raw Footage" (for Vanessa to stitch). Default is Content.
-- Stored in new drop_purpose column on clips table.
+Fix: use the service role client for the existing-signature check so it
+bypasses RLS and can actually find the existing signature.
 
-RUN SHEET:
-- What's Moving = only content clips (no raw footage)
-- Recent Drops = only content clips (no raw footage)
-- Studio Flow = only content clips (no raw footage)
-- Watch = only Live (finished/posted) videos — reverted to original
-- NEW "Raw Footage" tab = shows all raw footage drops, visible to ALL crew.
-  Women can see each other's raw drops with video playback.
-- In the Pipeline (planner) = only content clips (no raw footage)
-
-REQUIRES DATABASE MIGRATION:
-  Run supabase/add-drop-purpose.sql in the Supabase SQL Editor.
-  Until then, all clips default to "content" so nothing breaks.
+Also includes a SQL migration (supabase/fix-signature-rls.sql) to fix the
+RLS policy itself so client-side reads (use-terms-status hook, TermsGate)
+also work correctly. This prevents the woman from seeing "sign the Creator
+Release" when she already signed.
 
 Generated with [Devin](https://devin.ai)
 
