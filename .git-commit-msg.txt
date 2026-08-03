@@ -1,21 +1,9 @@
-Add Tone Mix, Creator Release modal, Full Ready Recipe integration, calendar fixes
+Fix agreement sign API — query members by user_id not id
 
-- Add Tone Mix (Funny/Honest/Emotional/Frustrated/Warm) to all 96 Full Ready
-  Recipes, RecipeBuilder, Ready Bank cards, Calendar Builder, Run Sheet
-  crew + admin views
-- Add CreatorReleaseModal — sign the Creator Release popup inline during
-  login (no redirect to agreements page), with signature pad + whoami
-- Remove 'Review later' escape from TermsGate — Quick Terms mandatory
-- Hide Admin Editing tab from crew in FullReadyRecipeDetail
-- Add recipe breakdown to Calendar Builder schedule modal (goal, topic,
-  examples, make-it-your-own, parts, assembly, caption)
-- Show What You're Making, Introduction Direction, Example Directions,
-  Make It Your Own on Run Sheet crew + admin views (no clicking needed)
-- Calendar now shows clips on both go-live (copper) and drop-by (teal) dates
-- Today button switches to week view
-- Fix schedule modal losing dates when viewing recipe details then returning
-- Carry toneMix + topic specifics through fullReadyRecipeToClipRecipe
-- Backfill existing clips with Full Ready Recipe data
+The sign, whoami, and email APIs were querying members.eq("id", user.id)
+but members.id is the member's own UUID, not the auth user ID. The correct
+column is user_id which links to auth.users.id. This caused "Member record
+not found" for every crew member trying to sign the Creator Release.
 
 Generated with [Devin](https://devin.ai)
 

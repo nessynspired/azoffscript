@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const { data: member, error: memberErr } = await supabase
       .from("members")
       .select("id, name, role, email")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .single();
     if (memberErr || !member) {
       return NextResponse.json({ error: "Member record not found" }, { status: 404 });

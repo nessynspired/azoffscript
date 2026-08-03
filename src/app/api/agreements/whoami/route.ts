@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const { data: member } = await supabase
       .from("members")
       .select("id, name, email, role")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .maybeSingle();
 
     const ip = getClientIp(request);
