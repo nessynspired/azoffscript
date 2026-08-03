@@ -1,56 +1,21 @@
-Add Recipe Builder — planner builds production packs without seeing IP
+Add Tone Mix, Creator Release modal, Full Ready Recipe integration, calendar fixes
 
-The planner can now build a full production pack (recipe) for each
-clip — goal, creator task, prompt, video parts, recording
-instructions, admin editing recipe — by picking from a blind bank
-of Shot Recipes, Recording Styles, and Transitions. She never sees
-the actual library pages or IP content.
-
-NEW: RecipeBuilder component (src/components/RecipeBuilder.tsx)
-  - Pick a Shot Recipe from dropdown (name + category + difficulty
-    only) → auto-fills ALL fields
-  - Pick a Recording Style (name + difficulty only) → auto-fills
-    how-to-record steps
-  - Pick a Transition (name + difficulty + category only) →
-    auto-fills start/end transition steps
-  - Edit every field manually after auto-fill
-  - Add/remove/reorder steps in: final video flow, 3 parts,
-    before recording, record steps, what to send, editing order
-  - NO access to: hooks, captions, prompts, market gaps, brand
-    moats, caption packages — that stays admin-only
-
-NEW: recipe JSONB column on clips table
-  - SQL migration: supabase/add-recipe-column.sql
-  - Stores the full recipe per clip
-  - Updated TypeScript types in db.ts (Row, Insert, Update, view)
-
-INTEGRATION:
-  Run Sheet (ClipDetailModal):
-    - "Build Recipe" button — planner-accessible (canPlanContent)
-    - "Edit with Libraries" button — still admin-only
-    - Crew view: shows the recipe if it exists (full assignment:
-      goal, task, prompt, example, video flow, 3 parts, recording
-      instructions, what to send)
-    - Admin/planner view: recipe preview with step counts + edit
-      button
-    - Template view is now a fallback (shows only if no recipe)
-
-  Calendar Builder:
-    - Clicking a clip opens RecipeBuilder for planners
-    - Clicking a clip opens ClipEditor for admins (unchanged)
-    - Planner can build/edit recipes directly from the calendar
-
-WHAT THE PLANNER SEES:
-  - Dropdowns with names + difficulty only (no library text/IP)
-  - Auto-filled fields she can edit
-  - No access to library pages (Growth, Discovery, Prompts, etc.)
-
-WHAT THE CREW SEES:
-  - The full recipe as their assignment (if one exists)
-  - Goal, task, prompt, example response, video flow, 3 parts
-    with step-by-step instructions, recording checklist, record
-    steps, what to send
-  - Falls back to template view if no recipe exists
+- Add Tone Mix (Funny/Honest/Emotional/Frustrated/Warm) to all 96 Full Ready
+  Recipes, RecipeBuilder, Ready Bank cards, Calendar Builder, Run Sheet
+  crew + admin views
+- Add CreatorReleaseModal — sign the Creator Release popup inline during
+  login (no redirect to agreements page), with signature pad + whoami
+- Remove 'Review later' escape from TermsGate — Quick Terms mandatory
+- Hide Admin Editing tab from crew in FullReadyRecipeDetail
+- Add recipe breakdown to Calendar Builder schedule modal (goal, topic,
+  examples, make-it-your-own, parts, assembly, caption)
+- Show What You're Making, Introduction Direction, Example Directions,
+  Make It Your Own on Run Sheet crew + admin views (no clicking needed)
+- Calendar now shows clips on both go-live (copper) and drop-by (teal) dates
+- Today button switches to week view
+- Fix schedule modal losing dates when viewing recipe details then returning
+- Carry toneMix + topic specifics through fullReadyRecipeToClipRecipe
+- Backfill existing clips with Full Ready Recipe data
 
 Generated with [Devin](https://devin.ai)
 

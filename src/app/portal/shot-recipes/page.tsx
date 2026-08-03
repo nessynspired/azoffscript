@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import {
   SHOT_RECIPES,
   SHOT_RECIPE_CATEGORIES,
@@ -15,10 +16,24 @@ import {
 import { InfoTooltip } from "@/components/InfoTooltip";
 
 export default function ShotRecipesPage() {
+  const { member } = useAuth();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ShotRecipeCategory | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<ShotRecipeDifficulty | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<ShotRecipe | null>(null);
+
+  // Admin-only — this is the master library. Planners edit per-clip copies via RecipeBuilder.
+  if (member && member.role !== "admin") {
+    return (
+      <div className="card p-10 text-center">
+        <p className="font-display text-2xl text-desert-night">Admin only.</p>
+        <p className="text-sm text-smoked-charcoal/60 mt-2">
+          This is the master shot recipe library. Planners can pick recipes when building a clip&apos;s recipe.
+        </p>
+        <Link href="/portal/lobby" className="btn btn-secondary btn-sm mt-4">← Back to Lobby</Link>
+      </div>
+    );
+  }
 
   const filtered = SHOT_RECIPES.filter((r) => {
     if (categoryFilter && r.category !== categoryFilter) return false;

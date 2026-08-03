@@ -90,7 +90,7 @@ Signature ID: ${sig.id}
 
 The full agreement text is attached as HTML. Arizona law governs this agreement. Venue: Maricopa County, Arizona.
 
-— AZ Off Script LLC`;
+— AZ Off Script`;
 
     // Send via Supabase auth admin invite-style email? No — use a notifications
     // queue row. If RESEND_API_KEY is set, we could integrate Resend here.
@@ -178,7 +178,7 @@ function buildSignedEmailHtml(opts: {
   .footer { margin-top: 28px; font-size: 11px; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 10px; }
 </style></head><body>
   <div class="header">
-    <h1>AZ OFF SCRIPT LLC</h1>
+    <h1>AZ OFF SCRIPT</h1>
     <p><strong>${escapeHtml(opts.title)}</strong> — ${escapeHtml(opts.version)}</p>
     <p style="font-size:12px;color:#6b7280;margin:4px 0 0;">Electronically signed copy — official record</p>
   </div>
@@ -199,7 +199,7 @@ function buildSignedEmailHtml(opts: {
   <div class="footer">
     This document was electronically signed through the AZ Off Script creator portal.
     Arizona law governs this agreement. Venue: Maricopa County, Arizona.
-    This signed copy is an official record retained by AZ Off Script LLC.
+    This signed copy is an official record retained by AZ Off Script.
   </div>
 </body></html>`;
 }

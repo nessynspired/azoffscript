@@ -2,34 +2,56 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import {
   TRANSITIONS,
   TRANSITION_CATEGORIES,
   TRANSITION_DIFFICULTIES,
   DIFFICULTY_COLORS,
+  CHAIN_TIER_COLORS,
+  CHAIN_TIER_DESCRIPTIONS,
   getTransitionsByCategory,
   type Transition,
   type TransitionCategory,
   type TransitionDifficulty,
+  type TransitionChainTier,
 } from "@/lib/transition-library";
 import { InfoTooltip } from "@/components/InfoTooltip";
 
 export default function TransitionsPage() {
+  const { member } = useAuth();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TransitionCategory | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<TransitionDifficulty | null>(null);
+  const [chainTierFilter, setChainTierFilter] = useState<TransitionChainTier | null>(null);
   const [selectedTransition, setSelectedTransition] = useState<Transition | null>(null);
+
+  // Admin-only — this is the master library. Planners edit per-clip copies via RecipeBuilder.
+  if (member && member.role !== "admin") {
+    return (
+      <div className="card p-10 text-center">
+        <p className="font-display text-2xl text-desert-night">Admin only.</p>
+        <p className="text-sm text-smoked-charcoal/60 mt-2">
+          This is the master transition library. Planners can pick transitions when building a clip&apos;s recipe.
+        </p>
+        <Link href="/portal/lobby" className="btn btn-secondary btn-sm mt-4">← Back to Lobby</Link>
+      </div>
+    );
+  }
 
   const filtered = TRANSITIONS.filter((t) => {
     if (categoryFilter && t.category !== categoryFilter) return false;
     if (difficultyFilter && t.difficulty !== difficultyFilter) return false;
+    if (chainTierFilter && t.chainTier !== chainTierFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       const matches =
         t.name.toLowerCase().includes(q) ||
         t.simpleDescription.toLowerCase().includes(q) ||
         t.category.toLowerCase().includes(q) ||
-        t.worksBestWith.some((w) => w.toLowerCase().includes(q));
+        t.worksBestWith.some((w) => w.toLowerCase().includes(q)) ||
+        (t.outgoingAction?.toLowerCase().includes(q) ?? false) ||
+        (t.incomingAction?.toLowerCase().includes(q) ?? false);
       if (!matches) return false;
     }
     return true;
@@ -62,6 +84,39 @@ export default function TransitionsPage() {
           <p>
             <span className="text-cactus-teal font-bold">Person 2:</span> Acts like the brush hit them and starts their video.
           </p>
+        </div>
+      </div>
+
+      {/* Transition Chain System — explainer */}
+      <div className="card p-5 bg-cactus-teal/5">
+        <p className="font-display text-lg text-desert-night">Transition Chains</p>
+        <p className="text-sm text-smoked-charcoal/70 mt-2 leading-relaxed">
+          When 4, 5, or 6 creators each record separately, they can&apos;t just &ldquo;use an object transition&rdquo; as a loose idea —
+          that creates six clips that may not connect. They need a <strong>Transition Chain Plan</strong>.
+        </p>
+        <p className="text-sm text-smoked-charcoal/70 mt-2 leading-relaxed">
+          The full group shares one coordinated transition sequence, but each creator receives only her specific position and instructions.
+          The first creator is the <strong>Opener</strong>, the last is the <strong>Closer</strong>, and everyone in between is a <strong>Middle Link</strong>.
+        </p>
+        <div className="mt-3 bg-white/50 rounded-xl p-3 text-xs text-smoked-charcoal/70 font-mono leading-relaxed">
+          <p><span className="text-copper-clay font-bold">Creator 1 (Opener):</span> Opening → Content → Transition out</p>
+          <p><span className="text-cactus-teal font-bold">Creator 2 (Middle):</span> Transition in → Content → Transition out</p>
+          <p className="text-desert-night/40">↓ ...</p>
+          <p><span className="text-heat-orange font-bold">Creator N (Closer):</span> Transition in → Content → Final ending</p>
+        </div>
+
+        {/* Chain tier explainer */}
+        <div className="mt-4 space-y-2">
+          <p className="text-xs font-bold text-desert-night/50 uppercase">Chain Tiers</p>
+          {(["Easy Chain", "Medium Chain", "Advanced Chain"] as TransitionChainTier[]).map((tier) => (
+            <div key={tier} className="flex items-start gap-2 text-sm">
+              <span className="shrink-0">{CHAIN_TIER_COLORS[tier]}</span>
+              <div>
+                <span className="font-bold text-desert-night">{tier}</span>
+                <p className="text-smoked-charcoal/60 text-xs">{CHAIN_TIER_DESCRIPTIONS[tier]}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -111,6 +166,24 @@ export default function TransitionsPage() {
                 onClick={() => setDifficultyFilter(d === difficultyFilter ? null : d)}
                 className={`chip !text-xs ${difficultyFilter === d ? "chip-copper" : "chip-cream"}`}
               >{DIFFICULTY_COLORS[d]} {d}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chain Tier filter */}
+        <div>
+          <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Chain Tier</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setChainTierFilter(null)}
+              className={`chip !text-xs ${!chainTierFilter ? "chip-copper" : "chip-cream"}`}
+            >All</button>
+            {(["Easy Chain", "Medium Chain", "Advanced Chain"] as TransitionChainTier[]).map((tier) => (
+              <button
+                key={tier}
+                onClick={() => setChainTierFilter(tier === chainTierFilter ? null : tier)}
+                className={`chip !text-xs ${chainTierFilter === tier ? "chip-copper" : "chip-cream"}`}
+              >{CHAIN_TIER_COLORS[tier]} {tier}</button>
             ))}
           </div>
         </div>
@@ -173,7 +246,7 @@ export default function TransitionsPage() {
         <div className="card p-10 text-center">
           <p className="font-display text-2xl text-desert-night">No transitions match those filters.</p>
           <button
-            onClick={() => { setCategoryFilter(null); setDifficultyFilter(null); setSearch(""); }}
+            onClick={() => { setCategoryFilter(null); setDifficultyFilter(null); setChainTierFilter(null); setSearch(""); }}
             className="btn btn-secondary btn-sm mt-4"
           >Clear filters</button>
         </div>
@@ -298,10 +371,51 @@ function TransitionDetailModal({ transition, onClose }: { transition: Transition
         </div>
 
         {/* Difficulty */}
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-desert-night/50 uppercase">Difficulty:</span>
           <span className="chip chip-cream !text-xs">{DIFFICULTY_COLORS[transition.difficulty]} {transition.difficulty}</span>
+          {transition.chainTier && (
+            <>
+              <span className="text-xs font-bold text-desert-night/50 uppercase ml-2">Chain Tier:</span>
+              <span className="chip chip-cream !text-xs">{CHAIN_TIER_COLORS[transition.chainTier]} {transition.chainTier}</span>
+            </>
+          )}
         </div>
+
+        {/* Paired Handoff — outgoing/incoming actions */}
+        {(transition.outgoingAction || transition.incomingAction) && (
+          <div className="mt-4 border-t border-desert-night/10 pt-4">
+            <p className="text-xs font-bold text-desert-night/50 uppercase">Paired Handoff</p>
+            <p className="text-xs text-smoked-charcoal/50 mt-1">Transitions are stored as paired handoffs, not isolated movements.</p>
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {transition.outgoingAction && (
+                <div className="bg-copper-clay/10 rounded-lg p-3">
+                  <p className="text-xs font-bold text-copper-deep uppercase">Outgoing Action</p>
+                  <p className="text-sm text-desert-night mt-1">{transition.outgoingAction}</p>
+                </div>
+              )}
+              {transition.incomingAction && (
+                <div className="bg-cactus-teal/10 rounded-lg p-3">
+                  <p className="text-xs font-bold text-cactus-teal uppercase">Incoming Action</p>
+                  <p className="text-sm text-desert-night mt-1">{transition.incomingAction}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Direction, safe prop, lens coverage */}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {transition.requiredDirection && (
+                <span className="chip chip-cream !text-[10px]">↔ Direction: {transition.requiredDirection}</span>
+              )}
+              {transition.safeProp && (
+                <span className="chip chip-cream !text-[10px]">Safe prop: {transition.safeProp}</span>
+              )}
+              {transition.lensCoverageRequired !== undefined && (
+                <span className="chip chip-cream !text-[10px]">Lens coverage: {transition.lensCoverageRequired ? "Required" : "Not required"}</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

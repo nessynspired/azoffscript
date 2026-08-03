@@ -1046,12 +1046,123 @@ export default function AgreementsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // ADMIN-ONLY — crew never sees this page
-  if (member?.role !== "admin") {
+  // Viewing a specific version's full text — accessible to both crew and admin
+  if (viewVersion) {
+    const agreement = agreements.find((a) => a.version === viewVersion);
+    const doc = getAgreementByVersion(viewVersion);
+    const body = doc?.bodyMarkdown ?? agreement?.body_markdown ?? "";
+    const exhibits = doc?.exhibits ?? [];
     return (
-      <div className="card p-10 text-center">
-        <p className="font-display text-2xl text-desert-night">Restricted.</p>
-        <p className="text-smoked-charcoal/70 mt-2">Agreements are managed centrally.</p>
+      <AgreementScrollViewer
+        title={agreement?.title ?? doc?.title ?? "Agreement"}
+        version={viewVersion}
+        bodyMarkdown={body}
+        exhibits={exhibits}
+        onBack={() => { setViewVersion(null); setViewExhibitId(null); }}
+        onDownload={() => agreement && downloadAgreementDoc(agreement)}
+        initialExhibitId={viewExhibitId}
+      />
+    );
+  }
+
+  // CREW VIEW — non-admins see the active agreement and can sign it
+  if (member?.role !== "admin") {
+    const activeAgreement = agreements.find((a) => a.status === "Active");
+    const mySignature = signatures.find((s) => s.agreement_id === activeAgreement?.id && s.member_id === member?.id);
+    const doc = activeAgreement ? getAgreementByVersion(activeAgreement.version) : null;
+
+    if (loading) {
+      return (
+        <div className="card p-10 text-center">
+          <p className="font-display text-xl text-desert-night">Loading…</p>
+        </div>
+      );
+    }
+
+    if (!activeAgreement || !doc) {
+      return (
+        <div className="card p-10 text-center">
+          <p className="font-display text-2xl text-desert-night">No active agreement yet.</p>
+          <p className="text-smoked-charcoal/70 mt-2">
+            The agreement will be available here once it&apos;s activated. Check back soon.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">
+            Creator Participation Agreement
+          </h1>
+          <p className="text-smoked-charcoal/70 mt-2">
+            Read through the agreement and sign at the bottom. This covers participation rules, media rights, posting rules, and more.
+          </p>
+        </div>
+
+        {/* Status card */}
+        {mySignature ? (
+          <div className="card p-5 bg-cactus-teal/15 border-2 border-cactus-teal flex items-center gap-4">
+            <MascotImage pose="peace" size={56} className="shrink-0" />
+            <div className="flex-1">
+              <p className="font-display text-xl text-cactus-teal">You&apos;re signed.</p>
+              <p className="text-sm text-smoked-charcoal/70">
+                Signed {new Date(mySignature.created_at).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })} ({activeAgreement.version}).
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="card p-5 bg-copper-deep/10 border-2 border-copper-clay flex items-center gap-4">
+            <MascotImage pose="main" size={56} className="shrink-0" />
+            <div className="flex-1">
+              <p className="font-bold text-desert-night">You haven&apos;t signed yet.</p>
+              <p className="text-sm text-smoked-charcoal/70 mt-1">
+                You need to sign this before uploading clips or filming official content.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Agreement card */}
+        <div className="card p-5 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-display text-lg text-desert-night">{activeAgreement.version} — {activeAgreement.title}</p>
+            <span className="chip chip-approved !text-[9px]">Active</span>
+          </div>
+          <p className="text-xs text-smoked-charcoal/60">{doc.summary}</p>
+          <div className="flex gap-2 flex-wrap pt-2">
+            <button
+              onClick={() => setPopupPreview(doc)}
+              className="btn btn-primary btn-sm"
+            >
+              {mySignature ? "Read it again" : "Read & Sign →"}
+            </button>
+            <button
+              onClick={() => setViewVersion(activeAgreement.version)}
+              className="btn btn-ghost btn-sm"
+            >
+              View full text
+            </button>
+          </div>
+        </div>
+
+        {/* Popup — crew signing flow */}
+        {popupPreview && (
+          <AgreementPopup
+            doc={popupPreview}
+            onClose={() => setPopupPreview(null)}
+            activeAgreementId={activeAgreement.id}
+            member={member ? { id: member.id, name: member.name, email: member.email, phone: null } : null}
+            alreadySigned={!!mySignature}
+            onSigned={() => { load(); }}
+            onOpenExhibit={(exhibitId) => {
+              setViewExhibitId(exhibitId);
+              setViewVersion(popupPreview.version);
+              setPopupPreview(null);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -1132,25 +1243,6 @@ export default function AgreementsPage() {
     a.download = `AZOffScript-${agreement.version}.md`;
     a.click();
     URL.revokeObjectURL(url);
-  }
-
-  // Viewing a specific version's full text
-  if (viewVersion) {
-    const agreement = agreements.find((a) => a.version === viewVersion);
-    const doc = getAgreementByVersion(viewVersion);
-    const body = doc?.bodyMarkdown ?? agreement?.body_markdown ?? "";
-    const exhibits = doc?.exhibits ?? [];
-    return (
-      <AgreementScrollViewer
-        title={agreement?.title ?? doc?.title ?? "Agreement"}
-        version={viewVersion}
-        bodyMarkdown={body}
-        exhibits={exhibits}
-        onBack={() => { setViewVersion(null); setViewExhibitId(null); }}
-        onDownload={() => agreement && downloadAgreementDoc(agreement)}
-        initialExhibitId={viewExhibitId}
-      />
-    );
   }
 
   // Viewing signatures for a specific agreement
@@ -1449,7 +1541,7 @@ function buildSignedHtml(opts: {
 </head>
 <body>
   <div class="header">
-    <h1>AZ OFF SCRIPT LLC</h1>
+    <h1>AZ OFF SCRIPT</h1>
     <p><strong>${escapeHtml(opts.title)}</strong> — ${escapeHtml(opts.version)}</p>
     <p style="font-size: 12px; color: #6b7280; margin: 4px 0 0;">Electronically signed copy — official record</p>
   </div>
@@ -1470,7 +1562,7 @@ function buildSignedHtml(opts: {
   <div class="footer">
     This document was electronically signed through the AZ Off Script creator portal.
     Arizona law governs this agreement. Venue: Maricopa County, Arizona.
-    This signed copy is an official record retained by AZ Off Script LLC.
+    This signed copy is an official record retained by AZ Off Script.
   </div>
 </body>
 </html>`;

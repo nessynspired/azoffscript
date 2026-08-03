@@ -10,6 +10,12 @@ import {
   type QuickDropTemplate,
   type EffortLabel,
 } from "@/lib/quick-drop-templates";
+import {
+  FULL_READY_RECIPES,
+  fullReadyRecipeToClipRecipe,
+  type FullReadyRecipe,
+} from "@/lib/full-ready-recipes";
+import { FullReadyRecipeDetail } from "@/components/FullReadyRecipeDetail";
 import { nextSunday } from "@/lib/plan-defaults";
 import {
   HOOKS,
@@ -68,6 +74,11 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
   const [effortFilter, setEffortFilter] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<QuickDropTemplate | null>(null);
 
+  // Library mode — Quick Formats vs Full Ready Recipes
+  const [bankMode, setBankMode] = useState<"quick" | "full">("full");
+  const [selectedFullRecipe, setSelectedFullRecipe] = useState<FullReadyRecipe | null>(null);
+  const [detailRecipe, setDetailRecipe] = useState<FullReadyRecipe | null>(null);
+
   // Center — Calendar
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [weekOffset, setWeekOffset] = useState(0);
@@ -103,6 +114,18 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
       if (search.trim()) {
         const q = search.toLowerCase();
         if (!t.name.toLowerCase().includes(q) && !t.bucket.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [search, effortFilter]);
+
+  // Filter Full Ready Recipes
+  const filteredFullRecipes = useMemo(() => {
+    return FULL_READY_RECIPES.filter((r) => {
+      if (effortFilter && r.effort !== effortFilter) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (!r.name.toLowerCase().includes(q) && !r.category.toLowerCase().includes(q) && !r.creatorTask.toLowerCase().includes(q) && !r.transitionFamily.toLowerCase().includes(q)) return false;
       }
       return true;
     });
@@ -159,11 +182,61 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
   function clipsForDay(day: Date): Clip[] {
     if (!day) return [];
     const dayStr = day.toISOString().slice(0, 10);
-    return clips.filter((c) => c.scheduled_date && c.scheduled_date.slice(0, 10) === dayStr);
+    // Show clips that go live on this day OR have a drop-by date on this day
+    return clips.filter((c) =>
+      (c.scheduled_date && c.scheduled_date.slice(0, 10) === dayStr) ||
+      (c.clip_due_date && c.clip_due_date.slice(0, 10) === dayStr)
+    );
+  }
+
+  function isLiveDay(day: Date, clip: Clip): boolean {
+    return !!clip.scheduled_date && clip.scheduled_date.slice(0, 10) === day.toISOString().slice(0, 10);
   }
 
   function openScheduleModal(template: QuickDropTemplate) {
     setSelectedTemplate(template);
+    setSelectedFullRecipe(null);
+    setLiveDate(nextSunday().toISOString().slice(0, 10));
+    setSubmittedBy("");
+    setCutReadyBy("");
+    setGreenlightBy("");
+    setSelectedCrew([]);
+    setShowScheduleModal(true);
+  }
+
+  function openScheduleModalFromFullRecipe(recipe: FullReadyRecipe) {
+    setSelectedFullRecipe(recipe);
+    // Find a matching QuickDropTemplate for clip metadata
+    const matching = QUICK_DROP_TEMPLATES.find(t =>
+      t.name.toLowerCase() === recipe.name.toLowerCase() ||
+      t.id === recipe.id.replace(/_[ab]$/, "")
+    );
+    if (matching) {
+      setSelectedTemplate(matching);
+    } else {
+      // Build a synthetic template
+      setSelectedTemplate({
+        id: recipe.id,
+        name: recipe.name,
+        bucket: recipe.category,
+        topicWorld: recipe.topicWorld as never,
+        description: recipe.creatorTask,
+        effort: recipe.effort as EffortLabel,
+        timeEstimate: recipe.effort,
+        homeFriendly: true,
+        needsTalking: true,
+        needsEditing: true,
+        adminStitches: false,
+        idea: recipe.creatorTask,
+        vibe: recipe.topicWorld,
+        whatToDrop: recipe.whatYouAreMaking,
+        makeItYours: recipe.makeItYourOwn[0] ?? "",
+        seoPhrase: recipe.searchTerms[0] ?? "",
+        captionStarter: recipe.caption,
+        hashtagStarter: recipe.hashtags,
+        platforms: ["tiktok"],
+      });
+    }
     setLiveDate(nextSunday().toISOString().slice(0, 10));
     setSubmittedBy("");
     setCutReadyBy("");
@@ -175,12 +248,18 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
   async function createClip() {
     if (!selectedTemplate || !liveDate) return;
     setCreating(true);
+    // If planning from a Full Ready Recipe, copy its content into the clip's recipe.
+    // This is a per-clip COPY — the master library is never modified.
+    const recipePayload = selectedFullRecipe
+      ? fullReadyRecipeToClipRecipe(selectedFullRecipe)
+      : null;
     const { data: clip, error } = await supabase.from("clips").insert({
       title: selectedTemplate.name, type: "video", status: "Planned",
       category: selectedTemplate.bucket, submitted_by: member.id, submitted_by_name: member.name,
       template_id: selectedTemplate.id, destination: selectedTemplate.platforms[0] ?? null,
       clip_due_date: submittedBy || null, final_cut_due: cutReadyBy || null,
       approval_due: greenlightBy || null, scheduled_date: liveDate || null,
+      ...(recipePayload ? { recipe: recipePayload } : {}),
     }).select().single();
     if (error) { alert(error.message); setCreating(false); return; }
     if (selectedCrew.length > 0 && clip) {
@@ -204,6 +283,7 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
     await load();
     setCreating(false);
     setShowScheduleModal(false);
+    setSelectedFullRecipe(null);
   }
 
   return (
@@ -221,8 +301,14 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
           <button onClick={() => isMonth ? setMonthOffset(monthOffset - 1) : setWeekOffset(weekOffset - 1)} className="text-desert-night/60 hover:text-desert-night text-lg px-2">←</button>
           <span className="font-display text-lg text-desert-night min-w-[180px] text-center">{periodLabel}</span>
           <button onClick={() => isMonth ? setMonthOffset(monthOffset + 1) : setWeekOffset(weekOffset + 1)} className="text-desert-night/60 hover:text-desert-night text-lg px-2">→</button>
-          <button onClick={() => { setWeekOffset(0); setMonthOffset(0); }} className="chip chip-cream !text-[10px]">Today</button>
+          <button onClick={() => { setWeekOffset(0); setMonthOffset(0); setViewMode("week"); }} className="chip chip-cream !text-[10px]">Today</button>
         </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-[10px] text-smoked-charcoal/60 mb-2">
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-copper-clay/40"></span> ▶ Goes live</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-cactus-teal/40"></span> ↓ Drop-by</span>
       </div>
 
       {/* 3-panel layout */}
@@ -232,13 +318,28 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
           <div className="card p-3 space-y-3 lg:sticky lg:top-4">
             <div className="flex items-center justify-between">
               <p className="font-display text-base text-desert-night">Ready Bank</p>
-              <span className="text-[10px] text-smoked-charcoal/50">{filteredTemplates.length}</span>
+              <span className="text-[10px] text-smoked-charcoal/50">
+                {bankMode === "full" ? filteredFullRecipes.length : filteredTemplates.length}
+              </span>
             </div>
+
+            {/* Bank mode toggle */}
+            <div className="flex gap-1 bg-desert-night/10 rounded-md p-0.5">
+              <button
+                onClick={() => { setBankMode("full"); setSelectedTemplate(null); setSelectedFullRecipe(null); }}
+                className={`flex-1 px-2 py-1 text-[10px] font-bold rounded transition ${bankMode === "full" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+              >📋 Full Recipes (96)</button>
+              <button
+                onClick={() => { setBankMode("quick"); setSelectedTemplate(null); setSelectedFullRecipe(null); }}
+                className={`flex-1 px-2 py-1 text-[10px] font-bold rounded transition ${bankMode === "quick" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+              >⚡ Quick (60)</button>
+            </div>
+
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search formats..."
+              placeholder={bankMode === "full" ? "Search recipes..." : "Search formats..."}
               className="field !text-xs !py-1.5 !px-2"
             />
             <div className="flex flex-wrap gap-1">
@@ -247,21 +348,55 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
                 <button key={e} onClick={() => setEffortFilter(e === effortFilter ? null : e)} className={`chip !text-[9px] !py-0.5 ${effortFilter === e ? "chip-copper" : "chip-cream"}`}>{e.replace(" Drop", "")}</button>
               ))}
             </div>
-            <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
-              {filteredTemplates.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTemplate(t)}
-                  className={`w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors ${selectedTemplate?.id === t.id ? "bg-copper-clay/20 ring-1 ring-copper-clay/40" : "bg-sandstone-cream/40 hover:bg-copper-clay/10"}`}
-                >
-                  <span className="font-bold text-xs text-desert-night leading-tight flex-1 min-w-0 truncate">{t.name}</span>
-                  <span className="text-[8px] text-smoked-charcoal/50 shrink-0">{t.effort.replace(" Drop", "")}</span>
-                </button>
-              ))}
-              {filteredTemplates.length === 0 && (
-                <p className="text-xs text-smoked-charcoal/40 text-center py-4">No formats match.</p>
-              )}
-            </div>
+
+            {/* Full Ready Recipes list */}
+            {bankMode === "full" && (
+              <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                {filteredFullRecipes.map((r) => (
+                  <div
+                    key={r.id}
+                    className={`w-full rounded-lg px-2.5 py-2 transition-colors ${selectedFullRecipe?.id === r.id ? "bg-copper-clay/20 ring-1 ring-copper-clay/40" : "bg-sandstone-cream/40 hover:bg-copper-clay/10"}`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => { setSelectedFullRecipe(r); setSelectedTemplate(null); }}
+                        className="flex-1 text-left min-w-0"
+                      >
+                        <p className="font-bold text-xs text-desert-night leading-tight truncate">{r.name}</p>
+                        <p className="text-[8px] text-smoked-charcoal/50 truncate">{r.category} · {r.effort.replace(" Drop", "")}</p>
+                      </button>
+                      <button
+                        onClick={() => setDetailRecipe(r)}
+                        className="text-[8px] text-copper-deep hover:underline shrink-0"
+                        title="View full breakdown"
+                      >👁</button>
+                    </div>
+                  </div>
+                ))}
+                {filteredFullRecipes.length === 0 && (
+                  <p className="text-xs text-smoked-charcoal/40 text-center py-4">No recipes match.</p>
+                )}
+              </div>
+            )}
+
+            {/* Quick Formats list */}
+            {bankMode === "quick" && (
+              <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                {filteredTemplates.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedTemplate(t)}
+                    className={`w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors ${selectedTemplate?.id === t.id && !selectedFullRecipe ? "bg-copper-clay/20 ring-1 ring-copper-clay/40" : "bg-sandstone-cream/40 hover:bg-copper-clay/10"}`}
+                  >
+                    <span className="font-bold text-xs text-desert-night leading-tight flex-1 min-w-0 truncate">{t.name}</span>
+                    <span className="text-[8px] text-smoked-charcoal/50 shrink-0">{t.effort.replace(" Drop", "")}</span>
+                  </button>
+                ))}
+                {filteredTemplates.length === 0 && (
+                  <p className="text-xs text-smoked-charcoal/40 text-center py-4">No formats match.</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -291,16 +426,23 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
                         {day.getDate()}
                       </p>
                       <div className="space-y-0.5 mt-0.5">
-                        {dayClips.slice(0, 3).map((c) => (
-                          <button
-                            key={c.id}
-                            onClick={() => isAdmin ? setEditingClip(c) : setRecipeClip(c)}
-                            className="w-full text-left text-[9px] bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep rounded px-1 py-0.5 truncate transition-colors"
-                            title={`Click to edit: ${c.title}`}
-                          >
-                            {c.title}
-                          </button>
-                        ))}
+                        {dayClips.slice(0, 3).map((c) => {
+                          const live = isLiveDay(day, c);
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => isAdmin ? setEditingClip(c) : setRecipeClip(c)}
+                              className={`w-full text-left text-[9px] rounded px-1 py-0.5 truncate transition-colors ${
+                                live
+                                  ? "bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep"
+                                  : "bg-cactus-teal/15 hover:bg-cactus-teal/30 text-cactus-teal"
+                              }`}
+                              title={live ? `Goes live: ${c.title}` : `Drop-by: ${c.title}`}
+                            >
+                              {live ? "▶ " : "↓ "}{c.title}
+                            </button>
+                          );
+                        })}
                         {dayClips.length > 3 && (
                           <p className="text-[8px] text-smoked-charcoal/40">+{dayClips.length - 3} more</p>
                         )}
@@ -324,16 +466,23 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
                         {day.getDate()}
                       </p>
                       <div className="space-y-1 mt-1">
-                        {dayClips.map((c) => (
-                          <button
-                            key={c.id}
-                            onClick={() => isAdmin ? setEditingClip(c) : setRecipeClip(c)}
-                            className="w-full text-left text-[10px] bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep rounded px-1.5 py-1 truncate transition-colors"
-                            title={`Click to edit: ${c.title}`}
-                          >
-                            {c.title}
-                          </button>
-                        ))}
+                        {dayClips.map((c) => {
+                          const live = isLiveDay(day, c);
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => isAdmin ? setEditingClip(c) : setRecipeClip(c)}
+                              className={`w-full text-left text-[10px] rounded px-1.5 py-1 truncate transition-colors ${
+                                live
+                                  ? "bg-copper-clay/15 hover:bg-copper-clay/30 text-copper-deep"
+                                  : "bg-cactus-teal/15 hover:bg-cactus-teal/30 text-cactus-teal"
+                              }`}
+                              title={live ? `Goes live: ${c.title}` : `Drop-by: ${c.title}`}
+                            >
+                              {live ? "▶ " : "↓ "}{c.title}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -348,11 +497,64 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
                   <p className="text-xs font-bold text-copper-deep uppercase">Selected</p>
                   <p className="text-sm font-bold text-desert-night truncate">{selectedTemplate.name}</p>
                   <p className="text-[10px] text-smoked-charcoal/50">{selectedTemplate.bucket} · {selectedTemplate.effort}</p>
+                  {selectedFullRecipe && (
+                    <p className="text-[10px] text-cactus-teal font-bold mt-0.5">Full recipe attached — all steps will copy into the clip</p>
+                  )}
                 </div>
                 <button
-                  onClick={() => openScheduleModal(selectedTemplate)}
+                  onClick={() => selectedFullRecipe ? openScheduleModalFromFullRecipe(selectedFullRecipe) : openScheduleModal(selectedTemplate)}
                   className="btn btn-primary btn-sm shrink-0"
                 >+ Schedule</button>
+              </div>
+            )}
+
+            {/* Full recipe preview when selected */}
+            {selectedFullRecipe && (
+              <div className="mt-3 bg-cactus-teal/10 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-cactus-teal uppercase">Full Recipe Breakdown</p>
+                  <button
+                    onClick={() => setDetailRecipe(selectedFullRecipe)}
+                    className="text-[10px] text-copper-deep hover:underline"
+                  >View all details →</button>
+                </div>
+                <div className="text-[11px] text-smoked-charcoal/80 space-y-1.5">
+                  <p><span className="font-bold text-desert-night">Goal:</span> {selectedFullRecipe.creatorTask}</p>
+                  <div>
+                    <p className="font-bold text-desert-night">Part 1 — Transition-In:</p>
+                    <p className="text-smoked-charcoal/70">{selectedFullRecipe.part1TransitionIn.description}</p>
+                    {selectedFullRecipe.part1TransitionIn.steps.length > 0 && (
+                      <ol className="ml-4 mt-0.5 space-y-0.5">
+                        {selectedFullRecipe.part1TransitionIn.steps.slice(0, 3).map((s, i) => (
+                          <li key={i} className="text-[10px] text-smoked-charcoal/60">{i + 1}. {s}</li>
+                        ))}
+                        {selectedFullRecipe.part1TransitionIn.steps.length > 3 && (
+                          <li className="text-[10px] text-smoked-charcoal/40 italic">+ {selectedFullRecipe.part1TransitionIn.steps.length - 3} more steps</li>
+                        )}
+                      </ol>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-bold text-desert-night">Part 2 — Content Action:</p>
+                    <ol className="ml-4 mt-0.5 space-y-0.5">
+                      {selectedFullRecipe.part2ContentAction.steps.slice(0, 3).map((s, i) => (
+                        <li key={i} className="text-[10px] text-smoked-charcoal/60">{i + 1}. {s}</li>
+                      ))}
+                      {selectedFullRecipe.part2ContentAction.steps.length > 3 && (
+                        <li className="text-[10px] text-smoked-charcoal/40 italic">+ {selectedFullRecipe.part2ContentAction.steps.length - 3} more steps</li>
+                      )}
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="font-bold text-desert-night">Part 3 — Transition-Out:</p>
+                    <p className="text-smoked-charcoal/70">{selectedFullRecipe.part3TransitionOut.description}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">👥 {selectedFullRecipe.defaultParticipantCount} creators</span>
+                    <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{selectedFullRecipe.transitionFamily}</span>
+                    <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{selectedFullRecipe.difficulty}</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -501,6 +703,7 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
       {recipeClip && (
         <RecipeBuilder
           clip={recipeClip}
+          members={members.map(m => ({ id: m.id, name: m.name }))}
           onClose={() => setRecipeClip(null)}
           onSaved={load}
         />
@@ -519,7 +722,7 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
       {/* Schedule modal */}
       {showScheduleModal && selectedTemplate && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowScheduleModal(false)}>
-          <div className="bg-sandstone-cream rounded-2xl p-6 max-w-md w-full space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-sandstone-cream rounded-2xl p-6 max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-display text-xl text-desert-night">{selectedTemplate.name}</h2>
@@ -527,6 +730,171 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
               </div>
               <button onClick={() => setShowScheduleModal(false)} className="text-desert-night/40 hover:text-desert-night text-2xl">×</button>
             </div>
+
+            {selectedFullRecipe && (
+              <div className="bg-cactus-teal/10 rounded-lg p-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-desert-night">📋 Recipe Breakdown</p>
+                  <button
+                    onClick={() => setDetailRecipe(selectedFullRecipe)}
+                    className="text-[10px] text-copper-deep hover:underline"
+                  >View full details →</button>
+                </div>
+
+                {/* Card preview */}
+                <div className="text-xs text-smoked-charcoal/80 space-y-1">
+                  <p><span className="font-bold text-desert-night">Creator task:</span> {selectedFullRecipe.creatorTask}</p>
+                  <p><span className="font-bold text-desert-night">Content action:</span> {selectedFullRecipe.contentAction}</p>
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1">
+                  <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{selectedFullRecipe.difficulty}</span>
+                  <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{selectedFullRecipe.transitionFamily}</span>
+                  <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{selectedFullRecipe.assemblyMode}</span>
+                  <span className="chip chip-teal !text-[8px] !px-1.5 !py-0.5">{selectedFullRecipe.defaultParticipantCount} creators</span>
+                  <span className={`chip !text-[8px] !px-1.5 !py-0.5 ${selectedFullRecipe.version.startsWith("A") ? "chip-copper" : "chip-cream"}`}>{selectedFullRecipe.version}</span>
+                </div>
+
+                {/* Tone Mix */}
+                {selectedFullRecipe.toneMix && selectedFullRecipe.toneMix.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[9px] font-bold text-desert-night/50 uppercase">Tone:</span>
+                    {selectedFullRecipe.toneMix.map(t => (
+                      <span key={t} className="chip chip-copper !text-[8px] !px-1.5 !py-0.5">{t}</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Goal */}
+                <div className="bg-white/40 rounded-md p-2">
+                  <p className="text-[9px] font-bold text-desert-night/50 uppercase">Goal</p>
+                  <p className="text-xs text-desert-night mt-0.5">{selectedFullRecipe.goal}</p>
+                </div>
+
+                {/* What You Are Making — the actual topic */}
+                {selectedFullRecipe.whatYouAreMaking && (
+                  <div className="bg-copper-clay/10 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-copper-deep uppercase">What You&apos;re Making</p>
+                    <p className="text-xs text-desert-night mt-0.5 font-bold">{selectedFullRecipe.whatYouAreMaking}</p>
+                  </div>
+                )}
+
+                {/* Introduction Direction — how to open */}
+                {selectedFullRecipe.introductionDirection && (
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Introduction Direction</p>
+                    <p className="text-xs text-desert-night mt-0.5 italic">{selectedFullRecipe.introductionDirection}</p>
+                  </div>
+                )}
+
+                {/* Assigned Movement or Line — if specific */}
+                {selectedFullRecipe.assignedMovementOrLine && (
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Assigned Movement or Line</p>
+                    <p className="text-xs text-desert-night mt-0.5 italic">{selectedFullRecipe.assignedMovementOrLine}</p>
+                  </div>
+                )}
+
+                {/* Content Shape — the beat-by-beat */}
+                {selectedFullRecipe.contentShape.length > 0 && (
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Content Shape</p>
+                    <ol className="text-xs text-desert-night mt-0.5 space-y-0.5">
+                      {selectedFullRecipe.contentShape.map((step, i) => (
+                        <li key={i} className="flex gap-1.5">
+                          <span className="text-copper-deep font-bold">{i + 1}.</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {/* Example Directions — so they know what to say/do */}
+                {selectedFullRecipe.exampleDirections.length > 0 && (
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Example Directions <span className="font-normal lowercase">(not scripts — just the type)</span></p>
+                    <ul className="text-xs text-desert-night mt-0.5 space-y-0.5">
+                      {selectedFullRecipe.exampleDirections.map((ex, i) => (
+                        <li key={i} className="flex gap-1.5">
+                          <span className="text-copper-deep">·</span>
+                          <span>{ex}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Make It Your Own — creative freedom rules */}
+                {selectedFullRecipe.makeItYourOwn.length > 0 && (
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Make It Your Own</p>
+                    <ul className="text-xs text-desert-night mt-0.5 space-y-0.5">
+                      {selectedFullRecipe.makeItYourOwn.map((item, i) => (
+                        <li key={i} className="flex gap-1.5">
+                          <span className="text-copper-deep">·</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Parts breakdown */}
+                <div className="space-y-1.5">
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-cactus-teal uppercase">Part 1 — Transition-In</p>
+                    <p className="text-xs text-desert-night mt-0.5">{selectedFullRecipe.part1TransitionIn.description}</p>
+                    <p className="text-[10px] text-smoked-charcoal/50 mt-0.5">{selectedFullRecipe.part1TransitionIn.steps.length} steps</p>
+                  </div>
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Part 2 — Content Action</p>
+                    <p className="text-[10px] text-smoked-charcoal/50 mt-0.5">{selectedFullRecipe.part2ContentAction.steps.length} steps</p>
+                  </div>
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-copper-deep uppercase">Part 3 — Transition-Out</p>
+                    <p className="text-xs text-desert-night mt-0.5">{selectedFullRecipe.part3TransitionOut.description}</p>
+                    <p className="text-[10px] text-smoked-charcoal/50 mt-0.5">{selectedFullRecipe.part3TransitionOut.steps.length} steps</p>
+                  </div>
+                </div>
+
+                {/* Assembly */}
+                <div className="bg-white/40 rounded-md p-2">
+                  <p className="text-[9px] font-bold text-desert-night/50 uppercase">Group Assembly</p>
+                  <p className="text-xs text-desert-night mt-0.5">
+                    {selectedFullRecipe.defaultParticipantCount} creators · {selectedFullRecipe.sixPersonOrder.join(" → ")}
+                  </p>
+                </div>
+
+                {/* Recording + What to Send */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Recording</p>
+                    <p className="text-[10px] text-smoked-charcoal/60 mt-0.5">{selectedFullRecipe.recordingSetup.length} setup notes · {selectedFullRecipe.recordSteps.length} record steps</p>
+                  </div>
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">What to Send</p>
+                    <p className="text-[10px] text-smoked-charcoal/60 mt-0.5">{selectedFullRecipe.whatToSend.length} rules</p>
+                  </div>
+                </div>
+
+                {/* Caption */}
+                {selectedFullRecipe.caption && (
+                  <div className="bg-white/40 rounded-md p-2">
+                    <p className="text-[9px] font-bold text-desert-night/50 uppercase">Caption</p>
+                    <p className="text-xs text-desert-night mt-0.5 italic">&ldquo;{selectedFullRecipe.caption}&rdquo;</p>
+                    {selectedFullRecipe.hashtags.length > 0 && (
+                      <p className="text-[10px] text-copper-deep mt-0.5">{selectedFullRecipe.hashtags.join(" ")}</p>
+                    )}
+                  </div>
+                )}
+
+                <p className="text-[10px] text-smoked-charcoal/50 text-center pt-1">
+                  All of this copies into the clip. Editable per-clip on the Run Sheet — master library stays untouched.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -561,6 +929,24 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Full Ready Recipe Detail Modal */}
+      {detailRecipe && (
+        <FullReadyRecipeDetail
+          recipe={detailRecipe}
+          onClose={() => setDetailRecipe(null)}
+          canPlanContent={isAdmin}
+          onPlan={(r) => {
+            setDetailRecipe(null);
+            // If the schedule modal is already open, the user was just viewing
+            // details from inside it — don't reset their dates/crew. Just close
+            // the detail modal and keep the schedule modal as-is.
+            if (!showScheduleModal) {
+              openScheduleModalFromFullRecipe(r);
+            }
+          }}
+        />
       )}
     </div>
   );

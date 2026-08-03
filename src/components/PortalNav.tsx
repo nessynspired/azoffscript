@@ -51,9 +51,9 @@ const PLANNER_PRIMARY: NavItem[] = [
 
 const PLANNER_MORE: NavItem[] = [
   { href: "/portal/sparks", label: "Spark Board", info: "Drop raw content ideas and vote on ideas you like. Best ones become Ready Bank templates." },
-  { href: "/portal/transitions", label: "Transitions", info: "How to connect your clip to the next person's clip. Simple step-by-step instructions for every transition." },
-  { href: "/portal/recording-styles", label: "Recording Styles", info: "How to film your video — direct to camera, natural moment, reaction, POV, and more. Not the transition, the actual filming style." },
-  { href: "/portal/shot-recipes", label: "Shot Recipes", info: "Ready-to-film assignments. Each recipe combines content + version + prompt + recording style + transition + editing + caption into one card. Just hit record." },
+  { href: "/portal/transitions", label: "Transitions", info: "How to connect your clip to the next person's clip. Simple step-by-step instructions for every transition.", adminOnly: true },
+  { href: "/portal/recording-styles", label: "Recording Styles", info: "How to film your video — direct to camera, natural moment, reaction, POV, and more. Not the transition, the actual filming style.", adminOnly: true },
+  { href: "/portal/shot-recipes", label: "Shot Recipes", info: "Ready-to-film assignments. Each recipe combines content + version + prompt + recording style + transition + editing + caption into one card. Just hit record.", adminOnly: true },
   { href: "/portal/editing-recipes", label: "Editing Recipes", info: "For admin. Once everyone sends their clips, this is how the final video gets put together. Repeatable blueprints for every content type.", adminOnly: true },
   { href: "/portal/prompts", label: "Prompts", info: "The endless idea engine. Evergreen, seasonal, trending, and community-generated prompts organized by category. This is a living library that keeps getting fed.", adminOnly: true },
   { href: "/portal/discovery", label: "Discovery", info: "How people find us. Captions, search keywords, comment prompts, and trend monitoring. Living library — updates continuously based on what's performing.", adminOnly: true },

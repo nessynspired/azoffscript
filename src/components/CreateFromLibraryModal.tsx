@@ -26,6 +26,7 @@ import {
 } from "@/lib/recording-style-library";
 import {
   SHOT_RECIPES,
+  buildRecipeForInsert,
 } from "@/lib/shot-recipe-library";
 import {
   QUICK_DROP_TEMPLATES,
@@ -112,6 +113,11 @@ export function CreateFromLibraryModal({ member, members, onClose, onCreated }: 
 
     const template = selectedTemplateId ? QUICK_DROP_TEMPLATES.find(t => t.id === selectedTemplateId) : null;
 
+    // Auto-attach recipe: prefer a shot recipe the user explicitly picked in
+    // the Recipes tab; otherwise fall back to the template's linked shotRecipeId.
+    const recipeShotRecipeId = notes.shotRecipe ?? template?.shotRecipeId;
+    const recipe = buildRecipeForInsert(recipeShotRecipeId);
+
     const { data: clip, error } = await supabase.from("clips").insert({
       title: title.trim(),
       type: "video",
@@ -127,6 +133,7 @@ export function CreateFromLibraryModal({ member, members, onClose, onCreated }: 
       approval_due: approvalDue || null,
       scheduled_date: scheduledDate || null,
       production_notes: notes as unknown as Record<string, unknown>,
+      ...(recipe ? { recipe } : {}),
     }).select().single();
 
     if (error || !clip) {

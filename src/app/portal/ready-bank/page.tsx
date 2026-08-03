@@ -19,9 +19,16 @@ import {
   SCRIPT_LAYER_FILTERS,
   type OffScriptVersion,
 } from "@/lib/off-script-versions";
+import {
+  FULL_READY_RECIPES,
+  fullReadyRecipeToClipRecipe,
+  type FullReadyRecipe,
+  type RecipeVersion,
+} from "@/lib/full-ready-recipes";
 import { nextSunday } from "@/lib/plan-defaults";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { CalendarBuilder } from "@/components/CalendarBuilder";
+import { FullReadyRecipeDetail, FullReadyRecipeCard } from "@/components/FullReadyRecipeDetail";
 import type { Database } from "@/lib/types/db";
 
 type Member = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "name" | "nickname" | "role" | "can_plan_content">;
@@ -59,6 +66,25 @@ export default function ReadyBankPage() {
 
   // View toggle — List vs Calendar Builder
   const [viewMode, setViewMode] = useState<"list" | "builder">("list");
+
+  // Library toggle — Quick Formats vs Full Ready Recipes
+  // Default to "full" so planners land on the complete recipe library with all steps.
+  const [libraryMode, setLibraryMode] = useState<"quick" | "full">("full");
+
+  // Full Ready Recipe detail modal
+  const [detailRecipe, setDetailRecipe] = useState<FullReadyRecipe | null>(null);
+
+  // When planning from a Full Ready Recipe, we store it here so createClip
+  // can copy the full recipe content into the clip's recipe field.
+  // This is a per-clip COPY — the master library is never modified.
+  const [pendingFullRecipe, setPendingFullRecipe] = useState<FullReadyRecipe | null>(null);
+
+  // Full Ready Recipe filters
+  const [fullSearch, setFullSearch] = useState("");
+  const [fullVersionFilter, setFullVersionFilter] = useState<"all" | RecipeVersion>("all");
+  const [fullCategoryFilter, setFullCategoryFilter] = useState<string | null>(null);
+  const [fullEffortFilter, setFullEffortFilter] = useState<string | null>(null);
+  const [fullDifficultyFilter, setFullDifficultyFilter] = useState<string | null>(null);
 
   // Action modal
   const [actionTemplate, setActionTemplate] = useState<QuickDropTemplate | null>(null);
@@ -113,11 +139,18 @@ export default function ReadyBankPage() {
     setSubmittedBy("");
     setCutReadyBy("");
     setGreenlightBy("");
+    setPendingFullRecipe(null);
   }
 
   async function createClip() {
     if (!actionTemplate || !member || !liveDate) return;
     setCreating(true);
+
+    // If planning from a Full Ready Recipe, copy its content into the clip's recipe.
+    // This is a per-clip COPY — the master library (FULL_READY_RECIPES) is never modified.
+    const recipePayload = pendingFullRecipe
+      ? fullReadyRecipeToClipRecipe(pendingFullRecipe)
+      : null;
 
     const clipInsert = {
       title: actionTemplate.name,
@@ -132,6 +165,7 @@ export default function ReadyBankPage() {
       final_cut_due: cutReadyBy || null,
       approval_due: greenlightBy || null,
       scheduled_date: liveDate || null,
+      ...(recipePayload ? { recipe: recipePayload } : {}),
     };
 
     const { data: clip, error } = await supabase.from("clips").insert(clipInsert).select().single();
@@ -204,6 +238,31 @@ export default function ReadyBankPage() {
     return true;
   });
 
+  // Filter Full Ready Recipes
+  const filteredFullRecipes = FULL_READY_RECIPES.filter((r) => {
+    if (fullVersionFilter !== "all" && r.version !== fullVersionFilter) return false;
+    if (fullCategoryFilter && r.category !== fullCategoryFilter) return false;
+    if (fullEffortFilter && r.effort !== fullEffortFilter) return false;
+    if (fullDifficultyFilter && r.difficulty !== fullDifficultyFilter) return false;
+    if (fullSearch.trim()) {
+      const q = fullSearch.toLowerCase();
+      const matches =
+        r.name.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q) ||
+        r.topicWorld.toLowerCase().includes(q) ||
+        r.creatorTask.toLowerCase().includes(q) ||
+        r.contentAction.toLowerCase().includes(q) ||
+        r.transitionFamily.toLowerCase().includes(q);
+      if (!matches) return false;
+    }
+    return true;
+  });
+
+  // Unique categories from full recipes
+  const fullRecipeCategories = [...new Set(FULL_READY_RECIPES.map(r => r.category))].sort();
+  const fullRecipeEfforts = [...new Set(FULL_READY_RECIPES.map(r => r.effort))].sort();
+  const fullRecipeDifficulties = [...new Set(FULL_READY_RECIPES.map(r => r.difficulty))].sort();
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -226,18 +285,50 @@ export default function ReadyBankPage() {
             </p>
           </div>
           {/* View toggle */}
-          <div className="flex gap-1 bg-desert-night/10 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode("list")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${viewMode === "list" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
-            >📋 List</button>
-            <button
-              onClick={() => setViewMode("builder")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${viewMode === "builder" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
-            >📅 Calendar Builder</button>
+          <div className="flex flex-wrap gap-2">
+            {/* Library toggle */}
+            <div className="flex gap-1 bg-desert-night/10 rounded-lg p-1">
+              <button
+                onClick={() => setLibraryMode("quick")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${libraryMode === "quick" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+              >⚡ Quick Formats (60)</button>
+              <button
+                onClick={() => setLibraryMode("full")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${libraryMode === "full" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+              >📋 Full Recipes ({FULL_READY_RECIPES.length})</button>
+            </div>
+            {/* View toggle */}
+            <div className="flex gap-1 bg-desert-night/10 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${viewMode === "list" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+              >☰ List</button>
+              <button
+                onClick={() => setViewMode("builder")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${viewMode === "builder" ? "bg-desert-night text-sandstone-cream" : "text-desert-night/60"}`}
+              >📅 Calendar Builder</button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Library mode explainer */}
+      {libraryMode === "full" && (
+        <div className="bg-cactus-teal/10 rounded-xl p-3 text-sm text-desert-night">
+          <p className="font-bold">Full Ready Recipes — 96 complete assignments with step-by-step instructions</p>
+          <p className="text-xs text-smoked-charcoal/70 mt-1">
+            Each recipe includes the full creator breakdown: transition-in steps, content action steps, transition-out steps, group assembly plan (4/5/6-person), recording setup, what to send, admin editing recipe, and caption package. Click any card to see the full breakdown. Plan from any recipe — the full content copies into your clip so you can edit it per-clip without touching the master library.
+          </p>
+        </div>
+      )}
+      {libraryMode === "quick" && (
+        <div className="bg-sandstone-cream/50 rounded-xl p-3 text-sm text-smoked-charcoal/70">
+          <p className="font-bold text-desert-night">Quick Formats — 60 short-form templates</p>
+          <p className="text-xs mt-1">
+            Lightweight cards with caption starters, hashtags, and search phrases. For when you need a fast plan without the full step-by-step breakdown.
+          </p>
+        </div>
+      )}
 
       {/* Flow explanation */}
       <div className="card p-4 bg-sandstone-cream/50">
@@ -262,6 +353,94 @@ export default function ReadyBankPage() {
 
       {/* List view — filters + template cards (default) */}
       {viewMode === "list" && (
+      <>
+      {/* ===== Full Ready Recipes view ===== */}
+      {libraryMode === "full" && (
+        <>
+        {/* Full Recipe Filters */}
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={fullSearch}
+            onChange={(e) => setFullSearch(e.target.value)}
+            placeholder="Search full recipes by name, category, or content..."
+            className="field"
+          />
+
+          {/* Version filter */}
+          <div>
+            <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Version</p>
+            <div className="flex gap-2">
+              <button onClick={() => setFullVersionFilter("all")} className={`chip !text-xs ${fullVersionFilter === "all" ? "chip-copper" : "chip-cream"}`}>All</button>
+              <button onClick={() => setFullVersionFilter("A — Current")} className={`chip !text-xs ${fullVersionFilter === "A — Current" ? "chip-copper" : "chip-cream"}`}>A: Current (60)</button>
+              <button onClick={() => setFullVersionFilter("B — Off Script")} className={`chip !text-xs ${fullVersionFilter === "B — Off Script" ? "chip-copper" : "chip-cream"}`}>B: Off Script (36)</button>
+            </div>
+          </div>
+
+          {/* Category filter */}
+          <div>
+            <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Category</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button onClick={() => setFullCategoryFilter(null)} className={`chip !text-[10px] ${!fullCategoryFilter ? "chip-copper" : "chip-cream"}`}>All</button>
+              {fullRecipeCategories.map((c) => (
+                <button key={c} onClick={() => setFullCategoryFilter(c === fullCategoryFilter ? null : c)} className={`chip !text-[10px] ${fullCategoryFilter === c ? "chip-copper" : "chip-cream"}`}>{c}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Effort filter */}
+          <div>
+            <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Effort</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button onClick={() => setFullEffortFilter(null)} className={`chip !text-[10px] ${!fullEffortFilter ? "chip-copper" : "chip-cream"}`}>All</button>
+              {fullRecipeEfforts.map((e) => (
+                <button key={e} onClick={() => setFullEffortFilter(e === fullEffortFilter ? null : e)} className={`chip !text-[10px] ${fullEffortFilter === e ? "chip-copper" : "chip-cream"}`}>{e}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Difficulty filter */}
+          <div>
+            <p className="text-xs font-bold text-desert-night/50 uppercase mb-1.5">Difficulty</p>
+            <div className="flex flex-wrap gap-1.5">
+              <button onClick={() => setFullDifficultyFilter(null)} className={`chip !text-[10px] ${!fullDifficultyFilter ? "chip-copper" : "chip-cream"}`}>All</button>
+              {fullRecipeDifficulties.map((d) => (
+                <button key={d} onClick={() => setFullDifficultyFilter(d === fullDifficultyFilter ? null : d)} className={`chip !text-[10px] ${fullDifficultyFilter === d ? "chip-copper" : "chip-cream"}`}>{d}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Results count */}
+        <p className="text-sm text-smoked-charcoal/60">
+          {filteredFullRecipes.length} {filteredFullRecipes.length === 1 ? "recipe" : "recipes"} ready to schedule
+        </p>
+
+        {/* Full Recipe Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredFullRecipes.map((r) => (
+            <FullReadyRecipeCard
+              key={r.id}
+              recipe={r}
+              onClick={() => setDetailRecipe(r)}
+            />
+          ))}
+        </div>
+
+        {filteredFullRecipes.length === 0 && (
+          <div className="card p-10 text-center">
+            <p className="font-display text-2xl text-desert-night">No recipes match those filters.</p>
+            <button
+              onClick={() => { setFullSearch(""); setFullVersionFilter("all"); setFullCategoryFilter(null); setFullEffortFilter(null); setFullDifficultyFilter(null); }}
+              className="btn btn-secondary btn-sm mt-4"
+            >Clear filters</button>
+          </div>
+        )}
+        </>
+      )}
+
+      {/* ===== Quick Formats view (existing) ===== */}
+      {libraryMode === "quick" && (
       <>
       {/* Filters */}
       <div className="space-y-3">
@@ -428,6 +607,8 @@ export default function ReadyBankPage() {
           >Clear filters</button>
         </div>
       )}
+      </>
+      )}
 
       {/* Planned ideas from Spark Board */}
       {plannedIdeas.length > 0 && (
@@ -465,6 +646,15 @@ export default function ReadyBankPage() {
               <h2 className="font-display text-xl text-desert-night">{actionTemplate.name}</h2>
               <button onClick={closeAction} className="text-desert-night/40 hover:text-desert-night text-2xl">×</button>
             </div>
+
+            {pendingFullRecipe && (
+              <div className="bg-cactus-teal/10 rounded-lg p-3 text-sm text-desert-night">
+                <p className="font-bold">Full recipe attached</p>
+                <p className="text-xs text-smoked-charcoal/70 mt-1">
+                  The complete recipe (transition-in, content action, transition-out, assembly plan, caption package) will be copied into this clip. You can edit it per-clip on the Run Sheet — the master library stays untouched.
+                </p>
+              </div>
+            )}
 
             {(actionMode === "week" || actionMode === "date" || actionMode === "assign") && (
               <div className="space-y-3">
@@ -531,6 +721,54 @@ export default function ReadyBankPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Full Ready Recipe Detail Modal */}
+      {detailRecipe && (
+        <FullReadyRecipeDetail
+          recipe={detailRecipe}
+          onClose={() => setDetailRecipe(null)}
+          canPlanContent={isPlanner}
+          onPlan={isPlanner ? (r) => {
+            // Close the detail modal
+            setDetailRecipe(null);
+            // Store the full recipe so createClip copies it into the clip
+            setPendingFullRecipe(r);
+            // Find a matching QuickDropTemplate for the clip metadata
+            const matchingTemplate = QUICK_DROP_TEMPLATES.find(t =>
+              t.name.toLowerCase() === r.name.toLowerCase() ||
+              t.id === r.id.replace(/_[ab]$/, "")
+            );
+            if (matchingTemplate) {
+              openAction(matchingTemplate, "assign");
+            } else {
+              // No matching template — create a synthetic template from the recipe
+              // so the action modal can still work
+              const syntheticTemplate: QuickDropTemplate = {
+                id: r.id,
+                name: r.name,
+                bucket: r.category,
+                description: r.creatorTask,
+                effort: r.effort as EffortLabel,
+                timeEstimate: r.effort,
+                homeFriendly: true,
+                needsTalking: true,
+                needsEditing: true,
+                adminStitches: false,
+                idea: r.creatorTask,
+                vibe: r.topicWorld,
+                whatToDrop: r.whatYouAreMaking,
+                makeItYours: r.makeItYourOwn[0] ?? "",
+                seoPhrase: r.searchTerms[0] ?? "",
+                captionStarter: r.caption,
+                hashtagStarter: r.hashtags,
+                platforms: ["tiktok"],
+                topicWorld: r.topicWorld as TopicWorld,
+              };
+              openAction(syntheticTemplate, "assign");
+            }
+          } : undefined}
+        />
       )}
     </div>
   );

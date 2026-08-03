@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import {
   RECORDING_STYLES,
   RECORDING_DIFFICULTIES,
@@ -12,9 +13,23 @@ import {
 import { InfoTooltip } from "@/components/InfoTooltip";
 
 export default function RecordingStylesPage() {
+  const { member } = useAuth();
   const [search, setSearch] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<RecordingDifficulty | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<RecordingStyle | null>(null);
+
+  // Admin-only — this is the master library. Planners edit per-clip copies via RecipeBuilder.
+  if (member && member.role !== "admin") {
+    return (
+      <div className="card p-10 text-center">
+        <p className="font-display text-2xl text-desert-night">Admin only.</p>
+        <p className="text-sm text-smoked-charcoal/60 mt-2">
+          This is the master recording style library. Planners can pick recording styles when building a clip&apos;s recipe.
+        </p>
+        <Link href="/portal/lobby" className="btn btn-secondary btn-sm mt-4">← Back to Lobby</Link>
+      </div>
+    );
+  }
 
   const filtered = RECORDING_STYLES.filter((s) => {
     if (difficultyFilter && s.difficulty !== difficultyFilter) return false;

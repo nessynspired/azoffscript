@@ -321,6 +321,12 @@ export default function DropPage() {
               </div>
               {clipLocked && <span className="text-2xl">🔒</span>}
             </button>
+
+            {clipLocked && (
+              <a href="/portal/agreements" className="btn btn-primary w-full text-sm mt-1">
+                Sign the Creator Release to unlock clip uploads →
+              </a>
+            )}
           </div>
         )}
 

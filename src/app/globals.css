@@ -890,13 +890,18 @@ a.chip {
 }
 .agreement-prose p,
 .agreement-prose li,
-.agreement-prose h1,
-.agreement-prose h2,
-.agreement-prose h3,
 .agreement-prose strong,
 .agreement-prose code {
   overflow-wrap: break-word;
   word-break: break-word;
+}
+/* Headings: only break when a single word truly overflows.
+   `word-break: break-word` was smashing titles into 1-2 chars/line on mobile. */
+.agreement-prose h1,
+.agreement-prose h2,
+.agreement-prose h3 {
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 .agreement-prose ul,
 .agreement-prose ol {

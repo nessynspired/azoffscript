@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { TONE_OPTIONS } from "@/lib/full-ready-recipes";
 import {
   SHOT_RECIPES,
   DIFFICULTY_COLORS as RECIPE_DIFF_COLORS,
@@ -15,8 +16,19 @@ import {
 import {
   TRANSITIONS,
   DIFFICULTY_COLORS as TRANSITION_DIFF_COLORS,
+  CHAIN_TIER_COLORS,
   type Transition,
+  type TransitionChainTier,
 } from "@/lib/transition-library";
+import {
+  planTransitionChain,
+  chainPreviewText,
+  recommendedStrategy,
+  recommendedTransitionId,
+  type TransitionChainPlan,
+  type ChainStrategy,
+  type ChainContentType,
+} from "@/lib/transition-chain";
 import type { Database } from "@/lib/types/db";
 
 /** Accepts either the clips table Row or the clips_with_meta view Row */
@@ -47,6 +59,39 @@ export interface ClipRecipe {
   adminOrder: string[];
   adminNotes: string;
   difficulty: string;
+  toneMix: string[];
+  // ===== Topic specifics (from Full Ready Recipes) =====
+  whatYouAreMaking?: string;
+  introductionDirection?: string;
+  assignedMovementOrLine?: string;
+  makeItYourOwn?: string[];
+  exampleDirections?: string[];
+  // ===== Transition Chain fields (for multi-creator videos) =====
+  assemblyMode?: string;
+  chainStrategy?: string;
+  chainContentType?: string;
+  participantCount?: number;
+  creatorOrder?: string[];
+  transitionFamily?: string;
+  chainTier?: string;
+  transitionMap?: { fromPosition: number; toPosition: number; transitionId: string; label: string; outgoingAction: string; incomingAction: string; direction: string }[];
+  chainOpening?: string;
+  chainClosing?: string;
+  chainPositions?: {
+    name: string;
+    position: number;
+    totalCreators: number;
+    role: string;
+    previousCreator: string | null;
+    nextCreator: string | null;
+    transitionIn: string;
+    transitionInSteps: string[];
+    transitionOut: string;
+    transitionOutSteps: string[];
+    direction: string;
+    contentAction: string;
+    object?: string;
+  }[];
 }
 
 function emptyRecipe(): ClipRecipe {
@@ -69,6 +114,7 @@ function emptyRecipe(): ClipRecipe {
     adminOrder: [],
     adminNotes: "",
     difficulty: "Easy",
+    toneMix: [],
   };
 }
 
@@ -103,6 +149,24 @@ function parseRecipe(raw: Record<string, unknown> | null): ClipRecipe {
     adminOrder: Array.isArray(raw.adminOrder) ? raw.adminOrder as string[] : e.adminOrder,
     adminNotes: typeof raw.adminNotes === "string" ? raw.adminNotes : e.adminNotes,
     difficulty: typeof raw.difficulty === "string" ? raw.difficulty : e.difficulty,
+    toneMix: Array.isArray(raw.toneMix) ? raw.toneMix as string[] : e.toneMix,
+    whatYouAreMaking: typeof raw.whatYouAreMaking === "string" ? raw.whatYouAreMaking : e.whatYouAreMaking,
+    introductionDirection: typeof raw.introductionDirection === "string" ? raw.introductionDirection : e.introductionDirection,
+    assignedMovementOrLine: typeof raw.assignedMovementOrLine === "string" ? raw.assignedMovementOrLine : e.assignedMovementOrLine,
+    makeItYourOwn: Array.isArray(raw.makeItYourOwn) ? raw.makeItYourOwn as string[] : e.makeItYourOwn,
+    exampleDirections: Array.isArray(raw.exampleDirections) ? raw.exampleDirections as string[] : e.exampleDirections,
+    // Chain fields
+    assemblyMode: typeof raw.assemblyMode === "string" ? raw.assemblyMode : e.assemblyMode,
+    chainStrategy: typeof raw.chainStrategy === "string" ? raw.chainStrategy : e.chainStrategy,
+    chainContentType: typeof raw.chainContentType === "string" ? raw.chainContentType : e.chainContentType,
+    participantCount: typeof raw.participantCount === "number" ? raw.participantCount : e.participantCount,
+    creatorOrder: Array.isArray(raw.creatorOrder) ? raw.creatorOrder as string[] : e.creatorOrder,
+    transitionFamily: typeof raw.transitionFamily === "string" ? raw.transitionFamily : e.transitionFamily,
+    chainTier: typeof raw.chainTier === "string" ? raw.chainTier : e.chainTier,
+    transitionMap: Array.isArray(raw.transitionMap) ? raw.transitionMap as ClipRecipe["transitionMap"] : e.transitionMap,
+    chainOpening: typeof raw.chainOpening === "string" ? raw.chainOpening : e.chainOpening,
+    chainClosing: typeof raw.chainClosing === "string" ? raw.chainClosing : e.chainClosing,
+    chainPositions: Array.isArray(raw.chainPositions) ? raw.chainPositions as ClipRecipe["chainPositions"] : e.chainPositions,
   };
 }
 
@@ -127,6 +191,7 @@ function recipeFromShotRecipe(sr: ShotRecipe): ClipRecipe {
     adminOrder: [...sr.adminOrder],
     adminNotes: sr.adminNotes ?? "",
     difficulty: sr.difficulty,
+    toneMix: [],
   };
 }
 
@@ -162,18 +227,107 @@ function applyTransition(r: ClipRecipe, t: Transition): ClipRecipe {
   };
 }
 
-export function RecipeBuilder({ clip, onClose, onSaved }: {
+export function RecipeBuilder({ clip, onClose, onSaved, members: membersProp }: {
   clip: Clip;
   onClose: () => void;
   onSaved: () => void;
+  members?: { id: string; name: string }[];
 }) {
   const supabase = createClient();
   const [recipe, setRecipe] = useState<ClipRecipe>(() => parseRecipe(clip.recipe));
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [showRecipePicker, setShowRecipePicker] = useState(false);
+
+  // Fetch members if not passed in as a prop (so we can populate creator dropdowns)
+  const [fetchedMembers, setFetchedMembers] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (membersProp && membersProp.length > 0) { setFetchedMembers(membersProp); return; }
+    supabase.from("members").select("id, name").order("name").then(({ data }) => {
+      if (data) setFetchedMembers(data as { id: string; name: string }[]);
+    });
+  }, [supabase, membersProp]);
+  const members = membersProp ?? fetchedMembers;
   const [showStylePicker, setShowStylePicker] = useState(false);
   const [showTransitionPicker, setShowTransitionPicker] = useState(false);
+  const [showChainPlanner, setShowChainPlanner] = useState(false);
+  const [chainCreators, setChainCreators] = useState<string[]>(
+    recipe.chainPositions && recipe.chainPositions.length > 0
+      ? recipe.chainPositions.map(p => p.name)
+      : recipe.creatorOrder ?? []
+  );
+  const [chainTransitionId, setChainTransitionId] = useState<string | null>(recipe.transitionId ?? null);
+  const [chainContentAction, setChainContentAction] = useState<string>(recipe.creatorTask || "");
+  const [chainPlan, setChainPlan] = useState<TransitionChainPlan | null>(null);
+  const [chainStrategy, setChainStrategy] = useState<ChainStrategy>(
+    (recipe.chainStrategy as ChainStrategy) ?? "Repeating"
+  );
+  const [chainContentType, setChainContentType] = useState<ChainContentType>(
+    (recipe.chainContentType as ChainContentType) ?? "Default Remote"
+  );
+  // Per-pair transition IDs for Action Chain (keyed by "from-to" e.g. "1-2")
+  const [pairTransitions, setPairTransitions] = useState<Record<string, string>>({});
+  // Per-creator objects for Family strategy (keyed by position number)
+  const [creatorObjects, setCreatorObjects] = useState<Record<number, string>>({});
+
+  // ── Chain Planner ──
+  function generateChain() {
+    const names = chainCreators.filter(n => n.trim());
+    if (names.length < 2) {
+      alert("Add at least 2 creators to plan a chain.");
+      return;
+    }
+    const plan = planTransitionChain(
+      names,
+      chainTransitionId,
+      chainContentAction || recipe.creatorTask || "Give your answer in your own words",
+      {
+        strategy: chainStrategy,
+        contentType: chainContentType,
+        pairTransitions: Object.keys(pairTransitions).length > 0 ? pairTransitions : undefined,
+        creatorObjects: Object.keys(creatorObjects).length > 0 ? creatorObjects : undefined,
+      },
+    );
+    setChainPlan(plan);
+  }
+
+  function applyChainToRecipe() {
+    if (!chainPlan) return;
+    setRecipe(prev => ({
+      ...prev,
+      assemblyMode: chainPlan.assemblyMode,
+      chainStrategy: chainPlan.chainStrategy,
+      chainContentType: chainPlan.contentType,
+      participantCount: chainPlan.participantCount,
+      creatorOrder: chainPlan.creatorOrder,
+      transitionFamily: chainPlan.transitionFamily,
+      chainTier: chainPlan.chainTier,
+      transitionMap: chainPlan.transitionMap,
+      chainOpening: chainPlan.opening,
+      chainClosing: chainPlan.closing,
+      chainPositions: chainPlan.positions,
+      transitionId: chainTransitionId ?? prev.transitionId,
+    }));
+    setShowChainPlanner(false);
+    setSavedFlash(false);
+  }
+
+  // When content type changes, auto-set the recommended strategy + default transition
+  function pickContentType(ct: ChainContentType) {
+    setChainContentType(ct);
+    const strat = recommendedStrategy(ct);
+    setChainStrategy(strat);
+    const transId = recommendedTransitionId(ct);
+    setChainTransitionId(transId);
+    // Clear per-pair transitions when switching away from Action Chain
+    if (strat !== "Action Chain") {
+      setPairTransitions({});
+    }
+    // Clear per-creator objects when switching away from Family
+    if (strat !== "Family") {
+      setCreatorObjects({});
+    }
+  }
 
   // ── Pickers ──
   function pickShotRecipe(sr: ShotRecipe) {
@@ -337,10 +491,263 @@ export function RecipeBuilder({ clip, onClose, onSaved }: {
                         <p className="text-xs text-smoked-charcoal/50 mt-0.5">{TRANSITION_DIFF_COLORS[t.difficulty]} {t.difficulty} · {t.category}</p>
                         <p className="text-xs text-smoked-charcoal/60 mt-1 italic">{t.simpleDescription}</p>
                         <p className="text-[10px] text-copper-deep/70 mt-0.5">Viewer sees: {t.whatViewersSee}</p>
+                        {t.chainTier && (
+                          <p className="text-[10px] text-cactus-teal/70 mt-0.5">{CHAIN_TIER_COLORS[t.chainTier]} {t.chainTier}</p>
+                        )}
                       </div>
                       {recipe.transitionId === t.id && <span className="text-cactus-teal text-sm shrink-0">✓</span>}
                     </button>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Transition Chain Planner ── */}
+            <div className="border-t border-desert-night/10 pt-4">
+              <div className="flex items-center justify-between">
+                <p className="label">Transition Chain Plan</p>
+                <button onClick={() => setShowChainPlanner(!showChainPlanner)} className="text-xs text-copper-deep hover:underline">
+                  {showChainPlanner ? "Hide" : "Plan chain →"}
+                </button>
+              </div>
+              <p className="text-xs text-smoked-charcoal/60 mt-1">
+                For multi-creator videos (4-6 people). Plans the full transition chain so each creator gets her specific position and instructions.
+              </p>
+
+              {/* Existing chain summary — with editable creator names */}
+              {recipe.chainPositions && recipe.chainPositions.length > 0 && !showChainPlanner && (
+                <div className="mt-2 bg-cactus-teal/10 rounded-lg p-3">
+                  <p className="text-xs font-bold text-desert-night/50 uppercase">Current Chain</p>
+                  <p className="text-sm text-desert-night mt-1">
+                    {recipe.assemblyMode} · {recipe.participantCount} creators · {recipe.transitionFamily}
+                    {recipe.chainStrategy && <span className="text-xs text-smoked-charcoal/50"> · {recipe.chainStrategy}</span>}
+                  </p>
+                  <div className="mt-2 space-y-1.5">
+                    {recipe.chainPositions.map((pos, i) => {
+                      // Names already used in other positions — exclude from this dropdown
+                      const usedNames = recipe.chainPositions!
+                        .filter((_, idx) => idx !== i)
+                        .map(p => p.name)
+                        .filter(n => n.trim() !== "");
+                      return (
+                      <div key={pos.position} className="text-xs text-smoked-charcoal/70 flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-copper-deep w-5 shrink-0">{pos.position}.</span>
+                        <span className="text-[9px] text-smoked-charcoal/50 shrink-0 w-14">
+                          {i === 0 ? "Opener" : i === recipe.chainPositions!.length - 1 ? "Closer" : "Middle"}
+                        </span>
+                        <select
+                          value={pos.name}
+                          onChange={(e) => {
+                            const newName = e.target.value;
+                            setRecipe(prev => ({
+                              ...prev,
+                              chainPositions: prev.chainPositions?.map(p =>
+                                p.position === pos.position ? { ...p, name: newName } : p
+                              ),
+                              creatorOrder: prev.creatorOrder?.map((n, idx) =>
+                                idx === i ? newName : n
+                              ),
+                            }));
+                          }}
+                          className="field !py-1 !text-sm flex-1 min-w-[120px]"
+                        >
+                          <option value="">Pick a creator…</option>
+                          {members.map(m => (
+                            <option key={m.id} value={m.name} disabled={usedNames.includes(m.name)}>
+                              {m.name}{usedNames.includes(m.name) ? " (already used)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{pos.role}</span>
+                        {pos.object && <span className="chip chip-teal !text-[8px] !px-1.5 !py-0.5">{pos.object}</span>}
+                      </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-smoked-charcoal/50 mt-2">
+                    Pick each creator from the dropdown. Click &ldquo;Plan chain →&rdquo; to change transitions, strategy, or add/remove positions.
+                  </p>
+                </div>
+              )}
+
+              {showChainPlanner && (
+                <div className="mt-3 border border-desert-night/10 rounded-xl bg-white/50 p-3 space-y-3">
+                  {/* Content Type — determines recommended strategy */}
+                  <div>
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">Content Type</p>
+                    <p className="text-[10px] text-smoked-charcoal/50 mt-0.5">Determines the recommended chain strategy</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {(["Default Remote", "Featured", "Debate / Court"] as ChainContentType[]).map(ct => (
+                        <button
+                          key={ct}
+                          onClick={() => pickContentType(ct)}
+                          className={`chip !text-[10px] ${chainContentType === ct ? "chip-copper" : "chip-cream"}`}
+                        >{ct}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Chain Strategy */}
+                  <div>
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">Chain Strategy</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {(["Repeating", "Family", "Action Chain"] as ChainStrategy[]).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => {
+                            setChainStrategy(s);
+                            if (s !== "Action Chain") setPairTransitions({});
+                            if (s !== "Family") setCreatorObjects({});
+                          }}
+                          className={`chip !text-[10px] ${chainStrategy === s ? "chip-copper" : "chip-cream"}`}
+                        >{s}</button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-smoked-charcoal/50 mt-1">
+                      {chainStrategy === "Repeating" && "Option 1: One repeating transition for all handoffs. Easiest to stitch."}
+                      {chainStrategy === "Family" && "Option 2: Same transition family, but each creator uses her own object."}
+                      {chainStrategy === "Action Chain" && "Option 3: Different transition per pair (planned action chain). Higher production."}
+                    </p>
+                  </div>
+
+                  {/* Creator order */}
+                  <div>
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">Creator Order (top = opener, bottom = closer)</p>
+                    <div className="mt-2 space-y-1.5">
+                      {chainCreators.map((name, i) => {
+                        // Names already used in other positions — exclude from this dropdown
+                        const usedNames = chainCreators.filter((_, idx) => idx !== i).filter(n => n.trim() !== "");
+                        return (
+                        <div key={i} className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-copper-deep w-5 shrink-0">{i + 1}.</span>
+                          <span className="text-[9px] text-smoked-charcoal/50 shrink-0 w-12">{i === 0 ? "Opener" : i === chainCreators.length - 1 ? "Closer" : "Middle"}</span>
+                          <select
+                            value={name}
+                            onChange={(e) => setChainCreators(prev => prev.map((n, idx) => idx === i ? e.target.value : n))}
+                            className="field !py-1 !text-sm flex-1 min-w-[120px]"
+                          >
+                            <option value="">Pick a creator…</option>
+                            {members.map(m => (
+                              <option key={m.id} value={m.name} disabled={usedNames.includes(m.name)}>
+                                {m.name}{usedNames.includes(m.name) ? " (already used)" : ""}
+                              </option>
+                            ))}
+                          </select>
+                          {/* Per-creator object (Family strategy only) */}
+                          {chainStrategy === "Family" && (
+                            <input
+                              type="text"
+                              value={creatorObjects[i + 1] ?? ""}
+                              onChange={(e) => setCreatorObjects(prev => ({ ...prev, [i + 1]: e.target.value }))}
+                              placeholder="Object"
+                              className="field !py-1 !text-xs w-20"
+                            />
+                          )}
+                          <button onClick={() => setChainCreators(prev => prev.filter((_, idx) => idx !== i))} className="text-smoked-charcoal/30 hover:text-heat-orange text-sm shrink-0">✕</button>
+                        </div>
+                        );
+                      })}
+                      <button onClick={() => setChainCreators(prev => [...prev, ""])} className="text-xs text-copper-deep hover:underline">+ Add creator</button>
+                    </div>
+                  </div>
+
+                  {/* Default transition (Repeating + Family) OR per-pair transitions (Action Chain) */}
+                  {chainStrategy !== "Action Chain" ? (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">
+                        {chainStrategy === "Family" ? "Transition Family (each creator uses her own object)" : "Transition (used for all handoffs)"}
+                      </p>
+                      <select
+                        value={chainTransitionId ?? ""}
+                        onChange={(e) => setChainTransitionId(e.target.value || null)}
+                        className="field !py-1 !text-sm mt-1"
+                      >
+                        <option value="">Pick a transition…</option>
+                        {TRANSITIONS.map(t => (
+                          <option key={t.id} value={t.id}>{t.name} — {t.chainTier ? `${CHAIN_TIER_COLORS[t.chainTier]} ${t.chainTier}` : t.difficulty}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Per-Pair Transitions (Action Chain)</p>
+                      <p className="text-[10px] text-smoked-charcoal/50 mt-0.5">Pick a different transition for each handoff. The outgoing action of one pair must match the incoming action of the next.</p>
+                      <div className="mt-2 space-y-1.5">
+                        {chainCreators.slice(0, -1).map((_, i) => {
+                          const pairKey = `${i + 1}-${i + 2}`;
+                          const fromName = chainCreators[i] || `Creator ${i + 1}`;
+                          const toName = chainCreators[i + 1] || `Creator ${i + 2}`;
+                          return (
+                            <div key={pairKey} className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] text-smoked-charcoal/60 shrink-0 min-w-[80px]">{fromName} → {toName}</span>
+                              <select
+                                value={pairTransitions[pairKey] ?? chainTransitionId ?? ""}
+                                onChange={(e) => setPairTransitions(prev => ({ ...prev, [pairKey]: e.target.value }))}
+                                className="field !py-1 !text-xs flex-1 min-w-[120px]"
+                              >
+                                <option value="">Pick a transition…</option>
+                                {TRANSITIONS.map(t => (
+                                  <option key={t.id} value={t.id}>{t.name} — {t.chainTier ?? t.difficulty}</option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Content action */}
+                  <div>
+                    <p className="text-xs font-bold text-desert-night/50 uppercase">Content Action (what each creator does in the middle)</p>
+                    <input
+                      type="text"
+                      value={chainContentAction}
+                      onChange={(e) => setChainContentAction(e.target.value)}
+                      placeholder="e.g. Give your verdict in your own words"
+                      className="field !py-1 !text-sm mt-1"
+                    />
+                  </div>
+
+                  {/* Generate + Preview */}
+                  <div className="flex gap-2">
+                    <button onClick={generateChain} className="btn btn-secondary btn-sm !text-xs">Generate Chain</button>
+                    {chainPlan && (
+                      <button onClick={applyChainToRecipe} className="btn btn-primary btn-sm !text-xs">Apply to Recipe</button>
+                    )}
+                  </div>
+
+                  {/* Chain preview */}
+                  {chainPlan && (
+                    <div className="bg-desert-night/5 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Chain Preview</p>
+                      <p className="text-xs text-smoked-charcoal/60 mt-1">
+                        {chainPlan.assemblyMode} · {chainPlan.chainStrategy} · {chainPlan.participantCount} creators · {chainPlan.transitionFamily} · {chainPlan.chainTier}
+                      </p>
+                      <pre className="text-xs text-desert-night mt-2 whitespace-pre-wrap font-mono leading-relaxed">{chainPreviewText(chainPlan)}</pre>
+
+                      {/* Per-creator detail */}
+                      <div className="mt-3 space-y-2">
+                        {chainPlan.positions.map(pos => (
+                          <div key={pos.position} className="bg-white/50 rounded-lg p-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-desert-night text-sm">{pos.name}</span>
+                              <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{pos.role}</span>
+                              <span className="text-[10px] text-smoked-charcoal/50">Position {pos.position} of {pos.totalCreators}</span>
+                              {pos.object && <span className="chip chip-teal !text-[8px] !px-1.5 !py-0.5">{pos.object}</span>}
+                            </div>
+                            <div className="mt-1 text-xs text-smoked-charcoal/70 space-y-0.5">
+                              {pos.previousCreator && <p><span className="text-copper-deep font-bold">After:</span> {pos.previousCreator}</p>}
+                              {pos.nextCreator && <p><span className="text-cactus-teal font-bold">Before:</span> {pos.nextCreator}</p>}
+                              <p><span className="font-bold">In:</span> {pos.transitionIn}</p>
+                              <p><span className="font-bold">Out:</span> {pos.transitionOut}</p>
+                              <p><span className="font-bold">Direction:</span> {pos.direction}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -367,6 +774,37 @@ export function RecipeBuilder({ clip, onClose, onSaved }: {
                 <option value="Advanced">🔴 Advanced</option>
               </select>
             </div>
+          </div>
+
+          {/* ── Tone Mix ── */}
+          <div className="card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-desert-night/50 uppercase">Tone Mix</p>
+              <p className="text-[10px] text-smoked-charcoal/40">Pick one or more — keeps the room&apos;s voice consistent</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TONE_OPTIONS.map((tone) => {
+                const selected = recipe.toneMix.includes(tone);
+                return (
+                  <button
+                    key={tone}
+                    type="button"
+                    onClick={() => setRecipe({
+                      ...recipe,
+                      toneMix: selected
+                        ? recipe.toneMix.filter(t => t !== tone)
+                        : [...recipe.toneMix, tone],
+                    })}
+                    className={`chip !text-xs transition ${selected ? "chip-copper" : "chip-cream hover:bg-copper-clay/10"}`}
+                  >
+                    {selected && "✓ "}{tone}
+                  </button>
+                );
+              })}
+            </div>
+            {recipe.toneMix.length === 0 && (
+              <p className="text-[10px] text-smoked-charcoal/40">No tone picked yet — the creator will use their natural delivery.</p>
+            )}
           </div>
 
           {/* ── Prompt ── */}

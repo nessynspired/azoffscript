@@ -72,6 +72,11 @@ export interface QuickDropTemplate {
   examplePrompts?: string[];
   whyItWorks?: string;
   bestFor?: string;
+  // Optional: links this template to a prebuilt Shot Recipe from the library.
+  // When a clip is created from this template, the recipe auto-attaches so
+  // crew members see "Your Assignment" steps without a planner having to
+  // open Build Recipe → Pick from Bank manually.
+  shotRecipeId?: string;
 }
 
 export const CONTENT_BUCKETS = [
@@ -174,6 +179,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     captionStarter: "Meet the AZ Off Script crew. Who's your favorite?",
     hashtagStarter: ["#AZOffScript", "#ArizonaCreators", "#ArizonaTikTok", "#CreatorCrew", "#MeetTheCrew"],
     platforms: ["TikTok", "Reels", "Facebook", "Shorts"],
+    shotRecipeId: "recipe_crew_intro_b",
   },
   {
     id: "step_into_the_room",
@@ -452,6 +458,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     captionStarter: "Arizona made us this way. What did it do to you?",
     hashtagStarter: ["#AZOffScript", "#ArizonaMadeMe", "#ArizonaTikTok", "#ArizonaCreators", "#ArizonaLife"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+    shotRecipeId: "recipe_arizona_made_me_b",
   },
   {
     id: "only_arizona_understand",
@@ -913,6 +920,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     captionStarter: "Real quick... what's one thing you've learned?",
     hashtagStarter: ["#AZOffScript", "#RealQuick", "#ArizonaCreators", "#Honest", "#RealTalk"],
     platforms: ["TikTok", "Reels", "Shorts", "Facebook"],
+    shotRecipeId: "recipe_real_quick_b",
   },
 
   // ===== FAKE SCENARIO COURT =====
@@ -1264,6 +1272,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "People will argue in the comments because everyone has heard these lines differently.",
     bestFor: "Talkers and expressive faces. Group stitch energy.",
+    shotRecipeId: "recipe_he_said_she_heard_b",
   },
   {
     id: "helping_or_making_worse",
@@ -1346,6 +1355,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "Instant comments. People will debate hard.",
     bestFor: "Talkers, expressive faces, group stitch.",
+    shotRecipeId: "recipe_caring_controlling_b",
   },
   {
     id: "men_think_means_nothing",
@@ -1432,6 +1442,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "It keeps the brand funny and mature, not just 'everything is a red flag.'",
     bestFor: "Talkers, group stitch, solo home clips.",
+    shotRecipeId: "recipe_red_flag_tired_b",
   },
   {
     id: "apology_or_excuse",
@@ -1474,6 +1485,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "Everyone has received a fake apology. Instant relatability.",
     bestFor: "Talkers, expressive faces, group stitch.",
+    shotRecipeId: "recipe_apology_or_excuse_b",
   },
   {
     id: "would_you_tell_your_friend",
@@ -1648,6 +1660,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "Everyone has a friend-or-follower. People will tag themselves.",
     bestFor: "Talkers, expressive faces, group stitch.",
+    shotRecipeId: "recipe_friend_or_follower_b",
   },
   {
     id: "girl_code_or_just_drama",
@@ -1690,6 +1703,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "Girl code debates always go viral. Comments will be a war zone.",
     bestFor: "Talkers, group stitch, solo home clips.",
+    shotRecipeId: "recipe_girl_code_or_just_drama_b",
   },
   {
     id: "friend_every_group_has",
@@ -1734,6 +1748,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "People will tag themselves and their friends. High shareability.",
     bestFor: "Talkers, group stitch, solo home clips.",
+    shotRecipeId: "recipe_friend_every_group_b",
   },
 
   // ===== MOM-LIFE OFF SCRIPT =====
@@ -1778,6 +1793,7 @@ export const QUICK_DROP_TEMPLATES: QuickDropTemplate[] = [
     ],
     whyItWorks: "Moms will tag each other. Exhausted logic is universally relatable.",
     bestFor: "Moms, solo home clips, talkers.",
+    shotRecipeId: "recipe_mom_math_b",
   },
   {
     id: "who_was_supposed_to_do_that",

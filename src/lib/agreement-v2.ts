@@ -63,12 +63,12 @@ export const AGREEMENT_V2: AgreementDoc = {
       sections: [1, 2, 3, 4, 5],
     },
   ],
-  bodyMarkdown: `# AZ OFF SCRIPT LLC
+  bodyMarkdown: `# AZ OFF SCRIPT
 # First Wave Participation Rules + Media Release
 
 **Document type:** Friendly main agreement with linked exhibits
-**Prepared by:** AZ Off Script LLC
-**Brand owner / administrator:** Vanessa Williams
+**Prepared by:** AZ Off Script
+**Brand owner / administrator:** Vanessa Williams (Founder / Authorized Brand Representative)
 **Current lane:** AZ Off Script First Wave / women-led room
 **Linked exhibits:** A-F, kept as separate PDF files in this packet
 **Status:** Business draft for attorney review and electronic signature
@@ -90,19 +90,21 @@ AZ Off Script is an Arizona creator and media brand. The current starting group 
 - Individual pages may be tagged or credited when appropriate, but tagging is separate from posting approval.
 - Nothing is paid or promised right now. Future money requires written terms before anything is owed or split.
 
-AZ Off Script LLC is the official business home for the brand. The LLC manages the official pages, content, approvals, portal, gear, legal documents, sponsor conversations, brand assets, and future money systems.
+AZ Off Script is the official business home for the brand. AZ Off Script manages the official pages, content, approvals, portal, gear, legal documents, sponsor conversations, brand assets, and future money systems.
+
+> **LLC Status Notice:** AZ Off Script is currently operated by its Founder, Vanessa Williams, as an individual doing business as AZ Off Script. AZ Off Script intends to form an Arizona limited liability company (the "LLC"). When the LLC is established, the LLC will hold and manage the brand, and all references to "AZ Off Script" in this Agreement will mean the LLC. Until then, "AZ Off Script" means the brand and business operated by Vanessa Williams, Founder / Authorized Brand Representative.
 
 # 2. Parties
 
-**Company:** AZ Off Script LLC, an Arizona limited liability company, including its owner, authorized representatives, successors, assigns, official social media pages, website, portal, brand assets, and related business operations.
+**Company:** AZ Off Script, a brand and business currently operated by Vanessa Williams, Founder / Authorized Brand Representative, with the intent to form an Arizona limited liability company. When the LLC is established, it will include its owner, authorized representatives, successors, assigns, official social media pages, website, portal, brand assets, and related business operations. Until then, references to "AZ Off Script" mean the brand operated by Vanessa Williams.
 
 **Participant:** The individual signing this Main Agreement. Participant may also be called Creator, Crew Member, or Member.
 
 # 3. No Ownership, Employment, or Partnership
 
-Participant understands that joining, filming, being on camera, receiving gear, submitting clips, helping with ideas, or being part of the First Wave does not make Participant an owner of AZ Off Script LLC.
+Participant understands that joining, filming, being on camera, receiving gear, submitting clips, helping with ideas, or being part of the First Wave does not make Participant an owner of AZ Off Script.
 
-- Participant does not receive LLC membership interest, voting rights, social-page ownership, follower ownership, sponsor ownership, website ownership, portal ownership, brand ownership, or authority to bind AZ Off Script LLC.
+- Participant does not receive ownership interest, voting rights, social-page ownership, follower ownership, sponsor ownership, website ownership, portal ownership, brand ownership, or authority to bind AZ Off Script (or the LLC when established).
 - Nothing creates employment, partnership, joint venture, agency, fiduciary duty, franchise, or equal ownership.
 - Participant keeps Participant's personal page, personal identity, unrelated content, unrelated business, private life, and personal brand.
 
@@ -135,7 +137,7 @@ If AZ Off Script later receives revenue, money will be handled only after revenu
 
 # 7. Role Understanding
 
-Vanessa/Admin controls final brand, posting, scheduling, archive, portal, business decisions, future waves, and expansion decisions. A planner may help organize content, but planner status does not create LLC ownership, sponsor authority, payout approval authority, or the right to override Do Not Post unless separately authorized in writing.
+Vanessa/Admin controls final brand, posting, scheduling, archive, portal, business decisions, future waves, and expansion decisions. A planner may help organize content, but planner status does not create ownership, sponsor authority, payout approval authority, or the right to override Do Not Post unless separately authorized in writing.
 
 # 8. Order of Control
 
@@ -154,7 +156,7 @@ If documents or communications conflict, the following order controls:
 
 # 9. Final Acknowledgment Checklist
 
-- [ ] I understand AZ Off Script LLC owns and manages the official AZ Off Script brand.
+- [ ] I understand AZ Off Script owns and manages the official AZ Off Script brand.
 - [ ] I understand AZ Off Script is the umbrella brand and the First Wave is the current women-led room.
 - [ ] I understand AZ Off Script may later expand into other women, men, couples, mixed groups, cities, Arizona-wide content, and other brand lanes.
 - [ ] I understand participation does not make me an owner, partner, employee, or shareholder.
@@ -178,10 +180,10 @@ If documents or communications conflict, the following order controls:
 
 By signing, Participant agrees to the Main Agreement and incorporated Exhibits A-F. Electronic signatures and electronic acceptance are accepted where legally allowed.
 
-**AZ OFF SCRIPT LLC**
+**AZ OFF SCRIPT**
 By: ________________________________
 Name: Vanessa Williams
-Title: Owner / Authorized Representative
+Title: Founder / Authorized Brand Representative
 Date: _________________________________
 Email: _________________________________
 Electronic signature accepted: Yes
@@ -345,7 +347,7 @@ This Agreement does not give AZ Off Script ownership over Participant's whole li
 
 # B.2. AZ Off Script Brand Ownership
 
-AZ Off Script LLC owns, controls, or manages the official AZ Off Script brand, including:
+AZ Off Script owns, controls, or manages the official AZ Off Script brand, including:
 
 - brand name
 - logo
@@ -412,7 +414,7 @@ Submitted Content means any content Participant creates, records, uploads, sends
 
 # B.4. Rights Granted to AZ Off Script
 
-Participant grants AZ Off Script LLC the right to use Submitted Content created for, submitted to, uploaded into, recorded during, approved for, or used by AZ Off Script.
+Participant grants AZ Off Script the right to use Submitted Content created for, submitted to, uploaded into, recorded during, approved for, or used by AZ Off Script.
 
 - review
 - edit
@@ -441,7 +443,7 @@ Participant grants AZ Off Script LLC the right to use Submitted Content created 
 - use in future official AZ Off Script platforms
 - monetize if money is later active under written terms
 
-If any Submitted Content cannot legally be assigned to AZ Off Script, Participant grants AZ Off Script LLC a worldwide, perpetual, irrevocable, royalty-free, sublicensable, transferable license to use that Submitted Content in connection with AZ Off Script.
+If any Submitted Content cannot legally be assigned to AZ Off Script, Participant grants AZ Off Script a worldwide, perpetual, irrevocable, royalty-free, sublicensable, transferable license to use that Submitted Content in connection with AZ Off Script.
 
 # B.5. Name, Image, Voice, and Likeness Release
 
@@ -471,7 +473,7 @@ Participant may not create a confusingly similar page, group, merch line, or bra
 
 AZ Off Script may create or provide branded gear, shirts, tumblers, mugs, badges, stickers, cards, or other items as welcome items, promotional gifts, filming props, member kit items, samples, or future merchandise designs.
 
-Unless AZ Off Script clearly says otherwise in writing, receiving personalized gear does not create ownership in the AZ Off Script brand, logo, mascot, designs, merch templates, future product revenue, LLC membership, or social media pages.
+Unless AZ Off Script clearly says otherwise in writing, receiving personalized gear does not create ownership in the AZ Off Script brand, logo, mascot, designs, merch templates, future product revenue, ownership interest, or social media pages.
 
 If Participant leaves or is removed, AZ Off Script may allow Participant to keep gifted personal gear, but Participant may not use the gear to falsely imply current membership, sponsorship, ownership, or authority to represent AZ Off Script.
 
@@ -485,7 +487,7 @@ Detailed no-money-promise, future-payout, revenue-type, split-template, tax, and
 
 # C.1. Money Is Not Active Yet
 
-Money is not active yet unless AZ Off Script LLC separately activates a written monetization arrangement.
+Money is not active yet unless AZ Off Script separately activates a written monetization arrangement.
 
 No participant is currently promised:
 
@@ -527,7 +529,7 @@ No payment is owed unless a written agreement or written payout terms are active
 
 Revenue is handled by revenue event, content lane, campaign, or business opportunity. Participant is not entitled to revenue from AZ Off Script content, pages, shows, sponsors, merch, events, or opportunities that Participant did not participate in, unless a separate written agreement says otherwise.
 
-If AZ Off Script creates future waves such as AZ Off Script Couples, AZ Off Script Men, AZ Off Script Local, or other brand lanes, revenue from those lanes belongs to AZ Off Script LLC and the contributors involved in that specific opportunity according to the applicable written terms. First Wave participation does not create a right to future AZ Off Script revenue from unrelated waves, campaigns, sponsor deals, merch, or content.
+If AZ Off Script creates future waves such as AZ Off Script Couples, AZ Off Script Men, AZ Off Script Local, or other brand lanes, revenue from those lanes belongs to AZ Off Script and the contributors involved in that specific opportunity according to the applicable written terms. First Wave participation does not create a right to future AZ Off Script revenue from unrelated waves, campaigns, sponsor deals, merch, or content.
 
 # C.4. Direct Costs Before Any Split
 
@@ -570,7 +572,7 @@ These split templates are not active unless AZ Off Script activates money-side t
 
 Participant understands that Vanessa may receive or retain the Brand / Operations share because Vanessa is building, owning, funding, designing, organizing, and operating the AZ Off Script brand, website, portal, software systems, merch, content library, rules, and business infrastructure.
 
-Participant understands that a planner may receive Planner / Orchestration recognition or compensation if that planner materially helps research trends, plan the content calendar, organize Weekly Heat, structure Quick Drops, assign deadlines, or coordinate content that becomes monetized. Planner status does not give the planner LLC ownership, payout approval authority, legal authority, sponsor authority, or the right to override Do Not Post unless separately authorized in writing.
+Participant understands that a planner may receive Planner / Orchestration recognition or compensation if that planner materially helps research trends, plan the content calendar, organize Weekly Heat, structure Quick Drops, assign deadlines, or coordinate content that becomes monetized. Planner status does not give the planner ownership, payout approval authority, legal authority, sponsor authority, or the right to override Do Not Post unless separately authorized in writing.
 
 # C.7. Tax and Payment Information
 
@@ -612,7 +614,7 @@ After leaving, Participant may lose access to creator portal, My Kit, Brand Lock
 
 # D.3. Previously Approved Content After Leaving
 
-If Participant leaves, is removed, becomes inactive, or no longer wants to participate, AZ Off Script LLC is not required to delete, transfer, surrender, or stop using previously approved AZ Off Script content.
+If Participant leaves, is removed, becomes inactive, or no longer wants to participate, AZ Off Script is not required to delete, transfer, surrender, or stop using previously approved AZ Off Script content.
 
 - official AZ Off Script pages
 - website
@@ -698,13 +700,13 @@ If a dispute happens, Participant agrees to use the dispute process instead of t
 
 # D.9. Indemnification
 
-Participant agrees to defend, indemnify, and hold harmless AZ Off Script LLC, its owner, authorized representatives, contractors, planners, and affiliates from third-party claims, losses, fines, costs, damages, and reasonable attorneys' fees arising from Participant's breach, unauthorized posting, false authority claims, submission of content without permission, unlawful recording, infringement, disclosure of private/confidential information, violation of sponsor disclosure rules, harassment/threats/defamation/doxxing/misconduct, or unauthorized use of AZ Off Script brand assets.
+Participant agrees to defend, indemnify, and hold harmless AZ Off Script, its owner, authorized representatives, contractors, planners, and affiliates from third-party claims, losses, fines, costs, damages, and reasonable attorneys' fees arising from Participant's breach, unauthorized posting, false authority claims, submission of content without permission, unlawful recording, infringement, disclosure of private/confidential information, violation of sponsor disclosure rules, harassment/threats/defamation/doxxing/misconduct, or unauthorized use of AZ Off Script brand assets.
 
 # D.10. No Guarantees and Liability Limitation
 
 AZ Off Script does not guarantee followers, views, virality, comments, positive reactions, brand deals, sponsorships, payment, equal posting, equal screen time, equal tagging, continued membership, individual page growth, audience growth, platform approval, account performance, algorithm performance, income, business results, participation in future waves, approval rights over brand expansion, or revenue from future waves/content Participant is not involved in. Social media performance is unpredictable.
 
-To the maximum extent allowed by law, AZ Off Script LLC will not be liable to Participant for indirect, incidental, special, punitive, exemplary, or consequential damages, lost followers, lost engagement, lost business opportunities, emotional distress caused by ordinary social media reactions, platform comments, algorithm changes, lost revenue, account limitations, third-party platform outages, or failure of content to perform. This does not limit liability where the law does not allow limitation.
+To the maximum extent allowed by law, AZ Off Script will not be liable to Participant for indirect, incidental, special, punitive, exemplary, or consequential damages, lost followers, lost engagement, lost business opportunities, emotional distress caused by ordinary social media reactions, platform comments, algorithm changes, lost revenue, account limitations, third-party platform outages, or failure of content to perform. This does not limit liability where the law does not allow limitation.
 
 # D.11. Emergency Relief
 
@@ -734,11 +736,11 @@ Detailed umbrella-brand, First Wave, future-cast, sub-brand, and expansion rules
 
 # E.1. Umbrella Brand
 
-AZ Off Script LLC owns and manages the AZ Off Script umbrella brand. The current First Wave is the first active group, but the brand may grow across different content lanes, waves, casts, shows, pages, locations, series, and sub-brands over time.
+AZ Off Script owns and manages the AZ Off Script umbrella brand. The current First Wave is the first active group, but the brand may grow across different content lanes, waves, casts, shows, pages, locations, series, and sub-brands over time.
 
 # E.2. Current First Wave / Women's Lane
 
-Participant understands that the current First Wave is a women-led AZ Off Script content lane. The First Wave may be publicly described as AZ Off Script First Wave, AZ Off Script Women, the women's room, the first AZ Off Script creator crew, a women-led Arizona creator room, or another similar brand-safe description approved by AZ Off Script LLC.
+Participant understands that the current First Wave is a women-led AZ Off Script content lane. The First Wave may be publicly described as AZ Off Script First Wave, AZ Off Script Women, the women's room, the first AZ Off Script creator crew, a women-led Arizona creator room, or another similar brand-safe description approved by AZ Off Script.
 
 This does not mean AZ Off Script as a whole is limited to women-only content forever. The First Wave may remain its own lane even if AZ Off Script later adds men, couples, mixed groups, other Arizona cities, guest creators, or separate sub-brands.
 
@@ -758,11 +760,11 @@ Examples may include:
 - AZ Off Script Tries It
 - AZ Off Script After Dark
 - AZ Off Script Moms
-- other names, shows, formats, or brand lanes approved by AZ Off Script LLC
+- other names, shows, formats, or brand lanes approved by AZ Off Script
 
 # E.4. Future Waves and New Members
 
-AZ Off Script LLC may invite, add, replace, pause, remove, or reorganize participants, guests, planners, creators, couples, men, women, mixed groups, or other contributors at any time based on brand needs.
+AZ Off Script may invite, add, replace, pause, remove, or reorganize participants, guests, planners, creators, couples, men, women, mixed groups, or other contributors at any time based on brand needs.
 
 - location
 - gender
@@ -784,7 +786,7 @@ Participant does not have the right to approve or block future members, future w
 
 # E.5. No Control Over Spin-Offs or Sub-Brands
 
-Participant understands that AZ Off Script LLC may create spin-offs, sub-brands, shows, pages, campaigns, or related projects under the AZ Off Script umbrella. Participant does not receive ownership, approval rights, revenue rights, or control over any spin-off, sub-brand, show, page, cast, or campaign unless Participant is directly involved in that specific opportunity and a written agreement says Participant receives compensation or rights.
+Participant understands that AZ Off Script may create spin-offs, sub-brands, shows, pages, campaigns, or related projects under the AZ Off Script umbrella. Participant does not receive ownership, approval rights, revenue rights, or control over any spin-off, sub-brand, show, page, cast, or campaign unless Participant is directly involved in that specific opportunity and a written agreement says Participant receives compensation or rights.
 
 Being part of the First Wave does not automatically make Participant part of AZ Off Script Couples, AZ Off Script Men, AZ Off Script Local, future city casts, future sponsor campaigns, future merch lines, or future paid opportunities.
 
@@ -796,7 +798,7 @@ AZ Off Script will not knowingly use Participant's approved First Wave content i
 
 # E.7. Future Revenue From Other Lanes
 
-Participant is not entitled to revenue from AZ Off Script content, pages, shows, sponsors, merch, events, or opportunities that Participant did not participate in, unless a separate written agreement says otherwise. Revenue from future lanes belongs to AZ Off Script LLC and the contributors involved in that specific opportunity according to applicable written terms.
+Participant is not entitled to revenue from AZ Off Script content, pages, shows, sponsors, merch, events, or opportunities that Participant did not participate in, unless a separate written agreement says otherwise. Revenue from future lanes belongs to AZ Off Script and the contributors involved in that specific opportunity according to applicable written terms.
 
 # E.8. Brand Sentence
 

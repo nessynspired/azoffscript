@@ -14,6 +14,13 @@ import { InfoTooltip } from "@/components/InfoTooltip";
 import { ClipEditor } from "@/components/ClipEditor";
 import { RecipeBuilder, type ClipRecipe } from "@/components/RecipeBuilder";
 import { CreateFromLibraryModal } from "@/components/CreateFromLibraryModal";
+import { FullReadyRecipeDetail, FullReadyRecipeCard } from "@/components/FullReadyRecipeDetail";
+import { buildRecipeForInsert } from "@/lib/shot-recipe-library";
+import {
+  FULL_READY_RECIPES,
+  fullReadyRecipeToClipRecipe,
+  type FullReadyRecipe,
+} from "@/lib/full-ready-recipes";
 import type { Database, ClipStatus, Platform, AssignmentRole, AssignmentTaskType } from "@/lib/types/db";
 
 type ClipMeta = Database["public"]["Views"]["clips_with_meta"]["Row"];
@@ -766,12 +773,14 @@ function ReadyToSchedulePanel({ member, members, onRefresh, scheduledClips }: {
   async function createClip(template: QuickDropTemplate) {
     if (!liveDate) return;
     setCreating(true);
+    const recipe = buildRecipeForInsert(template.shotRecipeId);
     const { data: clip, error } = await supabase.from("clips").insert({
       title: template.name, type: "video", status: "Planned",
       category: template.bucket, submitted_by: member.id, submitted_by_name: member.name,
       template_id: template.id, destination: template.platforms[0] ?? null,
       clip_due_date: submittedBy || null, final_cut_due: cutReadyBy || null,
       approval_due: greenlightBy || null, scheduled_date: liveDate || null,
+      ...(recipe ? { recipe } : {}),
     }).select().single();
     if (error) { alert(error.message); setCreating(false); return; }
     if (selectedCrew.length > 0 && clip) {
@@ -1202,6 +1211,27 @@ function ClipDetailModal({
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [showClipEditor, setShowClipEditor] = useState(false);
   const [showRecipeBuilder, setShowRecipeBuilder] = useState(false);
+  const [showRecipePicker, setShowRecipePicker] = useState(false);
+  const [attachingRecipe, setAttachingRecipe] = useState(false);
+
+  // Attach a Full Ready Recipe from the library to this existing clip.
+  // This copies the recipe content into the clip's recipe field — the master library is never modified.
+  async function attachFullRecipe(recipe: FullReadyRecipe) {
+    setAttachingRecipe(true);
+    const recipePayload = fullReadyRecipeToClipRecipe(recipe);
+    const { error } = await supabase.from("clips").update({
+      recipe: recipePayload as unknown as Record<string, unknown>,
+    }).eq("id", clip.id);
+    setAttachingRecipe(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    setShowRecipePicker(false);
+    await onRefresh();
+    // Open the recipe builder so the planner can customize it for this clip
+    setShowRecipeBuilder(true);
+  }
 
   async function createAssignment() {
     if (!assignForm.member_id || !currentMemberId) return;
@@ -1291,29 +1321,35 @@ function ClipDetailModal({
   void onStatusChange;
 
   return (
+    <>
     <div className="fixed inset-0 z-50 bg-desert-night/70 flex items-center justify-center p-3 md:p-4" onClick={onClose}>
       <div
         className="card p-4 md:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-pop"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-3">
           <div className="min-w-0">
             {canPlanContent && <span className={`chip ${STATUS_CHIP[clip.status]}`}>{clip.status}</span>}
             <h2 className="font-display text-2xl md:text-3xl text-desert-night mt-2 leading-none break-words">{displayTitle(clip)}</h2>
             <p className="text-sm text-smoked-charcoal/60 mt-1">{droppedByLabel(clip)}</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:shrink-0">
             {canPlanContent && (
-              <button onClick={() => setShowRecipeBuilder(true)} className="btn btn-secondary btn-sm !text-xs">
-                📋 Build Recipe
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={() => setShowRecipeBuilder(true)} className="btn btn-secondary btn-sm !text-xs">
+                  📋 Build Recipe
+                </button>
+                <button onClick={() => setShowRecipePicker(true)} className="btn btn-secondary btn-sm !text-xs">
+                  📋+ Attach from Ready Bank
+                </button>
+              </div>
             )}
             {isAdmin && (
               <button onClick={() => setShowClipEditor(true)} className="btn btn-secondary btn-sm !text-xs">
                 📚 Edit with Libraries
               </button>
             )}
-            <button onClick={onClose} className="btn btn-ghost btn-sm" aria-label="Close">✕</button>
+            <button onClick={onClose} className="btn btn-ghost btn-sm ml-auto md:ml-0" aria-label="Close">✕</button>
           </div>
         </div>
 
@@ -1356,6 +1392,15 @@ function ClipDetailModal({
               const hasRecipe = r && (r.goal || r.creatorTask || r.prompt || (r.finalVideoFlow && (r.finalVideoFlow as string[]).length > 0));
               if (!hasRecipe) return null;
               const recipe = r as unknown as ClipRecipe;
+              // Fall back to the stored fullReadyRecipe for fields that may be missing
+              // on clips created before the toneMix/topic-specifics update
+              const fr = (r.fullReadyRecipe ?? null) as Record<string, unknown> | null;
+              const toneMix = (recipe.toneMix?.length ? recipe.toneMix : (fr?.toneMix as string[] | undefined)) ?? [];
+              const whatYouAreMaking = recipe.whatYouAreMaking ?? (fr?.whatYouAreMaking as string | undefined);
+              const introductionDirection = recipe.introductionDirection ?? (fr?.introductionDirection as string | undefined);
+              const assignedMovementOrLine = recipe.assignedMovementOrLine ?? (fr?.assignedMovementOrLine as string | undefined);
+              const makeItYourOwn = (recipe.makeItYourOwn?.length ? recipe.makeItYourOwn : (fr?.makeItYourOwn as string[] | undefined)) ?? [];
+              const exampleDirections = (recipe.exampleDirections?.length ? recipe.exampleDirections : (fr?.exampleDirections as string[] | undefined)) ?? [];
               return (
                 <div className="card p-5 bg-cactus-teal/10 space-y-4">
                   <div>
@@ -1365,12 +1410,44 @@ function ClipDetailModal({
                         {recipe.difficulty === "Easy" ? "🟢" : recipe.difficulty === "Medium" ? "🟡" : "🔴"} {recipe.difficulty}
                       </p>
                     )}
+                    {toneMix.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className="text-[10px] font-bold text-desert-night/50 uppercase">Tone:</span>
+                        {toneMix.map((t: string) => (
+                          <span key={t} className="chip chip-copper !text-[10px]">{t}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {recipe.goal && (
                     <div>
                       <p className="text-xs font-bold text-desert-night/50 uppercase">Goal</p>
                       <p className="text-sm text-desert-night mt-1">{recipe.goal}</p>
+                    </div>
+                  )}
+
+                  {/* What You're Making — the actual topic */}
+                  {whatYouAreMaking && (
+                    <div className="bg-copper-clay/10 rounded-lg p-3">
+                      <p className="text-xs font-bold text-copper-deep uppercase">What You&apos;re Making</p>
+                      <p className="text-sm text-desert-night mt-1 font-bold">{whatYouAreMaking}</p>
+                    </div>
+                  )}
+
+                  {/* Introduction Direction */}
+                  {introductionDirection && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Introduction Direction</p>
+                      <p className="text-sm text-desert-night mt-1 italic">{introductionDirection}</p>
+                    </div>
+                  )}
+
+                  {/* Assigned Movement or Line */}
+                  {assignedMovementOrLine && (
+                    <div className="bg-sandstone-cream/70 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Assigned Movement or Line</p>
+                      <p className="text-sm text-desert-night mt-1 italic font-script text-base">&ldquo;{assignedMovementOrLine}&rdquo;</p>
                     </div>
                   )}
 
@@ -1391,6 +1468,36 @@ function ClipDetailModal({
                           <p className="text-sm text-desert-night/70 mt-1 font-script text-base">&ldquo;{recipe.exampleResponse}&rdquo;</p>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Example Directions — the type of responses, not scripts */}
+                  {exampleDirections.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Example Directions <span className="font-normal lowercase">(not scripts — just the type)</span></p>
+                      <ul className="mt-2 space-y-1">
+                        {exampleDirections.map((ex, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-copper-deep">·</span>
+                            <span>{ex}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Make It Your Own — creative freedom rules */}
+                  {makeItYourOwn.length > 0 && (
+                    <div className="bg-cactus-teal/5 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Make It Your Own</p>
+                      <ul className="mt-2 space-y-1">
+                        {makeItYourOwn.map((item, i) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-copper-deep">·</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
 
@@ -1499,6 +1606,97 @@ function ClipDetailModal({
                   <p className="text-xs text-smoked-charcoal/50 text-center italic">
                     One take is fine. We are looking for real, not perfect.
                   </p>
+
+                  {/* Transition Chain — per-creator position */}
+                  {recipe.chainPositions && recipe.chainPositions.length > 0 && (() => {
+                    const myPos = recipe.chainPositions.find(p => p.name === currentMemberName) ?? recipe.chainPositions.find(p => p.name?.toLowerCase() === (currentMemberName ?? "").toLowerCase());
+                    if (!myPos) return null;
+                    return (
+                      <div className="bg-desert-night/5 rounded-lg p-3 border border-copper-clay/20">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-display text-base text-desert-night">Your Transition Position</p>
+                          <span className="chip chip-copper !text-[9px]">{myPos.role}</span>
+                          <span className="text-[10px] text-smoked-charcoal/50">Position {myPos.position} of {myPos.totalCreators}</span>
+                        </div>
+
+                        <div className="mt-2 space-y-2 text-sm">
+                          {myPos.previousCreator && (
+                            <p className="text-smoked-charcoal/70">
+                              <span className="text-copper-deep font-bold">After:</span> {myPos.previousCreator}
+                            </p>
+                          )}
+                          {myPos.nextCreator && (
+                            <p className="text-smoked-charcoal/70">
+                              <span className="text-cactus-teal font-bold">Before:</span> {myPos.nextCreator}
+                            </p>
+                          )}
+                          {myPos.object && (
+                            <p className="text-smoked-charcoal/70">
+                              <span className="text-heat-orange font-bold">Your object:</span> {myPos.object}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* How your clip starts */}
+                        <div className="mt-3 bg-cactus-teal/10 rounded-lg p-2">
+                          <p className="text-xs font-bold text-cactus-teal uppercase">How Your Clip Starts</p>
+                          <p className="text-sm text-desert-night mt-1">{myPos.transitionIn}</p>
+                          {myPos.transitionInSteps.length > 0 && (
+                            <ol className="mt-2 space-y-1">
+                              {myPos.transitionInSteps.map((step, i) => (
+                                <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                                  <span className="text-desert-night/40 font-bold">{i + 1}.</span>
+                                  <span>{step}</span>
+                                </li>
+                              ))}
+                            </ol>
+                          )}
+                        </div>
+
+                        {/* Your content action */}
+                        <div className="mt-2 bg-sandstone-cream/50 rounded-lg p-2">
+                          <p className="text-xs font-bold text-desert-night/50 uppercase">Your Content</p>
+                          <p className="text-sm text-desert-night mt-1">{myPos.contentAction}</p>
+                        </div>
+
+                        {/* How your clip ends */}
+                        <div className="mt-2 bg-copper-clay/10 rounded-lg p-2">
+                          <p className="text-xs font-bold text-copper-deep uppercase">How Your Clip Ends</p>
+                          <p className="text-sm text-desert-night mt-1">{myPos.transitionOut}</p>
+                          {myPos.transitionOutSteps.length > 0 && (
+                            <ol className="mt-2 space-y-1">
+                              {myPos.transitionOutSteps.map((step, i) => (
+                                <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                                  <span className="text-desert-night/40 font-bold">{i + 1}.</span>
+                                  <span>{step}</span>
+                                </li>
+                              ))}
+                            </ol>
+                          )}
+                        </div>
+
+                        {/* Direction */}
+                        <p className="text-xs text-smoked-charcoal/60 mt-2">
+                          <span className="font-bold">Direction:</span> {myPos.direction}
+                        </p>
+
+                        {/* Full chain preview — so they see the whole picture */}
+                        <details className="mt-3">
+                          <summary className="text-xs text-copper-deep cursor-pointer hover:underline">See the full chain →</summary>
+                          <div className="mt-2 space-y-1 text-xs text-smoked-charcoal/70">
+                            {recipe.chainPositions.map(pos => (
+                              <div key={pos.position} className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-copper-deep w-4">{pos.position}.</span>
+                                <span className={`font-bold ${pos.name === currentMemberName ? "text-copper-deep" : "text-desert-night"}`}>{pos.name}</span>
+                                <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{pos.role}</span>
+                                {pos.object && <span className="chip chip-teal !text-[8px] !px-1.5 !py-0.5">{pos.object}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })()}
@@ -1634,6 +1832,14 @@ function ClipDetailModal({
               const hasRecipe = r && (r.goal || r.creatorTask || r.prompt);
               if (!hasRecipe) return null;
               const recipe = r as unknown as ClipRecipe;
+              // Fall back to the stored fullReadyRecipe for fields that may be missing
+              const fr = (r.fullReadyRecipe ?? null) as Record<string, unknown> | null;
+              const toneMix = (recipe.toneMix?.length ? recipe.toneMix : (fr?.toneMix as string[] | undefined)) ?? [];
+              const whatYouAreMaking = recipe.whatYouAreMaking ?? (fr?.whatYouAreMaking as string | undefined);
+              const introductionDirection = recipe.introductionDirection ?? (fr?.introductionDirection as string | undefined);
+              const assignedMovementOrLine = recipe.assignedMovementOrLine ?? (fr?.assignedMovementOrLine as string | undefined);
+              const makeItYourOwn = (recipe.makeItYourOwn?.length ? recipe.makeItYourOwn : (fr?.makeItYourOwn as string[] | undefined)) ?? [];
+              const exampleDirections = (recipe.exampleDirections?.length ? recipe.exampleDirections : (fr?.exampleDirections as string[] | undefined)) ?? [];
               return (
                 <div className="mt-6 card p-5 bg-cactus-teal/10 space-y-3">
                   <div className="flex items-center justify-between">
@@ -1642,10 +1848,36 @@ function ClipDetailModal({
                       Edit Recipe
                     </button>
                   </div>
+                  {toneMix.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-desert-night/50 uppercase">Tone:</span>
+                      {toneMix.map((t: string) => (
+                        <span key={t} className="chip chip-copper !text-[10px]">{t}</span>
+                      ))}
+                    </div>
+                  )}
                   {recipe.goal && (
                     <div>
                       <p className="text-xs font-bold text-desert-night/50 uppercase">Goal</p>
                       <p className="text-sm text-desert-night mt-1">{recipe.goal}</p>
+                    </div>
+                  )}
+                  {whatYouAreMaking && (
+                    <div className="bg-copper-clay/10 rounded-lg p-3">
+                      <p className="text-xs font-bold text-copper-deep uppercase">What You&apos;re Making</p>
+                      <p className="text-sm text-desert-night mt-1 font-bold">{whatYouAreMaking}</p>
+                    </div>
+                  )}
+                  {introductionDirection && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Introduction Direction</p>
+                      <p className="text-sm text-desert-night mt-1 italic">{introductionDirection}</p>
+                    </div>
+                  )}
+                  {assignedMovementOrLine && (
+                    <div className="bg-sandstone-cream/70 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Assigned Movement or Line</p>
+                      <p className="text-sm text-desert-night mt-1 italic font-script text-base">&ldquo;{assignedMovementOrLine}&rdquo;</p>
                     </div>
                   )}
                   {recipe.creatorTask && (
@@ -1658,6 +1890,32 @@ function ClipDetailModal({
                     <div>
                       <p className="text-xs font-bold text-desert-night/50 uppercase">Prompt</p>
                       <p className="text-sm text-desert-night mt-1 font-script text-base">&ldquo;{recipe.prompt}&rdquo;</p>
+                    </div>
+                  )}
+                  {exampleDirections.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Example Directions <span className="font-normal lowercase">(not scripts — just the type)</span></p>
+                      <ul className="mt-2 space-y-1">
+                        {exampleDirections.map((ex: string, i: number) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-copper-deep">·</span>
+                            <span>{ex}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {makeItYourOwn.length > 0 && (
+                    <div className="bg-cactus-teal/5 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Make It Your Own</p>
+                      <ul className="mt-2 space-y-1">
+                        {makeItYourOwn.map((item: string, i: number) => (
+                          <li key={i} className="text-sm text-desert-night flex items-start gap-2">
+                            <span className="text-copper-deep">·</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   {recipe.finalVideoFlow && recipe.finalVideoFlow.length > 0 && (
@@ -1674,6 +1932,28 @@ function ClipDetailModal({
                     {recipe.part3End?.instructions.length || 0} end steps ·{" "}
                     {recipe.recordSteps?.length || 0} record steps
                   </p>
+
+                  {/* Transition Chain summary (admin view) */}
+                  {recipe.chainPositions && recipe.chainPositions.length > 0 && (
+                    <div className="mt-3 bg-desert-night/5 rounded-lg p-3">
+                      <p className="text-xs font-bold text-desert-night/50 uppercase">Transition Chain</p>
+                      <p className="text-xs text-smoked-charcoal/60 mt-1">
+                        {recipe.assemblyMode} · {recipe.participantCount} creators · {recipe.transitionFamily} · {recipe.chainTier}
+                        {recipe.chainStrategy && <span> · {recipe.chainStrategy}</span>}
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        {recipe.chainPositions.map(pos => (
+                          <div key={pos.position} className="text-xs flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-copper-deep">{pos.position}.</span>
+                            <span className="font-bold text-desert-night">{pos.name}</span>
+                            <span className="chip chip-cream !text-[8px] !px-1.5 !py-0.5">{pos.role}</span>
+                            {pos.object && <span className="chip chip-teal !text-[8px] !px-1.5 !py-0.5">{pos.object}</span>}
+                            <span className="text-smoked-charcoal/50">In: {pos.transitionIn.slice(0, 40)}{pos.transitionIn.length > 40 ? "…" : ""}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -1925,8 +2205,161 @@ function ClipDetailModal({
       {showRecipeBuilder && (
         <RecipeBuilder
           clip={clip}
+          members={members.map(m => ({ id: m.id, name: m.name }))}
           onClose={() => setShowRecipeBuilder(false)}
           onSaved={() => { onRefresh(); setShowRecipeBuilder(false); }}
+        />
+      )}
+
+      {/* Recipe Picker — attach a Full Ready Recipe from the library to this clip */}
+      {showRecipePicker && (
+        <RecipePickerModal
+          onClose={() => setShowRecipePicker(false)}
+          onAttach={attachFullRecipe}
+          attaching={attachingRecipe}
+          clipTitle={clip.title}
+        />
+      )}
+    </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Recipe Picker Modal — search and attach a Full Ready Recipe to an existing clip
+// ---------------------------------------------------------------------------
+
+function RecipePickerModal({
+  onClose,
+  onAttach,
+  attaching,
+  clipTitle,
+}: {
+  onClose: () => void;
+  onAttach: (recipe: FullReadyRecipe) => Promise<void>;
+  attaching: boolean;
+  clipTitle: string;
+}) {
+  const [search, setSearch] = useState("");
+  const [versionFilter, setVersionFilter] = useState<"all" | "A — Current" | "B — Off Script">("all");
+  const [detailRecipe, setDetailRecipe] = useState<FullReadyRecipe | null>(null);
+
+  const filtered = FULL_READY_RECIPES.filter((r) => {
+    if (versionFilter !== "all" && r.version !== versionFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return r.name.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q) ||
+        r.creatorTask.toLowerCase().includes(q) ||
+        r.transitionFamily.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  // Try to find a recipe that matches the clip title
+  const suggested = FULL_READY_RECIPES.find(r =>
+    r.name.toLowerCase() === clipTitle.toLowerCase() ||
+    clipTitle.toLowerCase().includes(r.name.toLowerCase()) ||
+    r.name.toLowerCase().includes(clipTitle.toLowerCase())
+  );
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-sandstone-cream rounded-2xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-xl text-desert-night">Attach Full Recipe from Ready Bank</h2>
+            <p className="text-xs text-smoked-charcoal/50 mt-1">
+              Pick a recipe to copy into this clip. The full breakdown (steps, assembly plan, caption package) will be attached. You can edit it per-clip after — the master library stays untouched.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-desert-night/40 hover:text-desert-night text-2xl">×</button>
+        </div>
+
+        {/* Suggested match */}
+        {suggested && (
+          <div className="bg-cactus-teal/10 rounded-xl p-3">
+            <p className="text-xs font-bold text-cactus-teal uppercase">Suggested match for &ldquo;{clipTitle}&rdquo;</p>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-bold text-sm text-desert-night">{suggested.name}</p>
+                <p className="text-[10px] text-smoked-charcoal/50">{suggested.category} · {suggested.effort} · {suggested.transitionFamily}</p>
+              </div>
+              <div className="flex gap-1.5 shrink-0">
+                <button onClick={() => setDetailRecipe(suggested)} className="btn btn-cream btn-sm !text-xs">👁 View</button>
+                <button
+                  onClick={() => onAttach(suggested)}
+                  disabled={attaching}
+                  className="btn btn-primary btn-sm !text-xs"
+                >{attaching ? "Attaching…" : "Attach →"}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Search */}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search recipes by name, category, or content..."
+          className="field"
+        />
+
+        {/* Version filter */}
+        <div className="flex gap-2">
+          <button onClick={() => setVersionFilter("all")} className={`chip !text-xs ${versionFilter === "all" ? "chip-copper" : "chip-cream"}`}>All</button>
+          <button onClick={() => setVersionFilter("A — Current")} className={`chip !text-xs ${versionFilter === "A — Current" ? "chip-copper" : "chip-cream"}`}>A: Current</button>
+          <button onClick={() => setVersionFilter("B — Off Script")} className={`chip !text-xs ${versionFilter === "B — Off Script" ? "chip-copper" : "chip-cream"}`}>B: Off Script</button>
+        </div>
+
+        {/* Recipe cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {filtered.slice(0, 20).map((r) => (
+            <div key={r.id} className="card p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-sm text-desert-night leading-tight">{r.name}</p>
+                  <p className="text-[10px] text-smoked-charcoal/50">{r.category} · {r.effort}</p>
+                </div>
+                <span className={`chip !text-[8px] !px-1.5 !py-0.5 shrink-0 ${r.version.startsWith("A") ? "chip-copper" : "chip-cream"}`}>
+                  {r.version.startsWith("A") ? "A" : "B"}
+                </span>
+              </div>
+              <p className="text-xs text-smoked-charcoal/70 line-clamp-2">{r.creatorTask}</p>
+              <div className="flex gap-1.5">
+                <button onClick={() => setDetailRecipe(r)} className="btn btn-cream btn-sm !text-xs flex-1">👁 View</button>
+                <button
+                  onClick={() => onAttach(r)}
+                  disabled={attaching}
+                  className="btn btn-primary btn-sm !text-xs flex-1"
+                >{attaching ? "…" : "Attach →"}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filtered.length > 20 && (
+          <p className="text-xs text-smoked-charcoal/50 text-center">
+            Showing 20 of {filtered.length}. Refine your search to see more.
+          </p>
+        )}
+
+        {filtered.length === 0 && (
+          <p className="text-sm text-smoked-charcoal/40 text-center py-6">No recipes match your search.</p>
+        )}
+      </div>
+
+      {/* Full Ready Recipe Detail Modal (nested) */}
+      {detailRecipe && (
+        <FullReadyRecipeDetail
+          recipe={detailRecipe}
+          onClose={() => setDetailRecipe(null)}
+          canPlanContent={true}
+          onPlan={(r) => {
+            setDetailRecipe(null);
+            onAttach(r);
+          }}
         />
       )}
     </div>

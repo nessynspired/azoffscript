@@ -21,6 +21,17 @@ export type TransitionCategory =
   | "Camera Interaction"
   | "Brand Transitions";
 
+/**
+ * Chain tier — classifies which transition chain difficulty this transition
+ * belongs to. Used by the Transition Chain system to group transitions by
+ * how forgiving they are when stitched across 4-6 creators.
+ *
+ * "Easy Chain"   — forgiving, works for remote separate recording (cover/reveal, look, point, walk)
+ * "Medium Chain" — requires clearer matching (throw/catch, push/stumble, drop/pickup)
+ * "Advanced Chain" — needs practice or a visual reference (fake hit, choreographed fall, complex multi-object)
+ */
+export type TransitionChainTier = "Easy Chain" | "Medium Chain" | "Advanced Chain";
+
 export interface TransitionStep {
   step: string;
 }
@@ -47,6 +58,24 @@ export interface Transition {
   needs: string[];
   /** Optional: suggested objects to use */
   suggestedObjects?: string[];
+
+  // ===== Paired Handoff Fields =====
+  // Transitions are stored as paired handoffs, not isolated movements.
+  // The outgoing action is what the first creator does; the incoming action
+  // is what the next creator does to match it.
+
+  /** Short description of the outgoing action (what the first creator does) */
+  outgoingAction?: string;
+  /** Short description of the matching incoming action (what the next creator does) */
+  incomingAction?: string;
+  /** Required screen direction for matching (e.g. "Left to right", "Top to bottom") */
+  requiredDirection?: string;
+  /** Safe prop recommendation for this transition */
+  safeProp?: string;
+  /** Whether the lens must be fully covered for the transition to work */
+  lensCoverageRequired?: boolean;
+  /** Which transition chain tier this belongs to (for multi-creator chain planning) */
+  chainTier?: TransitionChainTier;
 }
 
 export const TRANSITION_CATEGORIES: TransitionCategory[] = [
@@ -64,6 +93,20 @@ export const DIFFICULTY_COLORS: Record<TransitionDifficulty, string> = {
   Easy: "🟢",
   Medium: "🟡",
   Advanced: "🔴",
+};
+
+export const TRANSITION_CHAIN_TIERS: TransitionChainTier[] = ["Easy Chain", "Medium Chain", "Advanced Chain"];
+
+export const CHAIN_TIER_COLORS: Record<TransitionChainTier, string> = {
+  "Easy Chain": "🟢",
+  "Medium Chain": "🟡",
+  "Advanced Chain": "🔴",
+};
+
+export const CHAIN_TIER_DESCRIPTIONS: Record<TransitionChainTier, string> = {
+  "Easy Chain": "Forgiving, works for remote separate recording. Cover/reveal, look, point, walk.",
+  "Medium Chain": "Requires clearer matching. Throw/catch, push/stumble, drop/pickup.",
+  "Advanced Chain": "Needs practice or a visual reference. Fake hit, choreographed fall, complex multi-object.",
 };
 
 export const TRANSITIONS: Transition[] = [
@@ -92,6 +135,12 @@ export const TRANSITIONS: Transition[] = [
     worksBestWith: ["Introductions", "Outfit videos", "Group videos", "Different answers"],
     needs: ["An object (sunglasses, tumbler, phone, purse, hat)", "Two or more creators"],
     suggestedObjects: ["Sunglasses", "Tumbler", "Phone", "Purse", "Hat", "Book", "Makeup brush"],
+    outgoingAction: "Cover the camera lens with an object",
+    incomingAction: "Start with the object covering the lens, then remove it",
+    requiredDirection: "Any",
+    safeProp: "Sunglasses, tumbler, or hat",
+    lensCoverageRequired: true,
+    chainTier: "Easy Chain",
   },
   {
     id: "object_hit",
@@ -116,6 +165,12 @@ export const TRANSITIONS: Transition[] = [
     worksBestWith: ["Funny content", "Debates", "Group reactions", "Court formats"],
     needs: ["An object (makeup brush, tumbler, phone)", "Two or more creators", "Timing"],
     suggestedObjects: ["Makeup brush", "Tumbler", "Phone", "Purse", "Book"],
+    outgoingAction: "Swing an object toward the camera lens",
+    incomingAction: "Act like the object hit you, then recover",
+    requiredDirection: "Any",
+    safeProp: "Lightweight makeup brush or soft item",
+    lensCoverageRequired: true,
+    chainTier: "Medium Chain",
   },
   {
     id: "object_pass",
@@ -141,6 +196,12 @@ export const TRANSITIONS: Transition[] = [
     worksBestWith: ["Crew introductions", "Team videos", "Brand moments", "Group day content"],
     needs: ["The same object for everyone", "Two or more creators", "Everyone moves the object in the same direction"],
     suggestedObjects: ["Tumbler", "Phone", "Sunglasses", "AZ Off Script merch", "Sticker"],
+    outgoingAction: "Move the object toward the edge of the frame and let it exit",
+    incomingAction: "Have the object enter from the same side and receive it",
+    requiredDirection: "Consistent (pick one direction for the whole chain)",
+    safeProp: "Tumbler or lightweight item",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
   {
     id: "object_throw",
@@ -165,6 +226,12 @@ export const TRANSITIONS: Transition[] = [
     worksBestWith: ["Funny content", "Group videos", "Crew introductions"],
     needs: ["A soft, safe object", "Two or more creators", "Timing"],
     suggestedObjects: ["Tumbler", "Hat", "Sunglasses", "Purse"],
+    outgoingAction: "Throw the object toward the camera",
+    incomingAction: "Reach out and catch the object",
+    requiredDirection: "Any",
+    safeProp: "Soft, lightweight object (hat, sunglasses)",
+    lensCoverageRequired: false,
+    chainTier: "Medium Chain",
   },
 
   // ===== BODY MOVEMENT =====
@@ -190,6 +257,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["One-line verdicts", "Reactions", "Any solo content"],
     needs: ["Just you", "A camera"],
+    outgoingAction: "Walk out of the frame",
+    incomingAction: "Walk into the frame from the same side",
+    requiredDirection: "Consistent",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
   {
     id: "walk_past_camera",
@@ -212,6 +285,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Group videos", "Crew introductions", "Different answers"],
     needs: ["Two or more creators", "Space to walk"],
+    outgoingAction: "Walk past the camera and exit the frame",
+    incomingAction: "Walk in from the same direction",
+    requiredDirection: "Consistent (left to right or right to left)",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
   {
     id: "walk_off_answer",
@@ -234,6 +313,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["One-line verdicts", "Two-second opinions", "Hot takes"],
     needs: ["Just you", "Space to walk off"],
+    outgoingAction: "Walk off after your answer",
+    incomingAction: "Walk into frame on an empty shot",
+    requiredDirection: "Any",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
   {
     id: "chair_spin",
@@ -257,6 +342,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Verdicts", "Reactions", "Court formats"],
     needs: ["A chair (optional)", "Just you"],
+    outgoingAction: "Spin in your chair and exit the frame",
+    incomingAction: "Start spinning into frame from the same direction",
+    requiredDirection: "Consistent",
+    safeProp: "A stable chair",
+    lensCoverageRequired: false,
+    chainTier: "Medium Chain",
   },
 
   // ===== ACTING TRANSITIONS =====
@@ -281,6 +372,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Medium",
     worksBestWith: ["Funny content", "Debates", "Group reactions", "Court formats"],
     needs: ["Two or more creators", "Acting/timing"],
+    outgoingAction: "Swing at the camera as if hitting the next person",
+    incomingAction: "React like you got hit and recover",
+    requiredDirection: "Any",
+    safeProp: "None — acting only",
+    lensCoverageRequired: false,
+    chainTier: "Medium Chain",
   },
   {
     id: "surprise_reaction",
@@ -303,6 +400,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Medium",
     worksBestWith: ["Funny content", "Reactions", "POV content"],
     needs: ["Two or more creators", "Acting"],
+    outgoingAction: "Look surprised and point toward the next person",
+    incomingAction: "Start with a surprised face looking back",
+    requiredDirection: "Any",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
   {
     id: "point_to_next",
@@ -325,6 +428,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Group videos", "Crew introductions", "Different answers"],
     needs: ["Two or more creators"],
+    outgoingAction: "Point toward the next person's direction",
+    incomingAction: "Start looking in the direction they pointed",
+    requiredDirection: "Consistent",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
 
   // ===== ENVIRONMENT TRANSITIONS =====
@@ -348,6 +457,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Introductions", "POV content", "Real life content"],
     needs: ["A door", "Two or more creators"],
+    outgoingAction: "Close a door in front of the camera",
+    incomingAction: "Open the door and start your video",
+    requiredDirection: "Any",
+    safeProp: "A door",
+    lensCoverageRequired: true,
+    chainTier: "Medium Chain",
   },
   {
     id: "mirror_transition",
@@ -369,6 +484,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Advanced",
     worksBestWith: ["POV content", "Soft truths", "Creative content"],
     needs: ["A mirror (or fake mirror frame)", "Two creators", "Camera positioning"],
+    outgoingAction: "Move toward a mirror until the lens is covered",
+    incomingAction: "Pull back from a mirror to reveal yourself",
+    requiredDirection: "Any",
+    safeProp: "A mirror",
+    lensCoverageRequired: true,
+    chainTier: "Advanced Chain",
   },
   {
     id: "car_transition",
@@ -391,6 +512,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Medium",
     worksBestWith: ["Arizona real life", "Errand content", "Mom-life"],
     needs: ["A car", "Two or more creators"],
+    outgoingAction: "Get into a car and close the door",
+    incomingAction: "Open the car door and step out",
+    requiredDirection: "Any",
+    safeProp: "A car",
+    lensCoverageRequired: true,
+    chainTier: "Medium Chain",
   },
   {
     id: "room_change",
@@ -411,6 +538,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Different answers", "Group videos", "Real life content"],
     needs: ["Two or more creators", "Different rooms"],
+    outgoingAction: "Walk out of your room",
+    incomingAction: "Start in a different room",
+    requiredDirection: "Any",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
 
   // ===== CAMERA INTERACTION =====
@@ -434,6 +567,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Any group content", "Crew introductions", "Reactions"],
     needs: ["Just your hand", "Two or more creators"],
+    outgoingAction: "Reach toward the camera and grab it",
+    incomingAction: "Start as if the camera was just handed to you",
+    requiredDirection: "Any",
+    safeProp: "None — acting only",
+    lensCoverageRequired: true,
+    chainTier: "Medium Chain",
   },
   {
     id: "hand_cover",
@@ -457,6 +596,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Any content", "Solo clips", "Group videos"],
     needs: ["Just your hand", "Two or more creators (or just you for solo)"],
+    outgoingAction: "Cover the lens with your hand",
+    incomingAction: "Start with your hand covering the lens, then remove it",
+    requiredDirection: "Any",
+    safeProp: "None needed",
+    lensCoverageRequired: true,
+    chainTier: "Easy Chain",
   },
   {
     id: "zoom_in",
@@ -479,6 +624,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Verdicts", "Reactions", "Solo clips"],
     needs: ["A phone camera", "Just you"],
+    outgoingAction: "Zoom the camera in until the screen is blurry",
+    incomingAction: "Start zoomed in and zoom out to reveal yourself",
+    requiredDirection: "Any",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
   {
     id: "zoom_out",
@@ -502,6 +653,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Verdicts", "Reactions", "Outfit reveals"],
     needs: ["A phone camera", "Just you"],
+    outgoingAction: "Zoom out from a close-up",
+    incomingAction: "Start zoomed in on something and zoom out to reveal yourself",
+    requiredDirection: "Any",
+    safeProp: "None needed",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
 
   // ===== BRAND TRANSITIONS =====
@@ -528,6 +685,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Crew introductions", "Group videos", "Brand moments", "Different answers"],
     needs: ["The AZ Off Script tumbler", "Two or more creators"],
+    outgoingAction: "Move the tumbler toward the edge of the frame",
+    incomingAction: "Have the tumbler enter from the same side",
+    requiredDirection: "Consistent",
+    safeProp: "An AZ Off Script tumbler",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
   {
     id: "logo_cover",
@@ -550,6 +713,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Crew introductions", "Brand moments", "Group videos"],
     needs: ["AZ Off Script merch/sticker/tumbler", "Two or more creators"],
+    outgoingAction: "Cover the lens with the AZ Off Script logo",
+    incomingAction: "Start with the logo covering the lens, then remove it",
+    requiredDirection: "Any",
+    safeProp: "AZ Off Script sticker, merch, or tumbler",
+    lensCoverageRequired: true,
+    chainTier: "Easy Chain",
   },
   {
     id: "merch_reveal",
@@ -572,6 +741,12 @@ export const TRANSITIONS: Transition[] = [
     difficulty: "Easy",
     worksBestWith: ["Off Script Looks", "Crew introductions", "Brand moments"],
     needs: ["AZ Off Script merch", "Just you"],
+    outgoingAction: "Zoom out from your AZ Off Script merch",
+    incomingAction: "Start close-up on your merch and zoom out to reveal yourself",
+    requiredDirection: "Any",
+    safeProp: "AZ Off Script merch",
+    lensCoverageRequired: false,
+    chainTier: "Easy Chain",
   },
 ];
 
@@ -591,4 +766,12 @@ export function getTransitionsByDifficulty(difficulty: TransitionDifficulty): Tr
 
 export function getEasyTransitions(): Transition[] {
   return getTransitionsByDifficulty("Easy");
+}
+
+export function getTransitionsByChainTier(tier: TransitionChainTier): Transition[] {
+  return TRANSITIONS.filter((t) => t.chainTier === tier);
+}
+
+export function getTransitionChainTiers(): TransitionChainTier[] {
+  return TRANSITION_CHAIN_TIERS;
 }

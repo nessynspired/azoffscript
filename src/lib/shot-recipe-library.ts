@@ -1091,3 +1091,59 @@ export function getRecipesByDifficulty(difficulty: ShotRecipeDifficulty): ShotRe
 export function getEasyRecipes(): ShotRecipe[] {
   return getRecipesByDifficulty("Easy");
 }
+
+/**
+ * Convert a ShotRecipe into the JSONB shape stored on `clips.recipe`.
+ *
+ * This is the same shape RecipeBuilder's `recipeFromShotRecipe` produces,
+ * extracted here so clip-creation flows can auto-attach a recipe without
+ * importing the RecipeBuilder component. Keeps a single source of truth
+ * for what a "clip recipe" looks like.
+ */
+export function shotRecipeToClipRecipe(sr: ShotRecipe): Record<string, unknown> {
+  return {
+    shotRecipeId: sr.id,
+    recordingStyleId: sr.recordingStyleId,
+    transitionId: sr.transitionId,
+    goal: sr.goal,
+    creatorTask: sr.creatorTask,
+    prompt: sr.prompt,
+    exampleResponse: sr.exampleResponse ?? "",
+    finalVideoFlow: [...sr.finalVideoFlow],
+    part1Start: { label: sr.part1Start.label, instructions: [...sr.part1Start.instructions] },
+    part2Content: { label: sr.part2Content.label, instructions: [...sr.part2Content.instructions] },
+    part3End: { label: sr.part3End.label, instructions: [...sr.part3End.instructions] },
+    beforeRecording: [...sr.beforeRecording],
+    recordSteps: [...sr.recordSteps],
+    submissionRules: [...sr.submissionRules],
+    editStyle: sr.editStyle,
+    adminOrder: [...sr.adminOrder],
+    adminNotes: sr.adminNotes ?? "",
+    difficulty: sr.difficulty,
+    // Chain fields default to empty — set by the Transition Chain Planner in RecipeBuilder
+    assemblyMode: undefined,
+    chainStrategy: undefined,
+    chainContentType: undefined,
+    participantCount: undefined,
+    creatorOrder: undefined,
+    transitionFamily: undefined,
+    chainTier: undefined,
+    transitionMap: undefined,
+    chainOpening: undefined,
+    chainClosing: undefined,
+    chainPositions: undefined,
+  };
+}
+
+/**
+ * Build the `recipe` JSONB for a clip insert, given an optional shotRecipeId
+ * (typically from a QuickDropTemplate). Returns null if no recipe is found,
+ * so callers can just spread `recipe: buildRecipeForInsert(template?.shotRecipeId)` 
+ * into their insert without conditionals.
+ */
+export function buildRecipeForInsert(shotRecipeId?: string): Record<string, unknown> | null {
+  if (!shotRecipeId) return null;
+  const sr = getShotRecipe(shotRecipeId);
+  if (!sr) return null;
+  return shotRecipeToClipRecipe(sr);
+}
