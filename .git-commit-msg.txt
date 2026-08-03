@@ -1,21 +1,21 @@
-Fix What's Moving + multiple file uploads + connect to planned clip
+Fix production_notes error + combined migration SQL
 
-WHAT'S MOVING FIX:
-- The filter was too restrictive — only showed clips with file_path or link,
-  excluding ideas. Now shows all dropped content clips (matching Recent Drops).
-- Added sort by created_at so newest drops show first.
+The "could not find the production_notes column" error happened because
+the production_notes column was never added to the database. The multi-file
+upload code tried to insert into it, causing the drop to fail.
 
-MULTIPLE FILE UPLOADS:
-- Drop page now supports picking multiple videos/images at once.
-- File picker accepts video/*, audio/*, image/* with multiple selection.
-- Shows list of selected files with remove buttons and "Add more files".
-- All files upload to Supabase storage, first file stored in file_path,
-  all files stored in production_notes.files array.
-- Clip detail modal shows all uploaded files with video players.
+Fix: moved the production_notes update to AFTER the clip is created, and
+made it non-blocking — if the column doesn't exist, the clip is still
+saved and a warning is logged to console.
 
-CONNECT TO PLANNED CLIP:
-- Made more prominent with border and clearer label:
-  "Which content piece is this for?"
+Also created supabase/run-all-migrations.sql — a single file that applies
+ALL pending database migrations at once:
+  1. production_notes column (multiple file uploads)
+  2. drop_purpose column (raw footage vs content)
+  3. Fixed RLS policy on agreement_signatures (signature duplicate fix)
+  4. Recreated clips_with_meta view with new columns
+
+Run this ONE file in the Supabase SQL Editor to fix everything.
 
 Generated with [Devin](https://devin.ai)
 

@@ -173,8 +173,6 @@ export default function DropPage() {
         needs_review: false,
         planned_clip_id: plannedClipId || null,
         drop_purpose: dropPurpose,
-        // Store all file paths in production_notes so we can show multiple videos
-        production_notes: allFilePaths.length > 1 ? { files: allFilePaths } : null,
       };
 
       const { data: clip, error: clipErr } = await supabase
@@ -187,6 +185,18 @@ export default function DropPage() {
         setError(clipErr?.message ?? "Could not drop that. Try again.");
         setSubmitting(false);
         return;
+      }
+
+      // Store all file paths in production_notes if multiple files were uploaded
+      // (non-blocking — if the column doesn't exist yet, the clip is still saved)
+      if (allFilePaths.length > 1) {
+        const { error: notesErr } = await supabase
+          .from("clips")
+          .update({ production_notes: { files: allFilePaths } })
+          .eq("id", clip.id);
+        if (notesErr) {
+          console.warn("[drop] Could not save production_notes (column may not exist yet):", notesErr.message);
+        }
       }
 
       // Tag people + create approval rows
