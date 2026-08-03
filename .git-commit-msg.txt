@@ -1,19 +1,21 @@
-Fix duplicate signature error — use service client for existing-signature check
+Fix What's Moving + multiple file uploads + connect to planned clip
 
-The "duplicate key value violates unique constraint" error happened because:
-1. The existing-signature check used the regular supabase client (with RLS)
-2. The RLS policy sig_read_own checks member_id = auth.uid()
-3. But member_id is the members.id UUID, NOT the auth user ID
-4. So RLS blocked the read, the check returned null
-5. The insert tried to add a duplicate, hitting the unique constraint
+WHAT'S MOVING FIX:
+- The filter was too restrictive — only showed clips with file_path or link,
+  excluding ideas. Now shows all dropped content clips (matching Recent Drops).
+- Added sort by created_at so newest drops show first.
 
-Fix: use the service role client for the existing-signature check so it
-bypasses RLS and can actually find the existing signature.
+MULTIPLE FILE UPLOADS:
+- Drop page now supports picking multiple videos/images at once.
+- File picker accepts video/*, audio/*, image/* with multiple selection.
+- Shows list of selected files with remove buttons and "Add more files".
+- All files upload to Supabase storage, first file stored in file_path,
+  all files stored in production_notes.files array.
+- Clip detail modal shows all uploaded files with video players.
 
-Also includes a SQL migration (supabase/fix-signature-rls.sql) to fix the
-RLS policy itself so client-side reads (use-terms-status hook, TermsGate)
-also work correctly. This prevents the woman from seeing "sign the Creator
-Release" when she already signed.
+CONNECT TO PLANNED CLIP:
+- Made more prominent with border and clearer label:
+  "Which content piece is this for?"
 
 Generated with [Devin](https://devin.ai)
 

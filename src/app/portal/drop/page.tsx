@@ -46,7 +46,7 @@ export default function DropPage() {
   const supabase = createClient();
 
   const [text, setText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [taggedMemberIds, setTaggedMemberIds] = useState<string[]>([]);
   const [lane, setLane] = useState<string>("");
   const [destination, setDestination] = useState<string>("");
@@ -87,7 +87,7 @@ export default function DropPage() {
 
   // Auto-detect what type of drop this is
   function detectType(): DropType {
-    if (file) return "video";
+    if (files.length > 0) return "video";
     if (isLink(text)) return "tiktok_link";
     return "idea";
   }
@@ -98,19 +98,29 @@ export default function DropPage() {
     );
   }
 
-  function handleFile(f: File | null) {
-    if (!f) return;
+  function handleFiles(newFiles: FileList | null) {
+    if (!newFiles || newFiles.length === 0) return;
     setError(null);
-    if (!f.type.startsWith("video/") && !f.type.startsWith("audio/")) {
-      setError("Only video files can be dropped here. For links, just paste them in the text box.");
-      return;
+    const valid: File[] = [];
+    for (const f of Array.from(newFiles)) {
+      if (!f.type.startsWith("video/") && !f.type.startsWith("audio/") && !f.type.startsWith("image/")) {
+        setError(`${f.name}: Only video, audio, or image files can be dropped here. For links, just paste them in the text box.`);
+        continue;
+      }
+      valid.push(f);
     }
-    setFile(f);
+    if (valid.length > 0) {
+      setFiles((prev) => [...prev, ...valid]);
+    }
+  }
+
+  function removeFile(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function submit() {
     if (!member || !user) { setError("You need to be signed in to drop something."); return; }
-    if (!text.trim() && !file) { setError("Drop something first — a link or a clip."); return; }
+    if (!text.trim() && files.length === 0) { setError("Drop something first — a link or a clip."); return; }
 
     setSubmitting(true);
     setError(null);
@@ -121,18 +131,22 @@ export default function DropPage() {
       const platform = isLinkDrop ? detectPlatform(text.trim()) : null;
 
       let filePath: string | null = null;
+      const allFilePaths: string[] = [];
 
-      // Upload file if video
-      if (type === "video" && file) {
-        const ext = file.name.split(".").pop() ?? "mp4";
-        const path = `${member.user_id}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("clips").upload(path, file, { upsert: false });
-        if (upErr) {
-          setError("Upload paused. Try again.");
-          setSubmitting(false);
-          return;
+      // Upload all files
+      if (type === "video" && files.length > 0) {
+        for (const f of files) {
+          const ext = f.name.split(".").pop() ?? "mp4";
+          const path = `${member.user_id}/${crypto.randomUUID()}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("clips").upload(path, f, { upsert: false });
+          if (upErr) {
+            setError(`Upload paused for ${f.name}. Try again.`);
+            setSubmitting(false);
+            return;
+          }
+          allFilePaths.push(path);
         }
-        filePath = path;
+        filePath = allFilePaths[0] ?? null;
       }
 
       // Auto-generate title — for link drops, use the platform name (not the raw URL)
@@ -142,7 +156,7 @@ export default function DropPage() {
       } else if (isLinkDrop) {
         title = "Link drop";
       } else {
-        title = text.trim().split("\n")[0].slice(0, 80) || file?.name?.replace(/\.[^.]+$/, "") || "Untitled drop";
+        title = text.trim().split("\n")[0].slice(0, 80) || files[0]?.name?.replace(/\.[^.]+$/, "") || "Untitled drop";
       }
 
       const clipInsert: Database["public"]["Tables"]["clips"]["Insert"] = {
@@ -151,7 +165,7 @@ export default function DropPage() {
         status: "Dropped",
         link: isLinkDrop ? text.trim() : null,
         file_path: filePath,
-        idea_text: !isLinkDrop && !file ? text.trim() : null,
+        idea_text: !isLinkDrop && files.length === 0 ? text.trim() : null,
         category: lane || null,
         destination: destination || null,
         submitted_by: member.id,
@@ -159,6 +173,8 @@ export default function DropPage() {
         needs_review: false,
         planned_clip_id: plannedClipId || null,
         drop_purpose: dropPurpose,
+        // Store all file paths in production_notes so we can show multiple videos
+        production_notes: allFilePaths.length > 1 ? { files: allFilePaths } : null,
       };
 
       const { data: clip, error: clipErr } = await supabase
@@ -197,8 +213,8 @@ export default function DropPage() {
         ? platform
           ? `${member.name} dropped a ${platform} clip`
           : `${member.name} dropped a link`
-        : file
-        ? `${member.name} dropped a video`
+        : files.length > 0
+        ? `${member.name} dropped ${files.length} video${files.length > 1 ? "s" : ""}`
         : `${member.name} dropped a thought: "${title}"`;
 
       await supabase.from("activity").insert({
@@ -221,7 +237,7 @@ export default function DropPage() {
 
   function reset() {
     setText("");
-    setFile(null);
+    setFiles([]);
     setTaggedMemberIds([]);
     setLane("");
     setDestination("");
@@ -367,7 +383,7 @@ export default function DropPage() {
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-xl text-desert-night">🎬 Send your clip</h2>
-              <button onClick={() => { setDropMode(null); setFile(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
+              <button onClick={() => { setDropMode(null); setFiles([]); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
             </div>
 
             {/* Purpose toggle — raw footage vs content clip */}
@@ -395,30 +411,41 @@ export default function DropPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="video/*,audio/*"
+              accept="video/*,audio/*,image/*"
+              multiple
               className="hidden"
-              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => handleFiles(e.target.files)}
             />
-            {!file ? (
+            {files.length === 0 ? (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full border-2 border-dashed border-desert-night/20 rounded-2xl py-12 flex flex-col items-center gap-3 hover:border-cactus-teal hover:bg-cactus-teal/5 transition-colors"
               >
                 <span className="text-5xl">�</span>
-                <p className="font-bold text-desert-night">Tap to pick a video</p>
-                <p className="text-sm text-smoked-charcoal/60">No edits needed. Just send it.</p>
+                <p className="font-bold text-desert-night">Tap to pick videos</p>
+                <p className="text-sm text-smoked-charcoal/60">You can pick multiple. No edits needed.</p>
               </button>
             ) : (
-              <div className="bg-cactus-teal/10 rounded-xl p-4 flex items-center gap-3">
-                <span className="text-2xl">✅</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-desert-night truncate">{file.name}</p>
-                  <p className="text-xs text-smoked-charcoal/60">{Math.round(file.size / 1024 / 1024)}MB</p>
-                </div>
-                <button onClick={() => setFile(null)} className="text-copper-deep text-sm font-bold">remove</button>
+              <div className="space-y-2">
+                {files.map((f, idx) => (
+                  <div key={idx} className="bg-cactus-teal/10 rounded-xl p-3 flex items-center gap-3">
+                    <span className="text-xl">✅</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-desert-night truncate text-sm">{f.name}</p>
+                      <p className="text-xs text-smoked-charcoal/60">{Math.round(f.size / 1024 / 1024)}MB</p>
+                    </div>
+                    <button onClick={() => removeFile(idx)} className="text-copper-deep text-sm font-bold">remove</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn btn-ghost btn-sm w-full !text-xs"
+                >
+                  + Add more files
+                </button>
               </div>
             )}
-            {file && (
+            {files.length > 0 && (
               <>
                 <input
                   value={text}
@@ -429,10 +456,10 @@ export default function DropPage() {
                 {error && <p className="mt-3 text-sm text-copper-deep font-bold">{error}</p>}
                 <button
                   onClick={submit}
-                  disabled={submitting || !file}
+                  disabled={submitting || files.length === 0}
                   className="btn btn-primary btn-lg w-full mt-4"
                 >
-                  {submitting ? "Uploading…" : "Drop It"}
+                  {submitting ? `Uploading ${files.length} file${files.length > 1 ? "s" : ""}…` : `Drop ${files.length} file${files.length > 1 ? "s" : ""}`}
                 </button>
               </>
             )}
@@ -440,15 +467,15 @@ export default function DropPage() {
         )}
 
         {/* ===== OPTIONAL EXTRAS — only after they've picked a mode ===== */}
-        {dropMode && (text.trim() || file) && (
+        {dropMode && (text.trim() || files.length > 0) && (
           <div className="mt-4 space-y-4">
-            {/* Connect to planned clip — optional */}
-            <div className="card p-4">
-              <p className="text-xs font-extrabold uppercase tracking-wide text-desert-night/50 mb-1">
-                Connect to a planned clip
+            {/* Connect to planned clip — which content piece is this for? */}
+            <div className="card p-4 border-2 border-copper-clay/20">
+              <p className="text-sm font-extrabold uppercase tracking-wide text-desert-night mb-1">
+                Which content piece is this for?
               </p>
               <p className="text-xs text-smoked-charcoal/50 mb-2">
-                (optional) — if this is for a specific content piece on the calendar
+                Pick the planned clip from the calendar, or leave it unselected.
               </p>
               <select
                 value={plannedClipId}

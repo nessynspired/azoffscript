@@ -1372,9 +1372,22 @@ function ClipDetailModal({
         )}
 
         {/* Video player — plays uploaded videos right in the modal */}
+        {/* Show all files if multiple were uploaded (stored in production_notes.files) */}
         {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
-          <div className="mt-4 max-h-[500px]">
+          <div className="mt-4 space-y-3">
             <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[500px]" />
+            {/* Additional files from multi-file drop */}
+            {(() => {
+              const notes = clip.production_notes as { files?: string[] } | null;
+              const allFiles = notes?.files;
+              if (!allFiles || !Array.isArray(allFiles) || allFiles.length <= 1) return null;
+              return allFiles.slice(1).map((fp: string, idx: number) => (
+                <div key={idx}>
+                  <p className="text-xs text-smoked-charcoal/50 mb-1 font-bold">File {idx + 2} of {String(allFiles.length)}</p>
+                  <VideoPlayer filePath={fp} title={`${clip.title} - file ${idx + 2}`} className="max-h-[500px]" />
+                </div>
+              ));
+            })()}
           </div>
         )}
 
@@ -3462,10 +3475,11 @@ function PlannerDashboard({
   // Missing assignments: clips with no one assigned
   const clipsWithoutAssignments = planningClips.filter((c) => !assignments.some((a) => a.clip_id === c.id));
 
-  // What's Moving — recent drops from the crew (uploaded videos AND link drops)
+  // What's Moving — recent drops from the crew (uploaded videos, link drops, ideas)
   // Only content clips — raw footage is excluded (it goes to the Raw Footage tab)
   const recentLinkDrops = clips
-    .filter((c) => c.status === "Dropped" && !isRawFootage(c) && ((c.type === "tiktok_link" && c.link) || ((c.type === "video" || c.type === "final_cut") && c.file_path)))
+    .filter((c) => c.status === "Dropped" && !isRawFootage(c))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 6);
 
   async function sendReminder(assignment: Assignment) {
