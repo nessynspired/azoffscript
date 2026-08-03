@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * VideoPlayer — plays videos uploaded to the Supabase "clips" storage bucket.
- * The bucket is private, so we generate a signed URL (valid for 1 hour).
+ * VideoPlayer — plays videos and shows images uploaded to the Supabase
+ * "clips" storage bucket. The bucket is private, so we generate a signed
+ * URL (valid for 1 hour).
  *
  * Props:
  *  - filePath: the path in the clips bucket (e.g. "user-uuid/filename.mp4")
@@ -25,6 +26,9 @@ export function VideoPlayer({
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Detect if this is an image based on file extension
+  const isImage = /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(filePath);
+
   useEffect(() => {
     let cancelled = false;
     async function getSignedUrl() {
@@ -35,7 +39,7 @@ export function VideoPlayer({
 
       if (cancelled) return;
       if (error || !data?.signedUrl) {
-        setError("Could not load video");
+        setError(error?.message ?? "Could not load file");
         return;
       }
       setUrl(data.signedUrl);
@@ -47,7 +51,7 @@ export function VideoPlayer({
   if (error) {
     return (
       <div className={`flex items-center justify-center bg-desert-night/10 rounded-xl ${className}`}>
-        <p className="text-sm text-smoked-charcoal/60">{error}</p>
+        <p className="text-sm text-smoked-charcoal/60 px-3 text-center">{error}</p>
       </div>
     );
   }
@@ -57,6 +61,18 @@ export function VideoPlayer({
       <div className={`flex items-center justify-center bg-desert-night/10 rounded-xl ${className}`}>
         <div className="animate-pulse text-2xl">🎬</div>
       </div>
+    );
+  }
+
+  // Render as image if it's an image file
+  if (isImage) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt={title ?? "Uploaded image"}
+        className={`w-full rounded-xl bg-desert-night object-contain ${className}`}
+      />
     );
   }
 

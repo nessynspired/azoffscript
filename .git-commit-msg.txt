@@ -1,21 +1,17 @@
-Fix production_notes error + combined migration SQL
+Fix VideoPlayer to show images + show actual error messages
 
-The "could not find the production_notes column" error happened because
-the production_notes column was never added to the database. The multi-file
-upload code tried to insert into it, causing the drop to fail.
+- VideoPlayer now detects image files (.jpg, .jpeg, .png, .gif, .webp,
+  .heic, .heif) and renders them as <img> instead of <video>. Latasha
+  dropped JPEG screenshots, not videos — the video player was trying to
+  play them and failing silently.
+- VideoPlayer now shows the actual error message from Supabase storage
+  instead of just "Could not load video", so we can diagnose issues.
+- The files DO exist in storage (confirmed via service role client).
+  Ronnie's 4MB mp4 and Latasha's 4 JPEGs are all there.
 
-Fix: moved the production_notes update to AFTER the clip is created, and
-made it non-blocking — if the column doesn't exist, the clip is still
-saved and a warning is logged to console.
-
-Also created supabase/run-all-migrations.sql — a single file that applies
-ALL pending database migrations at once:
-  1. production_notes column (multiple file uploads)
-  2. drop_purpose column (raw footage vs content)
-  3. Fixed RLS policy on agreement_signatures (signature duplicate fix)
-  4. Recreated clips_with_meta view with new columns
-
-Run this ONE file in the Supabase SQL Editor to fix everything.
+Note: Latasha dropped 4 files but only 1 was saved to file_path because
+the production_notes column doesn't exist yet. Run the combined migration
+(supabase/run-all-migrations.sql) to fix this for future drops.
 
 Generated with [Devin](https://devin.ai)
 
