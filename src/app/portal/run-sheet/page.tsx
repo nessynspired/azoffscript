@@ -136,6 +136,12 @@ function droppedByLabel(clip: { type: string; submitted_by_name: string }): stri
   return `Idea dropped by ${clip.submitted_by_name}`;
 }
 
+// Is this clip raw footage (for stitching) vs a content pipeline clip?
+// Raw footage drops are NOT part of the production pipeline.
+function isRawFootage(clip: { drop_purpose?: string | null }): boolean {
+  return clip.drop_purpose === "raw_footage";
+}
+
 // Clean display title for a clip — if the title is a raw URL (old link drops), show a clean label instead
 function displayTitle(clip: { title: string; type: string; link?: string | null }): string {
   // If the title looks like a URL, replace it with a clean platform label
@@ -160,7 +166,7 @@ export default function RunSheetPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "watch" | "planner">("week");
+  const [tab, setTab] = useState<"week" | "calendar" | "flow" | "board" | "trends" | "watch" | "raw" | "planner">("week");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showCreateFromLibrary, setShowCreateFromLibrary] = useState(false);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
@@ -284,7 +290,7 @@ export default function RunSheetPage() {
   }
 
   // Split clips: production = actual videos being made, ideas = links/ideas/trends
-  const productionClips = clips.filter((c) => c.type === "video" || c.type === "final_cut");
+  const productionClips = clips.filter((c) => (c.type === "video" || c.type === "final_cut") && !isRawFootage(c));
 
   const TABS: { key: typeof tab; label: string; count?: number; info: string }[] = [
     { key: "week", label: "This Week", info: "Your default view — shows recent drops, your part (assignments), greenlights you need to give, deadlines this week, what's going live, and what's stuck. Good for a quick check-in." },
@@ -293,7 +299,8 @@ export default function RunSheetPage() {
     { key: "flow", label: "Studio Flow", count: productionClips.length, info: "Kanban pipeline showing videos moving through production: Dropped → Planned → Shot → Cutting → Review → Ready → Scheduled → Live → Vault. Only shows actual videos, not links or ideas." },
     { key: "board", label: "Assignment Board", count: assignments.length, info: "Shows who's been assigned to what. Planners can assign crew members to clips and track whether assignments are done, waiting, or overdue." },
     { key: "trends", label: "Trend Drops", count: trends.length, info: "TikTok trends and references the crew has dropped for inspiration. Planners can group trends into Weekly Heat themes and turn them into planned clips." },
-    { key: "watch", label: "Watch", count: clips.filter((c) => c.status === "Live" || ((c.type === "video" || c.type === "final_cut" || c.type === "tiktok_link") && (c.file_path || c.link))).length, info: "Watch clips from the crew — dropped videos and posted content. Filter by platform or see fresh drops." },
+    { key: "watch", label: "Watch", count: clips.filter((c) => c.status === "Live").length, info: "Clips that have gone live (posted to TikTok, Instagram, etc.). Filter by platform. Use this to watch what's already out there." },
+    { key: "raw", label: "Raw Footage", count: clips.filter((c) => isRawFootage(c)).length, info: "Raw footage drops from the crew — videos recorded for Vanessa to stitch and edit. Not part of the production pipeline. All crew can see each other's raw drops here." },
   ];
 
   return (
@@ -474,6 +481,11 @@ export default function RunSheetPage() {
       {/* WATCH — posted/live videos */}
       {tab === "watch" && (
         <WatchTab clips={clips} onSelectClip={(id) => setSelectedClip(id)} />
+      )}
+
+      {/* RAW FOOTAGE — raw drops for stitching, visible to all crew */}
+      {tab === "raw" && (
+        <RawFootageTab clips={clips} members={members} onSelectClip={(id) => setSelectedClip(id)} />
       )}
 
       {selectedClip && (
@@ -2459,9 +2471,9 @@ function ThisWeekTab({
     (c.status === "Review" && c.approvals_blocked > 0));
 
   // Recent drops — the 6 most recently dropped clips of any type (video, tiktok link, idea)
-  // This ensures fresh drops always have a visible home on the default tab
+  // Only content clips — raw footage goes to the Raw Footage tab
   const recentDrops = clips
-    .filter((c) => c.status === "Dropped")
+    .filter((c) => c.status === "Dropped" && !isRawFootage(c))
     .slice(0, 6);
 
   // My drops — clips this member submitted (so they can find and watch their own videos)
@@ -3164,6 +3176,90 @@ function AssignmentBoardTab({
 }
 
 // ===========================================================================
+// RAW FOOTAGE — raw drops for stitching, visible to all crew
+// ===========================================================================
+function RawFootageTab({
+  clips, members, onSelectClip,
+}: {
+  clips: ClipMeta[];
+  members: Member[];
+  onSelectClip: (id: string) => void;
+}) {
+  const rawClips = clips
+    .filter((c) => isRawFootage(c))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  if (rawClips.length === 0) {
+    return (
+      <div className="card p-10 text-center">
+        <div className="inline-block"><MascotImage pose="shades" size={120} /></div>
+        <p className="font-display text-2xl text-desert-night mt-4">No raw footage yet.</p>
+        <p className="text-smoked-charcoal/70 mt-2">
+          When someone drops raw footage for stitching, it&apos;ll show up here for everyone to see.
+        </p>
+        <Link href="/portal/drop" className="btn btn-primary mt-6">Drop raw footage →</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-smoked-charcoal/70">
+        Raw footage from the crew — videos recorded for Vanessa to stitch and edit. Not part of the production pipeline.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {rawClips.map((clip) => {
+          const dropper = members.find((m) => m.id === clip.submitted_by);
+          return (
+            <button
+              key={clip.id}
+              onClick={() => onSelectClip(clip.id)}
+              className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
+            >
+              {/* Video player for uploaded videos */}
+              {clip.file_path && (clip.type === "video" || clip.type === "final_cut") && (
+                <div className="bg-desert-night/5 max-h-[250px] overflow-hidden">
+                  <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[250px] object-contain" />
+                </div>
+              )}
+              {/* Embedded video for link drops */}
+              {clip.type === "tiktok_link" && clip.link && (
+                <div className="bg-desert-night/5">
+                  <SocialEmbed url={clip.link} title={clip.title} />
+                </div>
+              )}
+              <div className="p-3 flex items-center gap-2">
+                {/* Profile picture or initials */}
+                <span className="w-8 h-8 rounded-full bg-cactus-teal/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-cactus-teal/30">
+                  {dropper?.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={dropper.photo_url} alt={clip.submitted_by_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-display text-xs text-sandstone-cream">
+                      {clip.submitted_by_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="chip chip-teal !text-[9px]">🎥 Raw Footage</span>
+                  </div>
+                  <p className="font-bold text-desert-night text-sm truncate">{displayTitle(clip)}</p>
+                  <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
+                    {clip.submitted_by_name} · {new Date(clip.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </p>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
 // WATCH — posted/live videos the crew can watch
 // ===========================================================================
 function WatchTab({
@@ -3172,17 +3268,15 @@ function WatchTab({
   clips: ClipMeta[];
   onSelectClip: (id: string) => void;
 }) {
-  // Show Live clips AND Dropped clips with videos — crew can watch each other's drops
-  const watchableClips = clips
-    .filter((c) => c.status === "Live" || ((c.type === "video" || c.type === "final_cut" || c.type === "tiktok_link") && (c.file_path || c.link)))
+  // Only Live clips — finished/posted videos. Raw footage and dropped content go to other tabs.
+  const liveClips = clips
+    .filter((c) => c.status === "Live")
     .sort((a, b) => new Date(b.scheduled_date ?? b.updated_at).getTime() - new Date(a.scheduled_date ?? a.updated_at).getTime());
-  const [filter, setFilter] = useState<"all" | "tiktok" | "instagram" | "youtube" | "facebook" | "dropped">("all");
+  const [filter, setFilter] = useState<"all" | "tiktok" | "instagram" | "youtube" | "facebook">("all");
 
   const filtered = filter === "all"
-    ? watchableClips
-    : filter === "dropped"
-    ? watchableClips.filter((c) => c.status === "Dropped")
-    : watchableClips.filter((c) => (c.destination ?? "").toLowerCase() === filter);
+    ? liveClips
+    : liveClips.filter((c) => (c.destination ?? "").toLowerCase() === filter);
 
   const PLATFORM_LABEL: Record<string, string> = {
     tiktok: "TikTok",
@@ -3205,15 +3299,15 @@ function WatchTab({
     return m ? `https://www.youtube.com/embed/${m[1]}` : null;
   }
 
-  if (watchableClips.length === 0) {
+  if (liveClips.length === 0) {
     return (
       <div className="card p-10 text-center">
         <div className="inline-block"><MascotImage pose="shades" size={120} /></div>
-        <p className="font-display text-2xl text-desert-night mt-4">No clips to watch yet.</p>
+        <p className="font-display text-2xl text-desert-night mt-4">No clips posted yet.</p>
         <p className="text-smoked-charcoal/70 mt-2">
-          When someone drops a video or a clip goes Live, it&apos;ll show up here.
+          When a clip goes Live, it&apos;ll show up here for the crew to watch.
         </p>
-        <Link href="/portal/drop" className="btn btn-primary mt-6">Drop a clip →</Link>
+        <Link href="/portal/run-sheet" className="btn btn-secondary mt-6">Back to Run Sheet</Link>
       </div>
     );
   }
@@ -3221,7 +3315,7 @@ function WatchTab({
   return (
     <div className="space-y-4">
       <p className="text-smoked-charcoal/70">
-        Clips from the crew — dropped videos and posted content. Click to watch.
+        Clips that have gone live. Click to watch, or open the original post.
       </p>
 
       {/* Platform filter */}
@@ -3229,9 +3323,9 @@ function WatchTab({
         <button
           onClick={() => setFilter("all")}
           className={`chip !text-xs ${filter === "all" ? "chip-dark" : "chip-cream opacity-60 hover:opacity-100"}`}
-        >All ({watchableClips.length})</button>
+        >All ({liveClips.length})</button>
         {(["tiktok", "instagram", "youtube", "facebook"] as const).map((p) => {
-          const count = watchableClips.filter((c) => (c.destination ?? "").toLowerCase() === p).length;
+          const count = liveClips.filter((c) => (c.destination ?? "").toLowerCase() === p).length;
           if (count === 0) return null;
           return (
             <button
@@ -3241,16 +3335,6 @@ function WatchTab({
             >{PLATFORM_LABEL[p]} ({count})</button>
           );
         })}
-        {(() => {
-          const droppedCount = watchableClips.filter((c) => c.status === "Dropped").length;
-          if (droppedCount === 0) return null;
-          return (
-            <button
-              onClick={() => setFilter("dropped")}
-              className={`chip !text-xs ${filter === "dropped" ? "chip-dark" : "chip-cream opacity-60 hover:opacity-100"}`}
-            >📥 Dropped ({droppedCount})</button>
-          );
-        })()}
       </div>
 
       {/* Clips grid */}
@@ -3319,7 +3403,7 @@ function WatchTab({
         })}
       </div>
 
-      {filtered.length === 0 && watchableClips.length > 0 && (
+      {filtered.length === 0 && liveClips.length > 0 && (
         <div className="card p-6 text-center">
           <p className="text-smoked-charcoal/70">No clips on {PLATFORM_LABEL[filter]} yet.</p>
         </div>
@@ -3352,7 +3436,7 @@ function PlannerDashboard({
   const needsPlanningTrends = trends.filter((t) => t.status === "New" || t.status === "Watching");
 
   // Clips in planning stages (Planned, Dropped, Cutting)
-  const planningClips = clips.filter((c) => c.status === "Planned" || c.status === "Dropped" || c.status === "Cutting");
+  const planningClips = clips.filter((c) => (c.status === "Planned" || c.status === "Dropped" || c.status === "Cutting") && !isRawFootage(c));
 
   // What's stuck: clips with past drop-by dates but no video submitted
   const stuckClips = planningClips.filter((c) => {
@@ -3379,9 +3463,9 @@ function PlannerDashboard({
   const clipsWithoutAssignments = planningClips.filter((c) => !assignments.some((a) => a.clip_id === c.id));
 
   // What's Moving — recent drops from the crew (uploaded videos AND link drops)
-  // Shows the crew's latest drops so the planner can see them at a glance
+  // Only content clips — raw footage is excluded (it goes to the Raw Footage tab)
   const recentLinkDrops = clips
-    .filter((c) => c.status === "Dropped" && ((c.type === "tiktok_link" && c.link) || ((c.type === "video" || c.type === "final_cut") && c.file_path)))
+    .filter((c) => c.status === "Dropped" && !isRawFootage(c) && ((c.type === "tiktok_link" && c.link) || ((c.type === "video" || c.type === "final_cut") && c.file_path)))
     .slice(0, 6);
 
   async function sendReminder(assignment: Assignment) {

@@ -55,6 +55,7 @@ export default function DropPage() {
   const [submitting, setSubmitting] = useState(false);
   const [dropped, setDropped] = useState(false);
   const [plannedClipId, setPlannedClipId] = useState<string>("");
+  const [dropPurpose, setDropPurpose] = useState<"content" | "raw_footage">("content");
   const [plannedClips, setPlannedClips] = useState<{ id: string; title: string; scheduled_date: string | null }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -157,6 +158,7 @@ export default function DropPage() {
         submitted_by_name: member.name,
         needs_review: false,
         planned_clip_id: plannedClipId || null,
+        drop_purpose: dropPurpose,
       };
 
       const { data: clip, error: clipErr } = await supabase
@@ -366,6 +368,29 @@ export default function DropPage() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-xl text-desert-night">🎬 Send your clip</h2>
               <button onClick={() => { setDropMode(null); setFile(null); setText(""); }} className="btn btn-ghost btn-sm">✕</button>
+            </div>
+
+            {/* Purpose toggle — raw footage vs content clip */}
+            <div className="mb-4">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-desert-night/50 mb-2">
+                What is this?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setDropPurpose("content")}
+                  className={`p-3 rounded-xl border-2 text-left transition-colors ${dropPurpose === "content" ? "border-copper-clay bg-copper-clay/10" : "border-desert-night/15 hover:border-desert-night/30"}`}
+                >
+                  <p className="font-bold text-desert-night text-sm">📝 Content Clip</p>
+                  <p className="text-xs text-smoked-charcoal/60 mt-0.5">For the production pipeline — planned content that gets edited and posted.</p>
+                </button>
+                <button
+                  onClick={() => setDropPurpose("raw_footage")}
+                  className={`p-3 rounded-xl border-2 text-left transition-colors ${dropPurpose === "raw_footage" ? "border-cactus-teal bg-cactus-teal/10" : "border-desert-night/15 hover:border-desert-night/30"}`}
+                >
+                  <p className="font-bold text-desert-night text-sm">🎥 Raw Footage</p>
+                  <p className="text-xs text-smoked-charcoal/60 mt-0.5">For Vanessa to stitch — raw video she'll edit together. Not a planned clip.</p>
+                </button>
+              </div>
             </div>
             <input
               ref={fileInputRef}
