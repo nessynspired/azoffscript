@@ -511,7 +511,7 @@ function MainAgreementPopup({
     });
     const data = await res.json();
     setSigning(false);
-    if (!res.ok) { setError(data.error ?? "Failed to sign"); return; }
+    if (!res.ok) { setError(data.error ? (data.detail ? `${data.error}: ${data.detail}` : data.error) : "Failed to sign"); return; }
     setSigned(true);
     onSigned?.();
   }
@@ -759,7 +759,7 @@ function AgreementPopup({
     const data = await res.json();
     setSigning(false);
     if (!res.ok) {
-      setError(data.error ?? "Failed to sign");
+      setError(data.error ? (data.detail ? `${data.error}: ${data.detail}` : data.error) : "Failed to sign");
       return;
     }
     setSigned(true);

@@ -74,10 +74,23 @@ export function SignaturePad({ onChange, label = "Sign here" }: SignaturePadProp
     if (!drawing.current) return;
     drawing.current = false;
     lastPoint.current = null;
-    // Emit the current canvas as PNG
+    // Emit the current canvas as a downscaled JPEG to keep payload small
     const canvas = canvasRef.current;
     if (canvas && hasInk.current) {
-      onChange(canvas.toDataURL("image/png"));
+      // Downscale to max 400px wide for storage — plenty for a signature
+      const maxW = 400;
+      const scale = Math.min(1, maxW / canvas.width);
+      const out = document.createElement("canvas");
+      out.width = Math.round(canvas.width * scale);
+      out.height = Math.round(canvas.height * scale);
+      const octx = out.getContext("2d");
+      if (octx) {
+        octx.drawImage(canvas, 0, 0, out.width, out.height);
+        // JPEG at 0.85 quality is much smaller than PNG for signatures
+        onChange(out.toDataURL("image/jpeg", 0.85));
+      } else {
+        onChange(canvas.toDataURL("image/png"));
+      }
     }
   }, [onChange]);
 

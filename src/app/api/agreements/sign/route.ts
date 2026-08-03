@@ -127,29 +127,40 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertErr || !signature) {
+      console.error("[agreements/sign] Insert failed:", insertErr?.message, {
+        agreementId,
+        memberId: member.id,
+        signatureDataLength: signatureData?.length ?? 0,
+      });
       return NextResponse.json(
-        { error: "Failed to save signature", detail: insertErr?.message },
+        { error: "Failed to save signature", detail: insertErr?.message ?? "Unknown insert error" },
         { status: 500 }
       );
     }
 
     // 9. Write the audit log entry (service role, tamper-evident)
-    await serviceClient.from("agreement_audit_log").insert({
-      action: "signed",
-      agreement_id: agreementId,
-      signature_id: signature.id,
-      member_id: member.id,
-      auth_user_id: user.id,
-      member_email: member.email ?? user.email,
-      ip_address: ip,
-      user_agent: userAgent,
-      metadata: {
-        printed_name: printedName.trim(),
-        signed_date: signedDate,
-        agreement_version: agreement.version,
-        email_confirmed_at: user.email_confirmed_at,
-      },
-    });
+    //    Non-blocking — if the audit table is missing or errors, the signature
+    //    is still valid. We log the error but don't fail the request.
+    try {
+      await serviceClient.from("agreement_audit_log").insert({
+        action: "signed",
+        agreement_id: agreementId,
+        signature_id: signature.id,
+        member_id: member.id,
+        auth_user_id: user.id,
+        member_email: member.email ?? user.email,
+        ip_address: ip,
+        user_agent: userAgent,
+        metadata: {
+          printed_name: printedName.trim(),
+          signed_date: signedDate,
+          agreement_version: agreement.version,
+          email_confirmed_at: user.email_confirmed_at,
+        },
+      });
+    } catch (auditErr) {
+      console.error("[agreements/sign] Audit log insert failed (non-blocking):", auditErr);
+    }
 
     return NextResponse.json({
       success: true,

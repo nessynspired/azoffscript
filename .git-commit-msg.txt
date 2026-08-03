@@ -1,9 +1,14 @@
-Fix agreement sign API — query members by user_id not id
+Fix signature save failures — downscale image + show real error + non-blocking audit
 
-The sign, whoami, and email APIs were querying members.eq("id", user.id)
-but members.id is the member's own UUID, not the auth user ID. The correct
-column is user_id which links to auth.users.id. This caused "Member record
-not found" for every crew member trying to sign the Creator Release.
+- Downscale signature canvas to max 400px wide and export as JPEG 0.85
+  quality instead of full-resolution PNG. On high-DPI phones the PNG could
+  be 1MB+ which may exceed body size limits.
+- Show the actual database error detail (data.detail) in the error message
+  on both CreatorReleaseModal and the agreements page popup, so women can
+  see what actually went wrong instead of just "Failed to sign".
+- Make the audit log insert non-blocking — if the audit table is missing
+  or errors, the signature is still valid. Log to console but don't fail.
+- Add server-side error logging with signature data length for debugging.
 
 Generated with [Devin](https://devin.ai)
 
