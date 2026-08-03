@@ -1,14 +1,13 @@
-Fix signature save failures — downscale image + show real error + non-blocking audit
+Fix video visibility — show dropped videos in Recent Drops, My Drops, and Watch tab
 
-- Downscale signature canvas to max 400px wide and export as JPEG 0.85
-  quality instead of full-resolution PNG. On high-DPI phones the PNG could
-  be 1MB+ which may exceed body size limits.
-- Show the actual database error detail (data.detail) in the error message
-  on both CreatorReleaseModal and the agreements page popup, so women can
-  see what actually went wrong instead of just "Failed to sign".
-- Make the audit log insert non-blocking — if the audit table is missing
-  or errors, the signature is still valid. Log to console but don't fail.
-- Add server-side error logging with signature data length for debugging.
+- Add "My Drops" section to This Week tab — shows clips the member submitted
+  with video playback right in the card (no need to click into the detail)
+- Add video preview to Recent Drops cards for uploaded videos (was only
+  showing TikTok link embeds before)
+- Watch tab now shows Dropped clips with videos/links, not just Live ones
+  — crew can watch each other's dropped content
+- Add "Dropped" filter button in Watch tab
+- Update Watch tab count to include dropped videos
 
 Generated with [Devin](https://devin.ai)
 
