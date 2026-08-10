@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { MascotImage } from "@/components/MascotImage";
 import type { Database, IdeaCategory, IdeaStatus } from "@/lib/types/db";
 
@@ -49,7 +50,10 @@ export default function SparkBoardPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
+    const archivedIds = await getArchivedMemberIds(supabase);
+    const archFilter = archivedInFilter(archivedIds);
     let q = supabase.from("ideas").select("*").order("created_at", { ascending: false });
+    if (archFilter) q = q.not("submitted_by", "in", archFilter);
     if (activeCategory !== "all") q = q.eq("category", activeCategory);
     const { data } = await q;
     setIdeas(data ?? []);

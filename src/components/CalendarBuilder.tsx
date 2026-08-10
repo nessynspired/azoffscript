@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { notifyMember } from "@/lib/notify";
 import {
   QUICK_DROP_TEMPLATES,
@@ -100,7 +101,11 @@ export function CalendarBuilder({ member, members, isAdmin = false }: {
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await supabase.from("clips").select("*").order("scheduled_date", { ascending: true });
+    const archivedIds = await getArchivedMemberIds(supabase);
+    const archFilter = archivedInFilter(archivedIds);
+    let q = supabase.from("clips").select("*").order("scheduled_date", { ascending: true });
+    if (archFilter) q = q.not("submitted_by", "in", archFilter);
+    const res = await q;
     setClips(res.data ?? []);
     setLoading(false);
   }, [supabase]);

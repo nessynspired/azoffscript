@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { getMemberGear } from "@/lib/crew-data";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import type { Database, GearItemType, GearStatus } from "@/lib/types/db";
@@ -53,9 +54,13 @@ export default function AdminGearBoardPage() {
   const [newNotes, setNewNotes] = useState("");
 
   const load = useCallback(async () => {
+    const archivedIds = await getArchivedMemberIds(supabase);
+    const archFilter = archivedInFilter(archivedIds);
+    let gearQ = supabase.from("gear").select("*").order("member_name").order("item_type");
+    if (archFilter) gearQ = gearQ.not("member_id", "in", archFilter);
     const [memRes, gearRes] = await Promise.all([
-      supabase.from("members").select("*").order("name"),
-      supabase.from("gear").select("*").order("member_name").order("item_type"),
+      supabase.from("members").select("*").eq("archived", false).order("name"),
+      gearQ,
     ]);
     setMembers(memRes.data ?? []);
     setGear(gearRes.data ?? []);

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
 import { AnimatedIntro } from "@/components/AnimatedIntro";
 import { SocialEmbed } from "@/components/SocialEmbed";
@@ -57,17 +58,32 @@ export default function LobbyPage() {
     async function load() {
       if (!member) { setLoading(false); return; }
       const isPlannerUser = member.role === "admin" || member.can_plan_content === true;
+      // Fetch archived member IDs to filter their data from active views
+      const archivedIds = await getArchivedMemberIds(supabase);
+      const archFilter = archivedInFilter(archivedIds);
+
+      let actQ = supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(8);
+      if (archFilter) actQ = actQ.not("actor_id", "in", archFilter);
+      let reviewQ = supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Review");
+      if (archFilter) reviewQ = reviewQ.not("submitted_by", "in", archFilter);
+      let readyQ = supabase.from("ideas").select("id", { count: "exact", head: true }).eq("status", "Planned");
+      if (archFilter) readyQ = readyQ.not("submitted_by", "in", archFilter);
+      let schedQ = supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Scheduled");
+      if (archFilter) schedQ = schedQ.not("submitted_by", "in", archFilter);
+      let allAsgnQ = supabase.from("content_assignments").select("status, drop_by_date").in("status", ["Assigned", "Waiting"]);
+      if (archFilter) allAsgnQ = allAsgnQ.not("member_id", "in", archFilter);
+
       const [actRes, reviewRes, readyRes, schedRes, clipsRes, themesRes, asgnRes, trendsRes, allAssignmentsRes] = await Promise.all([
-        supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(8),
-        supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Review"),
-        supabase.from("ideas").select("id", { count: "exact", head: true }).eq("status", "Planned"),
-        supabase.from("clips").select("id", { count: "exact", head: true }).eq("status", "Scheduled"),
+        actQ,
+        reviewQ,
+        readyQ,
+        schedQ,
         supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }).limit(20),
         supabase.from("content_themes").select("*").order("start_date", { ascending: false }).limit(5),
         supabase.from("content_assignments").select("*").eq("member_id", member.id).order("drop_by_date", { ascending: true }),
         // Planner stats
         isPlannerUser ? supabase.from("trend_references").select("id", { count: "exact", head: true }).in("status", ["New", "Watching"]) : Promise.resolve(null),
-        isPlannerUser ? supabase.from("content_assignments").select("status, drop_by_date").in("status", ["Assigned", "Waiting"]) : Promise.resolve(null),
+        isPlannerUser ? allAsgnQ : Promise.resolve(null),
       ]);
       setActivity(actRes.data ?? []);
       setHeat({

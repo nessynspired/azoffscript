@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { notifyMember, notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage } from "@/components/MascotImage";
 import { InfoTooltip } from "@/components/InfoTooltip";
@@ -77,12 +78,18 @@ export default function DropPage() {
 
   // Fetch planned clips (calendar items) for the "Connect to planned clip" dropdown
   useEffect(() => {
-    supabase
-      .from("clips")
-      .select("id, title, scheduled_date")
-      .eq("status", "Planned")
-      .order("scheduled_date")
-      .then(({ data }) => setPlannedClips(data ?? []));
+    (async () => {
+      const archivedIds = await getArchivedMemberIds(supabase);
+      const archFilter = archivedInFilter(archivedIds);
+      let q = supabase
+        .from("clips")
+        .select("id, title, scheduled_date")
+        .eq("status", "Planned")
+        .order("scheduled_date");
+      if (archFilter) q = q.not("submitted_by", "in", archFilter);
+      const { data } = await q;
+      setPlannedClips(data ?? []);
+    })();
   }, [supabase]);
 
   // Auto-detect what type of drop this is

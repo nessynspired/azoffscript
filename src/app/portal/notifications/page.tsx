@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { useAuth } from "@/context/AuthContext";
 import { MascotImage } from "@/components/MascotImage";
 import { InfoTooltip } from "@/components/InfoTooltip";
@@ -42,9 +43,13 @@ export default function NotificationsPage() {
 
   const load = useCallback(async () => {
     if (!member) return;
+    const archivedIds = await getArchivedMemberIds(supabase);
+    const archFilter = archivedInFilter(archivedIds);
+    let actQ = supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(100);
+    if (archFilter) actQ = actQ.not("actor_id", "in", archFilter);
     const [notifRes, actRes] = await Promise.all([
       supabase.from("notifications").select("*").eq("user_id", member.id).order("created_at", { ascending: false }).limit(50),
-      supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(100),
+      actQ,
     ]);
     setNotifications(notifRes.data ?? []);
     setActivity(actRes.data ?? []);

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { notifyAdminsAndPlanners } from "@/lib/notify";
 import { MascotImage, PosterImage } from "@/components/MascotImage";
 import { VideoPlayer } from "@/components/VideoPlayer";
@@ -41,7 +42,11 @@ export default function ReadyToPostPage() {
 
     if (clipsData.length > 0) {
       const ids = clipsData.map((c) => c.id);
-      const { data: appData } = await supabase.from("approvals").select("*").in("clip_id", ids);
+      const archivedIds = await getArchivedMemberIds(supabase);
+      const archFilter = archivedInFilter(archivedIds);
+      let appQ = supabase.from("approvals").select("*").in("clip_id", ids);
+      if (archFilter) appQ = appQ.not("member_id", "in", archFilter);
+      const { data: appData } = await appQ;
       const map: Record<string, Approval[]> = {};
       (appData ?? []).forEach((a) => { (map[a.clip_id] ??= []).push(a); });
       setApprovals(map);

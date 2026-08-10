@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { notifyMember, notifyTaggedPeople, notifyAssignedPeople, notifyAdminsAndPlanners } from "@/lib/notify";
 import { nextSunday } from "@/lib/plan-defaults";
 import { QUICK_DROP_TEMPLATES, CONTENT_BUCKETS, getTemplate, getTemplatesByBucket, getExampleFor, type QuickDropTemplate, type EffortLabel } from "@/lib/quick-drop-templates";
@@ -172,10 +173,17 @@ export default function RunSheetPage() {
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    // Fetch archived member IDs so we can filter their data out of active views
+    const archivedIds = await getArchivedMemberIds(supabase);
+    const archFilter = archivedInFilter(archivedIds);
+
+    let asgnQ = supabase.from("content_assignments").select("*").order("drop_by_date", { ascending: true });
+    if (archFilter) asgnQ = asgnQ.not("member_id", "in", archFilter);
+
     const [clipRes, trendRes, asgnRes, memRes] = await Promise.all([
       supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }),
       supabase.from("trend_references").select("*").order("created_at", { ascending: false }),
-      supabase.from("content_assignments").select("*").order("drop_by_date", { ascending: true }),
+      asgnQ,
       supabase.from("members").select("id, name, nickname, role, can_plan_content, photo_url").eq("archived", false).order("name"),
     ]);
 
@@ -195,10 +203,11 @@ export default function RunSheetPage() {
 
     if (clipData.length > 0) {
       const clipIds = clipData.map((c) => c.id);
-      const [pplRes, appRes] = await Promise.all([
-        supabase.from("clip_people").select("*").in("clip_id", clipIds),
-        supabase.from("approvals").select("*").in("clip_id", clipIds),
-      ]);
+      let pplQ = supabase.from("clip_people").select("*").in("clip_id", clipIds);
+      if (archFilter) pplQ = pplQ.not("member_id", "in", archFilter);
+      let appQ = supabase.from("approvals").select("*").in("clip_id", clipIds);
+      if (archFilter) appQ = appQ.not("member_id", "in", archFilter);
+      const [pplRes, appRes] = await Promise.all([pplQ, appQ]);
 
       const pplMap: Record<string, ClipPerson[]> = {};
       (pplRes.data ?? []).forEach((p) => {

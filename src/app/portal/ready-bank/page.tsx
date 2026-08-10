@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { getArchivedMemberIds, archivedInFilter } from "@/lib/archived-members";
 import { notifyMember } from "@/lib/notify";
 import {
   QUICK_DROP_TEMPLATES,
@@ -100,9 +101,13 @@ export default function ReadyBankPage() {
 
   const load = useCallback(async () => {
     if (!member) { setLoading(false); return; }
+    const archivedIds = await getArchivedMemberIds(supabase);
+    const archFilter = archivedInFilter(archivedIds);
+    let ideasQ = supabase.from("ideas").select("*").eq("status", "Planned").order("updated_at", { ascending: false });
+    if (archFilter) ideasQ = ideasQ.not("submitted_by", "in", archFilter);
     const [membersRes, ideasRes] = await Promise.all([
       supabase.from("members").select("id, name, nickname, role, can_plan_content").eq("archived", false).order("name"),
-      supabase.from("ideas").select("*").eq("status", "Planned").order("updated_at", { ascending: false }),
+      ideasQ,
     ]);
     setMembers(membersRes.data ?? []);
     setPlannedIdeas(ideasRes.data ?? []);
