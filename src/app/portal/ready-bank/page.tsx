@@ -101,7 +101,7 @@ export default function ReadyBankPage() {
   const load = useCallback(async () => {
     if (!member) { setLoading(false); return; }
     const [membersRes, ideasRes] = await Promise.all([
-      supabase.from("members").select("id, name, nickname, role, can_plan_content").order("name"),
+      supabase.from("members").select("id, name, nickname, role, can_plan_content").eq("archived", false).order("name"),
       supabase.from("ideas").select("*").eq("status", "Planned").order("updated_at", { ascending: false }),
     ]);
     setMembers(membersRes.data ?? []);

@@ -72,7 +72,7 @@ export default function DropPage() {
   }, []);
 
   useEffect(() => {
-    supabase.from("members").select("*").order("name").then(({ data }) => setMembers(data ?? []));
+    supabase.from("members").select("*").eq("archived", false).order("name").then(({ data }) => setMembers(data ?? []));
   }, [supabase]);
 
   // Fetch planned clips (calendar items) for the "Connect to planned clip" dropdown

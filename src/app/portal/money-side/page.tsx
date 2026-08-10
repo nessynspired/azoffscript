@@ -58,7 +58,7 @@ export default function MoneySidePage() {
 
   const load = useCallback(async () => {
     const [membersRes, eventsRes] = await Promise.all([
-      supabase.from("members").select("id, name, role, can_plan_content").order("name"),
+      supabase.from("members").select("id, name, role, can_plan_content").eq("archived", false).order("name"),
       supabase.from("revenue_events").select("*").order("created_at", { ascending: false }),
     ]);
     setMembers(membersRes.data ?? []);

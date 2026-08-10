@@ -243,7 +243,7 @@ export function RecipeBuilder({ clip, onClose, onSaved, members: membersProp }: 
   const [fetchedMembers, setFetchedMembers] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
     if (membersProp && membersProp.length > 0) { setFetchedMembers(membersProp); return; }
-    supabase.from("members").select("id, name").order("name").then(({ data }) => {
+    supabase.from("members").select("id, name").eq("archived", false).order("name").then(({ data }) => {
       if (data) setFetchedMembers(data as { id: string; name: string }[]);
     });
   }, [supabase, membersProp]);

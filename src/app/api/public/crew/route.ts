@@ -28,7 +28,8 @@ export async function GET() {
       supabase
         .from("members")
         .select("id, name, nickname, public_bio, slug, display_order, first_wave, photo_url, card_image, gear_image, favorite_content")
-        .eq("public_visible", true),
+        .eq("public_visible", true)
+        .eq("archived", false),
       supabase
         .from("site_settings")
         .select("value")

@@ -89,6 +89,8 @@ export interface Database {
           display_order: number;
           card_image: string | null;
           gear_image: string | null;
+          archived: boolean;
+          archived_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -122,6 +124,8 @@ export interface Database {
           display_order?: number;
           card_image?: string | null;
           gear_image?: string | null;
+          archived?: boolean;
+          archived_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -155,6 +159,8 @@ export interface Database {
           display_order?: number;
           card_image?: string | null;
           gear_image?: string | null;
+          archived?: boolean;
+          archived_at?: string | null;
           created_at?: string;
         };
       };

@@ -176,7 +176,7 @@ export default function RunSheetPage() {
       supabase.from("clips_with_meta").select("*").order("updated_at", { ascending: false }),
       supabase.from("trend_references").select("*").order("created_at", { ascending: false }),
       supabase.from("content_assignments").select("*").order("drop_by_date", { ascending: true }),
-      supabase.from("members").select("id, name, nickname, role, can_plan_content, photo_url").order("name"),
+      supabase.from("members").select("id, name, nickname, role, can_plan_content, photo_url").eq("archived", false).order("name"),
     ]);
 
     if (clipRes.error) {

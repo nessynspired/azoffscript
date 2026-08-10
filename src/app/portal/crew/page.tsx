@@ -44,6 +44,8 @@ export default function CrewPage() {
   const [createForm, setCreateForm] = useState({ name: "", nickname: "", plot_twist: "" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [archiving, setArchiving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const isAdmin = me?.role === "admin";
 
@@ -140,6 +142,26 @@ export default function CrewPage() {
     }
   }
 
+  async function toggleArchive(memberId: string, currentlyArchived: boolean) {
+    setArchiving(true);
+    const patch: Database["public"]["Tables"]["members"]["Update"] = {
+      archived: !currentlyArchived,
+      archived_at: !currentlyArchived ? new Date().toISOString() : null,
+    };
+    // If archiving, also pull them off the public site so they don't appear there
+    if (!currentlyArchived) {
+      patch.public_visible = false;
+    }
+    const { error } = await supabase.from("members").update(patch).eq("id", memberId);
+    if (error) {
+      alert(error.message);
+    } else {
+      setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, ...patch } as Member : m));
+      setSelected((prev) => prev && prev.id === memberId ? { ...prev, ...patch } as Member : prev);
+    }
+    setArchiving(false);
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center py-16 gap-4">
@@ -152,6 +174,9 @@ export default function CrewPage() {
   // Build a lookup of auth users by user_id, and find accounts with no member row
   const authByUserId = new Map(authUsers.map((u) => [u.id, u]));
   const orphans = authUsers.filter((u) => !u.has_member_row);
+  // Split active vs archived crew (archived only shown to admins in a collapsed section)
+  const activeMembers = members.filter((m) => !m.archived);
+  const archivedMembers = members.filter((m) => m.archived);
 
   return (
     <div className="space-y-6">
@@ -346,8 +371,9 @@ export default function CrewPage() {
           <p className="text-smoked-charcoal/70 mt-2">Once people sign up, they'll show up here.</p>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {members.map((m, i) => (
+          {activeMembers.map((m, i) => (
             <button
               key={m.id}
               onClick={() => setSelected(m)}
@@ -381,6 +407,54 @@ export default function CrewPage() {
             </button>
           ))}
         </div>
+
+        {/* ===== ADMIN: ARCHIVED CREW ===== */}
+        {isAdmin && archivedMembers.length > 0 && (
+          <section className="mt-8">
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              className="flex items-center gap-2 mb-3 text-smoked-charcoal/70 hover:text-desert-night transition-colors"
+            >
+              <span className="font-display text-xl">{showArchived ? "▾" : "▸"}</span>
+              <span className="font-display text-xl">Archived Crew</span>
+              <span className="chip !text-[10px] !bg-smoked-charcoal/10 !text-smoked-charcoal/60">{archivedMembers.length}</span>
+            </button>
+            {showArchived && (
+              <div className="card p-4 border-2 border-smoked-charcoal/10">
+                <p className="text-xs text-smoked-charcoal/60 mb-3">
+                  Archived members are hidden from the active crew, public site, and assignment dropdowns — but their signed agreements + content stay on file. Restore to bring them back.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {archivedMembers.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelected(m)}
+                      className="card p-5 text-left opacity-70 hover:opacity-100 transition-opacity"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-full bg-smoked-charcoal/10 flex items-center justify-center shrink-0 overflow-hidden grayscale">
+                          {m.photo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="font-display text-lg text-smoked-charcoal/50">
+                              {m.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-desert-night truncate">{m.name}</h3>
+                          <span className="chip !text-[10px] !bg-smoked-charcoal/10 !text-smoked-charcoal/60">Archived</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+        </>
       )}
 
       {/* Member detail modal */}
@@ -411,10 +485,11 @@ export default function CrewPage() {
               {selected.role === "admin" && <span className="chip chip-yellow">Admin</span>}
               {selected.can_plan_content && selected.role !== "admin" && <span className="chip chip-teal">Content Planner</span>}
               {selected.design_edition && <span className="chip chip-teal">Edition {selected.design_edition}</span>}
+              {selected.archived && <span className="chip !bg-smoked-charcoal/10 !text-smoked-charcoal/60">Archived</span>}
             </div>
 
             {/* Admin permission controls */}
-            {isAdmin && selected.role !== "admin" && (
+            {isAdmin && selected.role !== "admin" && !selected.archived && (
               <div className="mt-4 card-dark p-4">
                 <p className="text-sandstone-cream font-bold text-sm mb-1">Content Planning</p>
                 <p className="text-sandstone-cream/60 text-xs mb-3">
@@ -426,6 +501,27 @@ export default function CrewPage() {
                   className={`btn btn-sm ${selected.can_plan_content ? "btn-positive" : "btn-primary"}`}
                 >
                   {toggling ? "Saving…" : selected.can_plan_content ? "✓ Can Plan Content" : "Grant Planning Access"}
+                </button>
+              </div>
+            )}
+
+            {/* Admin archive/restore controls — keeps agreements + content on file */}
+            {isAdmin && selected.role !== "admin" && (
+              <div className="mt-4 rounded-xl p-4 border-2 border-copper-clay/20">
+                <p className="font-bold text-sm text-desert-night mb-1">
+                  {selected.archived ? "Restore this crew member" : "Archive this crew member"}
+                </p>
+                <p className="text-xs text-smoked-charcoal/70 mb-3">
+                  {selected.archived
+                    ? "Brings them back to the active crew, public site, and assignment dropdowns. Their signed agreements + content stayed on file while archived."
+                    : "Hides them from the active crew, public site, and assignment dropdowns. Their signed agreements + content stay on file — nothing is deleted. You can restore anytime."}
+                </p>
+                <button
+                  onClick={() => toggleArchive(selected.id, selected.archived)}
+                  disabled={archiving}
+                  className={`btn btn-sm ${selected.archived ? "btn-positive" : "btn-secondary"}`}
+                >
+                  {archiving ? "Saving…" : selected.archived ? "↩ Restore to Active Crew" : "Archive (keep on file)"}
                 </button>
               </div>
             )}
