@@ -419,7 +419,8 @@ export default function LobbyPage() {
         </section>
       )}
 
-      {/* What's Moving */}
+      {/* What's Moving — hidden for now */}
+      {false && (
       <section>
         <h2 className="font-display text-2xl md:text-3xl text-desert-night mb-4">What&apos;s Moving</h2>
         {loading ? (
@@ -463,6 +464,7 @@ export default function LobbyPage() {
           </>
         )}
       </section>
+      )}
 
       {/* This Week's Heat */}
       <section>
