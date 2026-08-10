@@ -35,6 +35,10 @@ export default function JoinSubmissionsPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [inviteStatus, setInviteStatus] = useState<Record<string, { kind: "sending" | "sent" | "error"; message?: string; email?: string }>>({});
+  const [showManual, setShowManual] = useState(false);
+  const [manualForm, setManualForm] = useState({ name: "", email: "", city: "", socials: "", lane: "", why: "", admin_notes: "" });
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [manualSaving, setManualSaving] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -69,6 +73,29 @@ export default function JoinSubmissionsPage() {
     setBusyId(null);
     if (error) { alert(error.message); return; }
     if (expandedId === id) setExpandedId(null);
+    load();
+  }
+
+  async function addManualSubmission() {
+    if (!manualForm.name.trim()) { setManualError("Name is required."); return; }
+    setManualSaving(true);
+    setManualError(null);
+    const { error } = await supabase
+      .from("join_submissions")
+      .insert({
+        name: manualForm.name.trim(),
+        email: manualForm.email.trim() || null,
+        city: manualForm.city.trim() || "",
+        socials: manualForm.socials.trim() || null,
+        lane: manualForm.lane.trim() || null,
+        why: manualForm.why.trim() || null,
+        admin_notes: manualForm.admin_notes.trim() || null,
+        status: "New",
+      });
+    setManualSaving(false);
+    if (error) { setManualError(error.message); return; }
+    setShowManual(false);
+    setManualForm({ name: "", email: "", city: "", socials: "", lane: "", why: "", admin_notes: "" });
     load();
   }
 
@@ -187,12 +214,20 @@ export default function JoinSubmissionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Join Submissions</h1>
-        <InfoTooltip text="Admin only. When someone fills out the public /join form on the website, their submission shows up here. Review their info (name, city, vibe, socials) and decide if you want to invite them. Approved submissions can be converted into invite codes." />
-        <p className="text-smoked-charcoal/70 mt-2 text-lg">
-          People who filled out the public /join form. Review, follow up, or convert to an invite code.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-3xl md:text-5xl text-desert-night leading-none">Join Submissions</h1>
+          <InfoTooltip text="Admin only. When someone fills out the public /join form on the website, their submission shows up here. You can also add someone manually if they reached out via DM, text, or in person." />
+          <p className="text-smoked-charcoal/70 mt-2 text-lg">
+            People who filled out the public /join form, or were added manually. Review, follow up, or convert to an invite code.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowManual(true)}
+          className="btn btn-secondary shrink-0"
+        >
+          + Add manually
+        </button>
       </div>
 
       {/* Filter chips */}
@@ -460,6 +495,101 @@ export default function JoinSubmissionsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Manual add modal */}
+      {showManual && (
+        <div className="fixed inset-0 bg-desert-night/40 flex items-center justify-center z-50 p-4" onClick={() => setShowManual(false)}>
+          <div className="card p-6 max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl text-desert-night">Add Person Manually</h2>
+              <button onClick={() => setShowManual(false)} className="text-smoked-charcoal/50 hover:text-desert-night text-2xl leading-none">&times;</button>
+            </div>
+            <p className="text-sm text-smoked-charcoal/70">
+              For someone who reached out via DM, text, or in person — not through the online form.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-desert-night/60">Name *</label>
+                <input
+                  value={manualForm.name}
+                  onChange={(e) => setManualForm({ ...manualForm, name: e.target.value })}
+                  placeholder="Their name"
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-desert-night/60">Email</label>
+                <input
+                  value={manualForm.email}
+                  onChange={(e) => setManualForm({ ...manualForm, email: e.target.value })}
+                  placeholder="email@example.com"
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-desert-night/60">City</label>
+                <input
+                  value={manualForm.city}
+                  onChange={(e) => setManualForm({ ...manualForm, city: e.target.value })}
+                  placeholder="e.g. Buckeye, AZ"
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-desert-night/60">Socials</label>
+                <input
+                  value={manualForm.socials}
+                  onChange={(e) => setManualForm({ ...manualForm, socials: e.target.value })}
+                  placeholder="@handle or link"
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-desert-night/60">Lane / Interest</label>
+                <input
+                  value={manualForm.lane}
+                  onChange={(e) => setManualForm({ ...manualForm, lane: e.target.value })}
+                  placeholder="e.g. On-Camera, Editor, Behind Scenes"
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-desert-night/60">Why they're interested</label>
+                <textarea
+                  value={manualForm.why}
+                  onChange={(e) => setManualForm({ ...manualForm, why: e.target.value })}
+                  placeholder="What they said about joining..."
+                  rows={2}
+                  className="field mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-desert-night/60">Admin notes</label>
+                <textarea
+                  value={manualForm.admin_notes}
+                  onChange={(e) => setManualForm({ ...manualForm, admin_notes: e.target.value })}
+                  placeholder="How they reached out, who referred them, etc."
+                  rows={2}
+                  className="field mt-1"
+                />
+              </div>
+            </div>
+            {manualError && (
+              <p className="text-sm text-red-700 bg-red-50 rounded-xl p-2">{manualError}</p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowManual(false)} className="btn btn-secondary">Cancel</button>
+              <button
+                onClick={addManualSubmission}
+                disabled={manualSaving || !manualForm.name.trim()}
+                className="btn btn-primary disabled:opacity-60"
+              >
+                {manualSaving ? "Saving…" : "Add to submissions"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

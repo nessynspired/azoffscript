@@ -102,9 +102,14 @@ export default function DropPage() {
     if (!newFiles || newFiles.length === 0) return;
     setError(null);
     const valid: File[] = [];
+    const MAX_SIZE = 50 * 1024 * 1024; // 50MB Supabase storage limit
     for (const f of Array.from(newFiles)) {
       if (!f.type.startsWith("video/") && !f.type.startsWith("audio/") && !f.type.startsWith("image/")) {
         setError(`${f.name}: Only video, audio, or image files can be dropped here. For links, just paste them in the text box.`);
+        continue;
+      }
+      if (f.size > MAX_SIZE) {
+        setError(`${f.name} is ${(f.size / 1024 / 1024).toFixed(1)}MB — max upload size is 50MB. Try compressing or trimming the file.`);
         continue;
       }
       valid.push(f);
@@ -138,9 +143,13 @@ export default function DropPage() {
         for (const f of files) {
           const ext = f.name.split(".").pop() ?? "mp4";
           const path = `${member.user_id}/${crypto.randomUUID()}.${ext}`;
-          const { error: upErr } = await supabase.storage.from("clips").upload(path, f, { upsert: false });
+          const { error: upErr } = await supabase.storage.from("clips").upload(path, f, {
+            upsert: false,
+            cacheControl: "3600",
+          });
           if (upErr) {
-            setError(`Upload paused for ${f.name}. Try again.`);
+            console.error("[drop] Upload error for", f.name, upErr);
+            setError(`Upload failed for ${f.name}: ${upErr.message}${upErr.message.toLowerCase().includes("size") || upErr.message.toLowerCase().includes("limit") ? " — file may be too large (max 50MB)." : ""}`);
             setSubmitting(false);
             return;
           }

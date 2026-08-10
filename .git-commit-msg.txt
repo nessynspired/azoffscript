@@ -1,17 +1,9 @@
-Fix VideoPlayer to show images + show actual error messages
+Remove What's Moving, fix upload errors, add manual join submissions
 
-- VideoPlayer now detects image files (.jpg, .jpeg, .png, .gif, .webp,
-  .heic, .heif) and renders them as <img> instead of <video>. Latasha
-  dropped JPEG screenshots, not videos — the video player was trying to
-  play them and failing silently.
-- VideoPlayer now shows the actual error message from Supabase storage
-  instead of just "Could not load video", so we can diagnose issues.
-- The files DO exist in storage (confirmed via service role client).
-  Ronnie's 4MB mp4 and Latasha's 4 JPEGs are all there.
-
-Note: Latasha dropped 4 files but only 1 was saved to file_path because
-the production_notes column doesn't exist yet. Run the combined migration
-(supabase/run-all-migrations.sql) to fix this for future drops.
+- Remove What's Moving section from Run Sheet planner
+- Show actual Supabase error on upload failure instead of generic "upload paused"
+- Add 50MB pre-upload size check with clear message
+- Add "Add manually" button on Join Submissions for people who didn't use the online form
 
 Generated with [Devin](https://devin.ai)
 

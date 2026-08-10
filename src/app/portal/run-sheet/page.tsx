@@ -3475,13 +3475,6 @@ function PlannerDashboard({
   // Missing assignments: clips with no one assigned
   const clipsWithoutAssignments = planningClips.filter((c) => !assignments.some((a) => a.clip_id === c.id));
 
-  // What's Moving — recent drops from the crew (uploaded videos, link drops, ideas)
-  // Only content clips — raw footage is excluded (it goes to the Raw Footage tab)
-  const recentLinkDrops = clips
-    .filter((c) => c.status === "Dropped" && !isRawFootage(c))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 6);
-
   async function sendReminder(assignment: Assignment) {
     const clip = clips.find((c) => c.id === assignment.clip_id);
     const member = members.find((m) => m.id === assignment.member_id);
@@ -3621,56 +3614,6 @@ function PlannerDashboard({
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* What's Moving — recent link drops with embedded videos */}
-      {recentLinkDrops.length > 0 && (
-        <section>
-          <h3 className="font-display text-xl text-desert-night mb-3">🔥 What&apos;s Moving</h3>
-          <p className="text-sm text-smoked-charcoal/60 mb-3">Recent trend drops from the crew. Tap to open the full clip.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recentLinkDrops.map((clip) => {
-              const dropper = members.find((m) => m.id === clip.submitted_by);
-              return (
-                <button
-                  key={clip.id}
-                  onClick={() => onSelectClip(clip.id)}
-                  className="card overflow-hidden text-left hover:-translate-y-0.5 transition-transform"
-                >
-                  {/* Video player for uploaded videos, embed for link drops */}
-                  <div className="bg-desert-night/5">
-                    {clip.file_path && (clip.type === "video" || clip.type === "final_cut") ? (
-                      <VideoPlayer filePath={clip.file_path} title={clip.title} className="max-h-[250px] object-contain" />
-                    ) : clip.link ? (
-                      <SocialEmbed url={clip.link} title={clip.title} />
-                    ) : null}
-                  </div>
-                  {/* Info — with dropper's profile picture */}
-                  <div className="p-3 flex items-center gap-2">
-                    {/* Profile picture or initials */}
-                    <span className="w-8 h-8 rounded-full bg-copper-clay/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-copper-clay/30">
-                      {dropper?.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={dropper.photo_url} alt={clip.submitted_by_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="font-display text-xs text-sandstone-cream">
-                          {clip.submitted_by_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                        </span>
-                      )}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-desert-night text-sm truncate">{displayTitle(clip)}</p>
-                      <p className="text-xs text-smoked-charcoal/60 mt-0.5 truncate">
-                        {clip.submitted_by_name}
-                        {clip.link && linkPlatform(clip.link) ? ` · ${linkPlatform(clip.link)}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                </button>
               );
             })}
           </div>
@@ -3937,7 +3880,7 @@ function PlannerDashboard({
       )}
 
       {/* Nothing to plan */}
-      {planningClips.length === 0 && stuckClips.length === 0 && waitingOn.length === 0 && readyForVanessa.length === 0 && needsPlanningTrends.length === 0 && clipsWithoutAssignments.length === 0 && recentLinkDrops.length === 0 && (
+      {planningClips.length === 0 && stuckClips.length === 0 && waitingOn.length === 0 && readyForVanessa.length === 0 && needsPlanningTrends.length === 0 && clipsWithoutAssignments.length === 0 && (
         <div className="card p-10 text-center">
           <p className="font-display text-2xl text-desert-night">Everything&apos;s moving.</p>
           <p className="text-smoked-charcoal/70 mt-2">Nothing stuck. Nothing waiting. You&apos;re all caught up.</p>
